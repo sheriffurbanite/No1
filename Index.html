@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviatrix - COMPLETE WORKING VERSION</title>
+
+<style>
+:root{
+  --bg-top:#081322;
+  --bg-main:#3a1c6b;
+  --bg-main-2:#1a0f3f;
+  --panel:#24164d;
+  --panel-dark:#1b113a;
+  --accent:#2ddc87;
+  --btn:#3b82f6;
+  --text-dim:#b8b4d9;
+  --orange:#ff7a2f;
+  --win:#28d17c;
+  --white:#ffffff;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  user-select:none;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+}
+
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  overflow-x:hidden;
+  touch-action:manipulation;
+}
+
+.header{
+  height:52px;
+  background:linear-gradient(180deg,#0b1830,#081322);
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  gap:10px;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.header .back{
+  font-size:18px;
+  cursor:pointer;
+  padding:8px;
+  border-radius:8px;
+  transition:background .2s;
+}
+
+.header .back:hover{
+  background:rgba(255,255,255,.1);
+}
+
+.header .title{
+  flex:1;
+  text-align:center;
+  font-weight:700;
+  font-size:16px;
+}
+
+.header .deposit{
+  background:linear-gradient(135deg,var(--win),#1fd17a);
+  color:#000;
+  padding:8px 14px;
+  border-radius:20px;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.header .level{
+  background:linear-gradient(135deg,#ffd700,#ffed4e);
+  color:#000;
+  padding:4px 8px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.infobar{
+  background:linear-gradient(180deg,#0b1830,#0b1530);
+  display:flex;
+  align-items:center;
+  padding:8px 12px;
+  gap:10px;
+}
+
+.balance{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.status{
+  margin-left:auto;
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  background:rgba(45,220,135,0.2);
+}
+
+.players{
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  background:rgba(255,255,255,0.1);
+  color:var(--white);
+}
+
+.game{
+  height:45vh;
+  background:radial-gradient(circle at top right,#4b2b9a 0%,#2b1768 40%,#1a0f3f 70%);
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  border-radius:20px;
+  margin:8px;
+}
+
+.game.waiting{
+  background:radial-gradient(circle at center,#2a164f 0%,#1a0f3f 70%);
+}
+
+.game.countdown{
+  background:radial-gradient(circle at center,#1a0f3f 0%,#0f0825 100%);
+}
+
+.gameCanvas{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  border-radius:20px;
+}
+
+.multiplier{
+  position:absolute;
+  bottom:20%;
+  font-size:64px;
+  font-weight:900;
+  color:var(--white);
+  text-shadow:0 0 20px rgba(255,255,255,0.8);
+  z-index:20;
+  transition:all .3s ease-out;
+}
+
+.multiplier.crashed{
+  color:#ff4444 !important;
+  text-shadow:0 0 30px rgba(255,68,68,.8);
+  animation:shake .5s ease-in-out;
+}
+
+.multiplier.countdown{
+  color:var(--accent);
+  font-size:120px;
+  text-shadow:0 0 40px rgba(45,220,135,.8);
+}
+
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-15px)}
+  75%{transform:translateX(15px)}
+}
+
+.crash-point{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:80px;
+  font-weight:900;
+  color:#ff4444;
+  text-shadow:0 0 40px rgba(255,68,68,.8);
+  animation:pulse 2s infinite;
+  z-index:25;
+}
+
+@keyframes pulse{
+  0%,100%{
+    transform:translate(-50%,-50%) scale(1);
+    opacity:1;
+  }
+  50%{
+    transform:translate(-50%,-50%) scale(1.2);
+    opacity:.8;
+  }
+}
+
+.stats{
+  display:flex;
+  gap:8px;
+  margin:0 8px 8px;
+}
+
+.stat-item{
+  flex:1;
+  background:rgba(255,255,255,.05);
+  padding:8px;
+  border-radius:10px;
+  text-align:center;
+  font-size:12px;
+}
+
+.bets{
+  background:linear-gradient(180deg,#24164d,#1b113a);
+  padding:10px;
+  display:flex;
+  gap:10px;
+  margin:0 8px;
+}
+
+.bet-card{
+  flex:1;
+  background:#2a1b59;
+  border-radius:16px;
+  padding:12px;
+}
+
+.bet-card.active{
+  border:2px solid var(--accent);
+  box-shadow:0 0 25px rgba(45,220,135,.4);
+}
+
+.bet-card.auto-active{
+  border:2px solid var(--orange);
+  box-shadow:0 0 25px rgba(255,122,47,.4);
+}
+
+.bet-display{
+  position:relative;
+  height:50px;
+  background:linear-gradient(135deg,#140a2f,#1a0f3f);
+  border-radius:12px;
+  margin-bottom:10px;
+  overflow:hidden;
+  cursor:pointer;
+}
+
+.bet-display.active{
+  background:linear-gradient(135deg,var(--win),#1fd17a);
+}
+
+.bet-display.flying{
+  background:linear-gradient(135deg,var(--orange),#ff9a4f);
+}
+
+.bet-display.cashed{
+  background:linear-gradient(135deg,var(--win),#1fd17a);
+}
+
+.bet-amount{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:20px;
+  font-weight:900;
+  z-index:2;
+  transition:all .3s ease;
+}
+
+.bet-display.active .bet-amount,
+.bet-display.flying .bet-amount{
+  color:var(--white);
+  text-shadow:0 0 10px rgba(255,255,255,.8);
+}
+
+.bet-display.cashed .bet-amount{
+  color:#000;
+  text-shadow:none;
+}
+
+.bet-display .gradient-bar{
+  position:absolute;
+  bottom:0;
+  left:0;
+  height:0%;
+  width:100%;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.4));
+  transition:height .1s ease-out;
+}
+
+.auto-row{
+  display:flex;
+  gap:4px;
+  margin-bottom:8px;
+}
+
+.auto-btn{
+  flex:1;
+  padding:4px 2px;
+  border:none;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.auto-off{
+  background:#444;
+  color:#ccc;
+}
+
+.auto-on{
+  background:var(--orange);
+  color:#000;
+}
+
+.auto-on:hover{
+  transform:scale(1.05);
+}
+
+.quick{
+  display:flex;
+  gap:4px;
+  margin-bottom:10px;
+}
+
+.quick span,
+.auto-multi span{
+  flex:1;
+  background:#3a2c6f;
+  border-radius:8px;
+  padding:6px 2px;
+  text-align:center;
+  font-size:11px;
+  opacity:.5;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.quick span:hover,
+.quick span.active,
+.auto-multi span:hover,
+.auto-multi span.active{
+  opacity:1;
+  background:var(--accent);
+  color:#000;
+  transform:scale(1.05);
+}
+
+.auto-multi{
+  display:flex;
+  gap:4px;
+  margin-bottom:8px;
+}
+
+.place{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.place-bet{
+  background:linear-gradient(135deg,var(--btn),#2563eb);
+  color:#fff;
+}
+
+.place-bet:hover:not(:disabled){
+  transform:translateY(-1px);
+  box-shadow:0 4px 15px rgba(59,130,246,.4);
+}
+
+.place-bet:disabled{
+  background:#555;
+  cursor:not-allowed;
+}
+
+.place-cashout{
+  background:linear-gradient(135deg,var(--win),#1fd17a)!important;
+  color:#000!important;
+  animation:pulse-green .8s infinite;
+}
+
+.place-cashed{
+  background:#666!important;
+  color:#ccc!important;
+  cursor:not-allowed;
+}
+
+@keyframes pulse-green{
+  0%,100%{
+    box-shadow:0 0 0 0 rgba(40,209,124,.7);
+  }
+  50%{
+    box-shadow:0 0 0 15px rgba(40,209,124,0);
+  }
+}
+
+.history{
+  background:#0e0825;
+  padding:8px 10px;
+  font-size:13px;
+  color:#cfc9ff;
+  white-space:nowrap;
+  overflow-x:auto;
+  margin:0 8px 8px;
+  border-radius:12px;
+}
+
+.history span{
+  margin-right:10px;
+  padding:4px 8px;
+  background:rgba(255,255,255,.1);
+  border-radius:10px;
+  font-weight:500;
+}
+
+.notification{
+  position:fixed;
+  top:80px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:12px;
+  font-weight:600;
+  z-index:1000;
+  animation:slideDown .3s ease;
+}
+
+@keyframes slideDown{
+  from{
+    transform:translate(-50%,-100%);
+    opacity:0;
+  }
+  to{
+    transform:translate(-50%,0);
+    opacity:1;
+  }
+}
+
+.notification.win{
+  background:var(--win);
+  color:#000;
+}
+
+.notification.lose{
+  background:#ff4444;
+  color:#fff;
+}
+
+.notification.info{
+  background:var(--accent);
+  color:#000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="back" onclick="goBack()">←</div>
+  <div class="title">Aviatrix ✈️</div>
+  <div class="level" id="level">🏆 Level 4</div>
+  <div class="deposit" onclick="deposit()">+ Deposit</div>
+</div>
+
+<div class="infobar">
+  <div class="balance">KES <strong id="balance">5,250</strong></div>
+  <div class="status" id="status">Connecting...</div>
+  <div class="players" id="players">1,847</div>
+</div>
+
+<div class="game waiting" id="game">
+  <canvas class="gameCanvas" id="gameCanvas" width="400" height="400"></canvas>
+  <div class="multiplier" id="multiplier">1.00x</div>
+</div>
+
+<div class="stats">
+
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:var(--win);" id="totalWin">0</div>
+    <div>Wins</div>
+  </div>
+
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:var(--orange);" id="maxMulti">1.00x</div>
+    <div>Max Multi</div>
+  </div>
+
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;" id="winRate">0%</div>
+    <div>Win Rate</div>
+  </div>
+
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:#ff7a2f;" id="gamesPlayed">0</div>
+    <div>Games</div>
+  </div>
+
+</div>
+
+<div class="bets">
+
+  <div class="bet-card" id="bet1">
+
+    <div class="bet-display" id="display1">
+      <div class="gradient-bar" id="bar1"></div>
+      <div class="bet-amount" id="amount1">100</div>
+    </div>
+
+    <div class="auto-row">
+      <button class="auto-btn auto-off" id="auto1" onclick="toggleAuto(1)">AUTO</button>
+
+      <input
+        type="number"
+        id="autoMulti1"
+        value="2.00"
+        min="1.01"
+        max="100"
+        step="0.01"
+        style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:10px;text-align:center;"
+      >
+    </div>
+
+    <div class="quick">
+      <span onclick="setQuick(1,50)">50</span>
+      <span onclick="setQuick(1,100)" class="active">100</span>
+      <span onclick="setQuick(1,200)">200</span>
+      <span onclick="setQuick(1,500)">500</span>
+    </div>
+
+    <button class="place place-bet" id="place1">PLACE BET</button>
+
+  </div>
+
+
+  <div class="bet-card" id="bet2">
+
+    <div class="bet-display" id="display2">
+      <div class="gradient-bar" id="bar2"></div>
+      <div class="bet-amount" id="amount2">100</div>
+    </div>
+
+    <div class="auto-row">
+      <button class="auto-btn auto-off" id="auto2" onclick="toggleAuto(2)">AUTO</button>
+
+      <input
+        type="number"
+        id="autoMulti2"
+        value="2.00"
+        min="1.01"
+        max="100"
+        step="0.01"
+        style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:10px;text-align:center;"
+      >
+    </div>
+
+    <div class="quick">
+      <span onclick="setQuick(2,50)">50</span>
+      <span onclick="setQuick(2,100)" class="active">100</span>
+      <span onclick="setQuick(2,200)">200</span>
+      <span onclick="setQuick(2,500)">500</span>
+    </div>
+
+    <button class="place place-bet" id="place2">PLACE BET</button>
+
+  </div>
+
+</div>
+
+<div class="history" id="history">
+  Loading history...
+</div>
+
+
+<!-- Socket.IO client -->
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+<script>
+
+/* =========================================================
+   AVIATRIX CLIENT
+   Server-authoritative round engine
+   Cashout is virtual/demo only.
+   ========================================================= */
+
+const SOCKET_URL = "https://no-gen.bonto.run";
+
+let socket = null;
+
+let connected = false;
+
+let gameState = "waiting";
+
+let multiplier = 1.00;
+
+let balance = 5250;
+
+let activeBets = {};
+
+let history = [];
+
+let betAmounts = {
+  1:100,
+  2:100
+};
+
+let autoCashouts = {
+  1:null,
+  2:null
+};
+
+let autoEnabled = {
+  1:false,
+  2:false
+};
+
+let currentRoundId = null;
+
+let currentPlayers = 1847;
+
+let stats = {
+  wins:0,
+  games:0,
+  totalWin:0,
+  maxMulti:1.00
+};
+
+let canvas;
+let ctx;
+
+let particles = [];
+
+let level = 4;
+
+
+/* =========================================================
+   CANVAS
+   ========================================================= */
+
+function initCanvas(){
+
+  canvas = document.getElementById("gameCanvas");
+
+  ctx = canvas.getContext("2d");
+
+  function resizeCanvas(){
+
+    canvas.width = canvas.offsetWidth;
+
+    canvas.height = canvas.offsetHeight;
+
+  }
+
+  resizeCanvas();
+
+  window.addEventListener("resize",resizeCanvas);
+}
+
+
+/* =========================================================
+   PARTICLES
+   ========================================================= */
+
+function animateParticles(){
+
+  if(!ctx) return;
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  particles = particles.filter(p=>{
+
+    p.x += p.vx;
+
+    p.y += p.vy;
+
+    p.life -= 1;
+
+    p.vy += .1;
+
+    ctx.save();
+
+    ctx.globalAlpha = p.life / 30;
+
+    ctx.fillStyle = p.color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      p.x,
+      p.y,
+      p.size,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+    return p.life > 0;
+
+  });
+
+  if(particles.length > 0){
+
+    requestAnimationFrame(animateParticles);
+
+  }
+
+}
+
+
+function createParticles(
+  x,
+  y,
+  color,
+  count = 15
+){
+
+  for(let i=0;i<count;i++){
+
+    particles.push({
+
+      x,
+      y,
+
+      vx:(Math.random()-.5)*10,
+
+      vy:(Math.random()-.5)*10-5,
+
+      size:Math.random()*4+2,
+
+      life:30,
+
+      color
+
+    });
+
+  }
+
+  animateParticles();
+
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+function initButtons(){
+
+  document.getElementById("place1").onclick =
+    ()=>toggleBet(1);
+
+  document.getElementById("place2").onclick =
+    ()=>toggleBet(2);
+
+}
+
+
+/* =========================================================
+   PLAYER DISPLAY
+   ========================================================= */
+
+function updatePlayers(){
+
+  /*
+    This remains visual-only.
+    It has no effect on the round.
+  */
+
+  if(gameState === "countdown"){
+
+    currentPlayers +=
+      Math.floor(Math.random()*30)+10;
+
+  }
+
+  else if(gameState === "flying"){
+
+    if(multiplier < 20){
+
+      if(Math.random() < .25){
+
+        currentPlayers -=
+          Math.floor(Math.random()*50)+20;
+
+      }
+
+    }
+
+  }
+
+  currentPlayers = Math.max(
+    50,
+    Math.min(5000,currentPlayers)
+  );
+
+  document.getElementById("players")
+    .textContent =
+    currentPlayers.toLocaleString();
+
+}
+
+
+/* =========================================================
+   SERVER CONNECTION
+   ========================================================= */
+
+function connectSocket(){
+
+  try{
+
+    socket = io(SOCKET_URL,{
+      transports:["websocket","polling"],
+      reconnection:true,
+      reconnectionAttempts:Infinity,
+      reconnectionDelay:1000,
+      timeout:10000
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    showNotification(
+      "Unable to connect to game server.",
+      "lose"
+    );
+
+    return;
+
+  }
+
+
+  socket.on("connect",()=>{
+
+    connected = true;
+
+    document.getElementById("status")
+      .textContent = "Connected";
+
+    showNotification(
+      "Connected to round server",
+      "info"
+    );
+
+  });
+
+
+  socket.on("disconnect",()=>{
+
+    connected = false;
+
+    document.getElementById("status")
+      .textContent = "Server disconnected";
+
+    gameState = "waiting";
+
+    disableBetButtons();
+
+    showNotification(
+      "Connection lost — waiting for server...",
+      "lose"
+    );
+
+  });
+
+
+  socket.on("connect_error",(error)=>{
+
+    console.error(
+      "Socket connection error:",
+      error.message
+    );
+
+    document.getElementById("status")
+      .textContent = "Connecting...";
+
+  });
+
+
+  /* =======================================================
+     INITIAL / CURRENT SERVER STATE
+     ======================================================= */
+
+  socket.on("round_state",(state)=>{
+
+    if(!state) return;
+
+    currentRoundId = state.roundId || null;
+
+    multiplier =
+      Number(state.multiplier) || 1.00;
+
+    if(state.phase === "countdown"){
+
+      handleServerCountdown(
+        state.roundId,
+        Number(state.countdown) || 0
+      );
+
+    }
+
+    else if(state.phase === "running"){
+
+      handleRoundStarted(
+        state.roundId,
+        multiplier
+      );
+
+    }
+
+    else if(state.phase === "ended"){
+
+      handleRoundEnded(
+        state.roundId,
+        multiplier
+      );
+
+    }
+
+    else{
+
+      gameState = "waiting";
+
+      setWaitingUI();
+
+    }
+
+  });
+
+
+  /* =======================================================
+     COUNTDOWN
+     ======================================================= */
+
+  socket.on("round_countdown",(data)=>{
+
+    if(!data) return;
+
+    handleServerCountdown(
+      data.roundId,
+      Number(data.seconds) || 0
+    );
+
+  });
+
+
+  /* =======================================================
+     ROUND START
+     ======================================================= */
+
+  socket.on("round_started",(data)=>{
+
+    if(!data) return;
+
+    handleRoundStarted(
+      data.roundId,
+      Number(data.multiplier) || 1.00
+    );
+
+  });
+
+
+  /* =======================================================
+     LIVE MULTIPLIER
+     ======================================================= */
+
+  socket.on("round_update",(data)=>{
+
+    if(!data) return;
+
+    if(
+      currentRoundId &&
+      data.roundId &&
+      data.roundId !== currentRoundId
+    ){
+
+      return;
+
+    }
+
+    if(gameState !== "flying") return;
+
+    multiplier =
+      Number(data.multiplier) || multiplier;
+
+    updateAllDisplays();
+
+  });
+
+
+  /* =======================================================
+     SERVER ROUND END
+     ======================================================= */
+
+  socket.on("round_ended",(data)=>{
+
+    if(!data) return;
+
+    handleRoundEnded(
+      data.roundId,
+      Number(data.multiplier) || multiplier
+    );
+
+  });
+
+
+  /* =======================================================
+     SERVER ROUND RESET
+     ======================================================= */
+
+  socket.on("round_reset",()=>{
+
+    resetRound();
+
+    setWaitingUI();
+
+  });
+
+}
+
+
+/* =========================================================
+   COUNTDOWN FROM SERVER
+   ========================================================= */
+
+function handleServerCountdown(
+  roundId,
+  seconds
+){
+
+  currentRoundId = roundId;
+
+  gameState = "countdown";
+
+  multiplier = 1.00;
+
+  const game = document.getElementById("game");
+
+  game.classList.remove(
+    "waiting"
+  );
+
+  game.classList.add(
+    "countdown"
+  );
+
+  const multiplierEl =
+    document.getElementById("multiplier");
+
+  multiplierEl.className =
+    "multiplier countdown";
+
+  multiplierEl.textContent =
+    seconds > 0 ? seconds : "GO";
+
+  document.getElementById("status")
+    .textContent =
+    seconds > 0
+      ? `Betting round - ${seconds}s`
+      : "Starting...";
+
+  enableBetButtons();
+
+  updatePlayers();
+
+}
+
+
+/* =========================================================
+   ROUND STARTED
+   ========================================================= */
+
+function handleRoundStarted(
+  roundId,
+  startingMultiplier
+){
+
+  currentRoundId = roundId;
+
+  gameState = "flying";
+
+  multiplier =
+    Number(startingMultiplier) || 1.00;
+
+  document.getElementById("game")
+    .classList.remove(
+      "countdown",
+      "waiting"
+    );
+
+  const multiplierEl =
+    document.getElementById("multiplier");
+
+  multiplierEl.className =
+    "multiplier";
+
+  multiplierEl.textContent =
+    multiplier.toFixed(2) + "x";
+
+  document.getElementById("status")
+    .textContent =
+    "🛫 FLYING - CASH OUT";
+
+  disableBetButtons();
+
+  /*
+    Count the server-started round once.
+  */
+
+  stats.games++;
+
+  updateStats();
+
+  updateAllDisplays();
+
+}
+
+
+/* =========================================================
+   ROUND ENDED BY SERVER
+   ========================================================= */
+
+function handleRoundEnded(
+  roundId,
+  finalMultiplier
+){
+
+  if(
+    currentRoundId &&
+    roundId &&
+    currentRoundId !== roundId
+  ){
+
+    return;
+
+  }
+
+  multiplier =
+    Number(finalMultiplier) || multiplier;
+
+  crashGame(multiplier);
+
+}
+
+
+/* =========================================================
+   DISPLAY UPDATES
+   ========================================================= */
+
+function updateAllDisplays(){
+
+  const multiplierEl =
+    document.getElementById("multiplier");
+
+  if(gameState === "crashed"){
+
+    multiplierEl.classList.add("crashed");
+
+    multiplierEl.textContent =
+      multiplier.toFixed(2) + "x";
+
+  }
+
+  else if(gameState === "flying"){
+
+    multiplierEl.classList.remove(
+      "crashed"
+    );
+
+    multiplierEl.textContent =
+      multiplier.toFixed(2) + "x";
+
+  }
+
+
+  Object.keys(activeBets).forEach(slot=>{
+
+    const bet = activeBets[slot];
+
+    if(!bet || bet.cashedOut) return;
+
+
+    const currentValue =
+      Math.floor(
+        bet.amount * multiplier
+      );
+
+
+    document.getElementById(
+      `amount${slot}`
+    ).textContent =
+      currentValue;
+
+
+    const profitPercent =
+      Math.min(
+        100,
+        Math.max(
+          0,
+          (multiplier - 1) * 100
+        )
+      );
+
+
+    document.getElementById(
+      `bar${slot}`
+    ).style.height =
+      profitPercent + "%";
+
+
+    document.getElementById(
+      `display${slot}`
+    ).classList.add("flying");
+
+
+    checkAutoCashout(slot);
+
+  });
+
+}
+
+
+/* =========================================================
+   AUTO CASHOUT
+   ========================================================= */
+
+function checkAutoCashout(slot){
+
+  const target =
+    autoCashouts[slot];
+
+  const bet =
+    activeBets[slot];
+
+  if(
+    !autoEnabled[slot] ||
+    !target ||
+    !bet ||
+    bet.cashedOut ||
+    gameState !== "flying"
+  ){
+
+    return;
+
+  }
+
+  if(multiplier >= target){
+
+    cashOut(slot);
+
+  }
+
+}
+
+
+/* =========================================================
+   BET BUTTON
+   ========================================================= */
+
+function toggleBet(slot){
+
+  if(!connected){
+
+    showNotification(
+      "Waiting for server connection...",
+      "info"
+    );
+
+    return;
+
+  }
+
+
+  if(gameState !== "countdown"){
+
+    return;
+
+  }
+
+
+  const placeBtn =
+    document.getElementById(
+      `place${slot}`
+    );
+
+  const display =
+    document.getElementById(
+      `display${slot}`
+    );
+
+
+  /*
+    PLACE BET
+  */
+
+  if(
+    !activeBets[slot] ||
+    activeBets[slot].cashedOut
+  ){
+
+    const amount =
+      Number(betAmounts[slot]);
+
+
+    if(balance < amount){
+
+      showNotification(
+        "Insufficient virtual balance!",
+        "lose"
+      );
+
+      return;
+
+    }
+
+
+    balance -= amount;
+
+    updateBalance();
+
+
+    activeBets[slot] = {
+
+      amount:amount,
+
+      cashedOut:false
+
+    };
+
+
+    display.classList.add("active");
+
+
+    document.getElementById(
+      `amount${slot}`
+    ).textContent =
+      amount;
+
+
+    /*
+      The cashout button is prepared
+      before the round starts.
+    */
+
+    placeBtn.textContent =
+      "CASH OUT";
+
+    placeBtn.className =
+      "place place-cashout";
+
+    placeBtn.disabled = true;
+
+
+    placeBtn.onclick =
+      function(){
+
+        cashOut(slot);
+
+      };
+
+
+    document.getElementById(
+      `bet${slot}`
+    ).classList.add("active");
+
+
+    showNotification(
+      `Bet ${amount} KES placed!`,
+      "win"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ENABLE BET BUTTONS
+   ========================================================= */
+
+function enableBetButtons(){
+
+  [1,2].forEach(slot=>{
+
+    const btn =
+      document.getElementById(
+        `place${slot}`
+      );
+
+    /*
+      If a bet hasn't been placed,
+      allow placement.
+    */
+
+    if(
+      !activeBets[slot] ||
+      activeBets[slot].cashedOut
+    ){
+
+      btn.disabled = false;
+
+    }
+
+  });
+
+}
+
+
+/* =========================================================
+   DISABLE NEW BET PLACEMENT
+   Existing cashout buttons remain usable.
+   ========================================================= */
+
+function disableBetButtons(){
+
+  [1,2].forEach(slot=>{
+
+    const btn =
+      document.getElementById(
+        `place${slot}`
+      );
+
+    const bet =
+      activeBets[slot];
+
+
+    if(
+      bet &&
+      !bet.cashedOut &&
+      gameState === "flying"
+    ){
+
+      btn.disabled = false;
+
+    }
+
+    else{
+
+      btn.disabled = true;
+
+    }
+
+  });
+
+}
+
+
+/* =========================================================
+   VIRTUAL CASHOUT
+   ========================================================= */
+
+function cashOut(slot){
+
+  const bet =
+    activeBets[slot];
+
+
+  if(
+    !bet ||
+    bet.cashedOut ||
+    gameState !== "flying"
+  ){
+
+    return;
+
+  }
+
+
+  /*
+    Demo-only settlement.
+
+    The browser is NOT controlling
+    the server's round/crash.
+  */
+
+  const cashoutMultiplier =
+    multiplier;
+
+
+  const payout =
+    Math.floor(
+      bet.amount * cashoutMultiplier
+    );
+
+
+  balance += payout;
+
+  stats.totalWin += payout;
+
+  stats.wins++;
+
+
+  bet.cashedOut = true;
+
+
+  updateBalance();
+
+  updateStats();
+
+
+  const display =
+    document.getElementById(
+      `display${slot}`
+    );
+
+  const placeBtn =
+    document.getElementById(
+      `place${slot}`
+    );
+
+  const amountEl =
+    document.getElementById(
+      `amount${slot}`
+    );
+
+  const bar =
+    document.getElementById(
+      `bar${slot}`
+    );
+
+
+  display.classList.remove(
+    "active",
+    "flying"
+  );
+
+  display.classList.add(
+    "cashed"
+  );
+
+
+  amountEl.textContent =
+    payout;
+
+
+  bar.style.height =
+    "0%";
+
+
+  placeBtn.textContent =
+    "CASHED ✅";
+
+  placeBtn.className =
+    "place place-cashed";
+
+  placeBtn.disabled = true;
+
+  placeBtn.onclick = null;
+
+
+  document.getElementById(
+    `bet${slot}`
+  ).classList.remove(
+    "active"
+  );
+
+
+  createParticles(
+    canvas.width / 2,
+    canvas.height / 2,
+    "#28d17c"
+  );
+
+
+  showNotification(
+    `✅ CASHOUT ${formatKES(payout)} KES at ${cashoutMultiplier.toFixed(2)}x!`,
+    "win"
+  );
+
+}
+
+
+/* =========================================================
+   AUTO TOGGLE
+   ========================================================= */
+
+function toggleAuto(slot){
+
+  autoEnabled[slot] =
+    !autoEnabled[slot];
+
+
+  const btn =
+    document.getElementById(
+      `auto${slot}`
+    );
+
+  const card =
+    document.getElementById(
+      `bet${slot}`
+    );
+
+
+  if(autoEnabled[slot]){
+
+    let value =
+      parseFloat(
+        document.getElementById(
+          `autoMulti${slot}`
+        ).value
+      );
+
+
+    if(
+      !Number.isFinite(value) ||
+      value < 1.01
+    ){
+
+      value = 2.00;
+
+      document.getElementById(
+        `autoMulti${slot}`
+      ).value =
+        "2.00";
+
+    }
+
+
+    autoCashouts[slot] =
+      value;
+
+
+    btn.className =
+      "auto-btn auto-on";
+
+    card.classList.add(
+      "auto-active"
+    );
+
+
+    showNotification(
+      `Auto-cashout at ${value.toFixed(2)}x ON`,
+      "info"
+    );
+
+  }
+
+  else{
+
+    btn.className =
+      "auto-btn auto-off";
+
+    card.classList.remove(
+      "auto-active"
+    );
+
+
+    autoCashouts[slot] =
+      null;
+
+
+    showNotification(
+      "Auto-cashout OFF",
+      "info"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SERVER CRASH DISPLAY
+   ========================================================= */
+
+function crashGame(finalMultiplier){
+
+  gameState = "crashed";
+
+  multiplier =
+    Number(finalMultiplier) || multiplier;
+
+
+  stats.maxMulti =
+    Math.max(
+      stats.maxMulti,
+      multiplier
+    );
+
+
+  updateStats();
+
+  updateAllDisplays();
+
+
+  const game =
+    document.getElementById("game");
+
+
+  const crashEl =
+    document.createElement("div");
+
+
+  crashEl.className =
+    "crash-point";
+
+
+  crashEl.textContent =
+    multiplier.toFixed(2) + "x";
+
+
+  game.appendChild(
+    crashEl
+  );
+
+
+  history.unshift(
+    multiplier.toFixed(2)
+  );
+
+
+  updateHistory();
+
+
+  document.getElementById("status")
+    .textContent =
+    `💥 Crashed at ${multiplier.toFixed(2)}x`;
+
+
+  createParticles(
+    canvas.width / 2,
+    canvas.height / 2,
+    "#ff4444",
+    50
+  );
+
+
+  /*
+    IMPORTANT:
+    No local timer starts another round.
+
+    The server will send:
+      round_reset
+      then round_countdown
+
+    The browser simply waits.
+  */
+
+  disableBetButtons();
+
+
+  setTimeout(()=>{
+
+    if(
+      crashEl &&
+      crashEl.parentNode === game
+    ){
+
+      game.removeChild(
+        crashEl
+      );
+
+    }
+
+  },3500);
+
+}
+
+
+/* =========================================================
+   RESET ROUND
+   ========================================================= */
+
+function resetRound(){
+
+  Object.keys(activeBets)
+    .forEach(slot=>{
+
+      const display =
+        document.getElementById(
+          `display${slot}`
+        );
+
+      const placeBtn =
+        document.getElementById(
+          `place${slot}`
+        );
+
+      const amountEl =
+        document.getElementById(
+          `amount${slot}`
+        );
+
+      const bar =
+        document.getElementById(
+          `bar${slot}`
+        );
+
+
+      display.className =
+        "bet-display";
+
+
+      placeBtn.textContent =
+        "PLACE BET";
+
+
+      placeBtn.className =
+        "place place-bet";
+
+
+      placeBtn.disabled = true;
+
+
+      placeBtn.onclick =
+        ()=>toggleBet(slot);
+
+
+      amountEl.textContent =
+        betAmounts[slot];
+
+
+      bar.style.height =
+        "0%";
+
+
+      document.getElementById(
+        `bet${slot}`
+      ).classList.remove(
+        "active"
+      );
+
+    });
+
+
+  activeBets = {};
+
+
+  multiplier = 1.00;
+
+
+  gameState = "waiting";
+
+
+  const multiplierEl =
+    document.getElementById(
+      "multiplier"
+    );
+
+
+  multiplierEl.className =
+    "multiplier";
+
+
+  multiplierEl.textContent =
+    "1.00x";
+
+
+  document.getElementById(
+    "game"
+  ).classList.remove(
+    "countdown"
+  );
+
+
+  document.getElementById(
+    "game"
+  ).classList.add(
+    "waiting"
+  );
+
+}
+
+
+/* =========================================================
+   WAITING UI
+   ========================================================= */
+
+function setWaitingUI(){
+
+  gameState = "waiting";
+
+  document.getElementById(
+    "game"
+  ).classList.remove(
+    "countdown"
+  );
+
+  document.getElementById(
+    "game"
+  ).classList.add(
+    "waiting"
+  );
+
+
+  document.getElementById(
+    "multiplier"
+  ).className =
+    "multiplier";
+
+
+  document.getElementById(
+    "multiplier"
+  ).textContent =
+    "1.00x";
+
+
+  document.getElementById(
+    "status"
+  ).textContent =
+    "Waiting for next round...";
+
+
+  disableBetButtons();
+
+}
+
+
+/* =========================================================
+   BALANCE
+   ========================================================= */
+
+function updateBalance(){
+
+  document.getElementById(
+    "balance"
+  ).textContent =
+    formatKES(balance);
+
+}
+
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+function updateStats(){
+
+  document.getElementById(
+    "totalWin"
+  ).textContent =
+    formatKES(stats.totalWin);
+
+
+  document.getElementById(
+    "maxMulti"
+  ).textContent =
+    stats.maxMulti.toFixed(2) + "x";
+
+
+  document.getElementById(
+    "gamesPlayed"
+  ).textContent =
+    stats.games;
+
+
+  document.getElementById(
+    "winRate"
+  ).textContent =
+    stats.games > 0
+      ? (
+          stats.wins /
+          stats.games *
+          100
+        ).toFixed(1) + "%"
+      : "0%";
+
+}
+
+
+/* =========================================================
+   FORMAT
+   ========================================================= */
+
+function formatKES(amount){
+
+  return new Intl.NumberFormat(
+    "en-KE",
+    {
+      minimumFractionDigits:0
+    }
+  ).format(amount);
+
+}
+
+
+/* =========================================================
+   HISTORY
+   ========================================================= */
+
+function updateHistory(){
+
+  document.getElementById(
+    "history"
+  ).innerHTML =
+
+    history
+      .slice(0,15)
+      .map(m=>{
+
+        const value =
+          parseFloat(m);
+
+        const bg =
+          value > 10
+            ? "var(--win)"
+            : value > 2
+              ? "var(--orange)"
+              : "#ff4444";
+
+
+        return `
+          <span style="background:${bg}">
+            ${m}x
+          </span>
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* =========================================================
+   QUICK BET
+   ========================================================= */
+
+function setQuick(
+  slot,
+  amount
+){
+
+  /*
+    Quick amount only changes
+    the amount for the next virtual bet.
+  */
+
+  if(activeBets[slot]){
+
+    showNotification(
+      "Finish the current bet first.",
+      "info"
+    );
+
+    return;
+
+  }
+
+
+  betAmounts[slot] =
+    amount;
+
+
+  document.getElementById(
+    `amount${slot}`
+  ).textContent =
+    amount;
+
+
+  document.querySelectorAll(
+    `#bet${slot} .quick span`
+  ).forEach(span=>{
+
+    span.classList.toggle(
+      "active",
+      parseInt(span.textContent) === amount
+    );
+
+  });
+
+}
+
+
+/* =========================================================
+   VIRTUAL DEMO DEPOSIT
+   ========================================================= */
+
+function deposit(){
+
+  const amounts =
+    [5000,10000,25000];
+
+
+  const amount =
+    amounts[
+      Math.floor(
+        Math.random() *
+        amounts.length
+      )
+    ];
+
+
+  balance += amount;
+
+
+  updateBalance();
+
+
+  showNotification(
+    `${amount.toLocaleString()} KES virtual balance added!`,
+    "win"
+  );
+
+}
+
+
+/* =========================================================
+   NOTIFICATION
+   ========================================================= */
+
+function showNotification(
+  text,
+  type
+){
+
+  const notif =
+    document.createElement(
+      "div"
+    );
+
+
+  notif.className =
+    `notification ${type}`;
+
+
+  notif.textContent =
+    text;
+
+
+  document.body.appendChild(
+    notif
+  );
+
+
+  setTimeout(
+    ()=>notif.remove(),
+    3500
+  );
+
+}
+
+
+/* =========================================================
+   BACK
+   ========================================================= */
+
+function goBack(){
+
+  showNotification(
+    "Back to lobby 👈",
+    "info"
+  );
+
+}
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+let initDone = false;
+
+
+function initGame(){
+
+  if(initDone) return;
+
+  initDone = true;
+
+
+  initCanvas();
+
+
+  updateBalance();
+
+
+  updateStats();
+
+
+  history = [
+    "2.45",
+    "15.32",
+    "1.23",
+    "8.76",
+    "3.21",
+    "47.12",
+    "1.89"
+  ];
+
+
+  updateHistory();
+
+
+  initButtons();
+
+
+  /*
+    No local countdown.
+    No local gameLoop.
+    No local crash generation.
+
+    Everything round-related now comes
+    from the Socket.IO server.
+  */
+
+  setWaitingUI();
+
+  connectSocket();
+
+}
+
+
+initGame();
+
+</script>
+
+</body>
+</html>
