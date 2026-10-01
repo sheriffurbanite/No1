@@ -1,532 +1,670 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Crash • Live</title>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <style>
-    :root {
-      --bg: #0b0e11;
-      --surface: #151a21;
-      --surface2: #1c232d;
-      --border: #2a3340;
-      --text: #e8eef7;
-      --muted: #8b9bb4;
-      --accent: #00e701;
-      --accent-dim: #00b801;
-      --danger: #ff3b3b;
-      --warning: #f5a623;
-      --demo: #3b82f6;
-      --radius: 12px;
-      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      overflow-x: hidden;
-    }
-    .screen { display: none; min-height: 100dvh; }
-    .screen.active { display: flex; flex-direction: column; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aviatrix</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{
+  --bg-top:#081322;
+  --bg-main:#3a1c6b;
+  --bg-main-2:#1a0f3f;
+  --panel:#24164d;
+  --panel-dark:#1b113a;
+  --accent:#2ddc87;
+  --btn:#3b82f6;
+  --text-dim:#b8b4d9;
+  --orange:#ff7a2f;
+  --win:#28d17c;
+  --white:#ffffff;
+}
 
-    /* Loading */
-    #screen-loading { align-items: center; justify-content: center; gap: 16px; }
-    .spinner {
-      width: 42px; height: 42px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+*{
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  user-select:none;
+  -webkit-user-select:none;
+}
 
-    /* Auth */
-    #screen-auth { align-items: center; justify-content: center; padding: 24px; }
-    .auth-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px 28px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
-    .auth-card h1 { font-size: 1.6rem; margin-bottom: 6px; text-align: center; }
-    .auth-card .subtitle { color: var(--muted); text-align: center; margin-bottom: 28px; font-size: 0.9rem; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-    .tab {
-      flex: 1; padding: 10px; border: 1px solid var(--border);
-      background: transparent; color: var(--muted); border-radius: 8px;
-      cursor: pointer; font-weight: 600; transition: 0.15s;
-    }
-    .tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
-    .form-group input {
-      width: 100%; padding: 12px 14px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-      font-size: 1rem; outline: none;
-    }
-    .form-group input:focus { border-color: var(--accent); }
-    .error-msg { color: var(--danger); font-size: 0.85rem; margin-bottom: 12px; min-height: 20px; }
-    .btn {
-      width: 100%; padding: 14px; border: none; border-radius: 8px;
-      font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.15s;
-    }
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-primary:hover { background: var(--accent-dim); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-ghost {
-      background: transparent; border: 1px solid var(--border);
-      color: var(--text); margin-top: 10px;
-    }
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  overflow-x:hidden;
+  touch-action:manipulation;
+}
 
-    /* App shell */
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px; background: var(--surface);
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50;
-    }
-    .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.5px; }
-    .brand span { color: var(--accent); }
-    .env-switch {
-      display: flex; background: var(--surface2); border-radius: 999px;
-      padding: 3px; border: 1px solid var(--border);
-    }
-    .env-btn {
-      padding: 6px 14px; border: none; border-radius: 999px;
-      font-size: 0.75rem; font-weight: 700; cursor: pointer;
-      background: transparent; color: var(--muted); transition: 0.15s;
-    }
-    .env-btn.active-demo { background: var(--demo); color: #fff; }
-    .env-btn.active-real { background: var(--accent); color: #000; }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    .balance-box { text-align: right; line-height: 1.2; }
-    .balance-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .balance-value { font-weight: 700; font-size: 1rem; }
-    .balance-value.demo { color: var(--demo); }
-    .balance-value.real { color: var(--accent); }
-    .avatar {
-      width: 36px; height: 36px; border-radius: 50%; background: var(--surface2);
-      border: 1px solid var(--border); display: flex; align-items: center;
-      justify-content: center; font-weight: 700; font-size: 0.85rem; cursor: pointer;
-    }
+.header{
+  height:52px;
+  background:linear-gradient(180deg,#0b1830,#081322);
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  gap:10px;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.header .back{
+  font-size:18px;
+  cursor:pointer;
+  padding:8px;
+  border-radius:8px;
+}
+.header .title{
+  flex:1;
+  text-align:center;
+  font-weight:700;
+  font-size:16px;
+}
+.header .deposit{
+  background:linear-gradient(135deg, var(--win), #1fd17a);
+  color:#000;
+  padding:8px 14px;
+  border-radius:20px;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+}
+.header .level{
+  background:linear-gradient(135deg, #ffd700, #ffed4e);
+  color:#000;
+  padding:4px 8px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:700;
+}
 
-    .main {
-      flex: 1; display: grid; grid-template-columns: 1fr; gap: 0;
-      max-width: 1200px; width: 100%; margin: 0 auto;
-    }
-    @media (min-width: 900px) {
-      .main { grid-template-columns: 1fr 340px; padding: 16px; gap: 16px; }
-    }
+.infobar{
+  background:linear-gradient(180deg,#0b1830,#0b1530);
+  display:flex;
+  align-items:center;
+  padding:8px 12px;
+  gap:10px;
+}
+.balance{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  font-weight:600;
+}
+.balance-label{
+  font-size:11px;
+  opacity:.7;
+  margin-right:2px;
+}
+.status{
+  margin-left:auto;
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  background:rgba(45,220,135,0.2);
+}
+.players{
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  background:rgba(255,255,255,0.1);
+}
 
-    .game-panel {
-      background: var(--surface); overflow: hidden;
-      display: flex; flex-direction: column; min-height: 420px;
-    }
-    @media (min-width: 900px) {
-      .game-panel { border-radius: var(--radius); border: 1px solid var(--border); }
-    }
-    .multiplier-area {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; position: relative; padding: 24px;
-      background: radial-gradient(ellipse at center, #12181f 0%, #0b0e11 70%);
-    }
-    .phase-badge {
-      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
-      padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
-    }
-    .phase-countdown { background: var(--warning); color: #000; }
-    .phase-running { background: var(--accent); color: #000; }
-    .phase-ended { background: var(--danger); color: #fff; }
-    .phase-waiting { background: var(--border); color: var(--muted); }
-    .multiplier {
-      font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 800;
-      letter-spacing: -2px; line-height: 1; transition: color 0.1s;
-    }
-    .multiplier.running { color: var(--accent); }
-    .multiplier.crashed { color: var(--danger); }
-    .multiplier.waiting { color: var(--muted); }
-    .countdown-text { font-size: 1.1rem; color: var(--warning); margin-top: 8px; font-weight: 600; }
-    .round-id { position: absolute; bottom: 12px; font-size: 0.7rem; color: var(--muted); }
+.game{
+  height:45vh;
+  background:radial-gradient(circle at top right,#4b2b9a 0%,#2b1768 40%,#1a0f3f 70%);
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  border-radius:20px;
+  margin:8px;
+}
+.game.waiting{
+  background:radial-gradient(circle at center,#2a164f 0%,#1a0f3f 70%);
+}
+.game.countdown{
+  background:radial-gradient(circle at center,#1a0f3f 0%,#0f0825 100%);
+}
+.gameCanvas{
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  border-radius:20px;
+}
+.multiplier{
+  position:absolute;
+  bottom:20%;
+  font-size:64px;
+  font-weight:900;
+  color:var(--white);
+  text-shadow:0 0 20px rgba(255,255,255,0.8);
+  z-index:20;
+  transition:all 0.15s ease-out;
+}
+.multiplier.crashed{
+  color:#ff4444 !important;
+  text-shadow:0 0 30px rgba(255,68,68,0.8);
+  animation:shake 0.5s ease-in-out;
+}
+.multiplier.countdown{
+  color:var(--accent);
+  font-size:120px;
+  text-shadow:0 0 40px rgba(45,220,135,0.8);
+}
+@keyframes shake{
+  0%,100%{ transform:translateX(0); }
+  25%{ transform:translateX(-15px); }
+  75%{ transform:translateX(15px); }
+}
+.crash-point{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:80px;
+  font-weight:900;
+  color:#ff4444;
+  text-shadow:0 0 40px rgba(255,68,68,0.8);
+  animation:pulse 2s infinite;
+  z-index:25;
+}
+@keyframes pulse{
+  0%,100%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+  50%{ transform:translate(-50%,-50%) scale(1.2); opacity:0.8; }
+}
 
-    .controls {
-      padding: 16px; background: var(--surface2); border-top: 1px solid var(--border);
-      display: grid; gap: 12px;
-    }
-    .bet-row { display: flex; gap: 8px; }
-    .bet-input {
-      flex: 1; padding: 12px; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-size: 1rem; font-weight: 600;
-    }
-    .quick-bets { display: flex; gap: 6px; flex-wrap: wrap; }
-    .quick-bet {
-      padding: 6px 10px; font-size: 0.75rem; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer;
-    }
-    .quick-bet:hover { border-color: var(--accent); color: var(--text); }
-    .action-btn {
-      padding: 16px; border: none; border-radius: 10px;
-      font-weight: 800; font-size: 1.05rem; cursor: pointer; transition: 0.15s;
-    }
-    .btn-bet { background: var(--accent); color: #000; }
-    .btn-bet:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-cashout { background: var(--warning); color: #000; }
-    .btn-cashout:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-signal {
-      background: #7c3aed; color: #fff; margin-top: 4px;
-    }
-    .status-line { text-align: center; font-size: 0.85rem; color: var(--muted); min-height: 20px; }
+.stats{
+  display:flex;
+  gap:8px;
+  margin:0 8px 8px;
+}
+.stat-item{
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  padding:8px;
+  border-radius:10px;
+  text-align:center;
+  font-size:12px;
+}
 
-    .side-panel { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
-    @media (min-width: 900px) { .side-panel { padding: 0; } }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px;
-    }
-    .card h3 {
-      font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.5px; margin-bottom: 10px;
-    }
-    .history-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
-    .hist-item { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
-    .hist-item.low { background: #1a2332; color: var(--muted); }
-    .hist-item.mid { background: #132a1a; color: var(--accent); }
-    .hist-item.high { background: #2a1a1a; color: var(--danger); }
-    .account-info { display: grid; gap: 6px; font-size: 0.9rem; }
-    .account-info .row { display: flex; justify-content: space-between; }
-    .account-info .label { color: var(--muted); }
-    .btn-logout {
-      margin-top: 10px; padding: 10px; width: 100%; background: transparent;
-      border: 1px solid var(--danger); color: var(--danger); border-radius: 8px;
-      font-weight: 600; cursor: pointer;
-    }
-    .btn-logout:hover { background: rgba(255,59,59,0.1); }
+.bets{
+  background:linear-gradient(180deg,#24164d,#1b113a);
+  padding:10px;
+  display:flex;
+  gap:10px;
+  margin:0 8px;
+}
+.bet-card{
+  flex:1;
+  background:#2a1b59;
+  border-radius:16px;
+  padding:12px;
+}
+.bet-card.active{
+  border:2px solid var(--accent);
+  box-shadow:0 0 25px rgba(45,220,135,0.4);
+}
+.bet-card.auto-active{
+  border:2px solid var(--orange);
+  box-shadow:0 0 25px rgba(255,122,47,0.4);
+}
+.bet-display{
+  position:relative;
+  height:50px;
+  background:linear-gradient(135deg,#140a2f,#1a0f3f);
+  border-radius:12px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+.bet-display.active{
+  background:linear-gradient(135deg,var(--win),#1fd17a);
+}
+.bet-display.flying{
+  background:linear-gradient(135deg,var(--orange),#ff9a4f);
+}
+.bet-display.cashed{
+  background:linear-gradient(135deg,var(--win),#1fd17a);
+}
+.bet-amount{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:20px;
+  font-weight:900;
+  z-index:2;
+}
+.bet-display.active .bet-amount,
+.bet-display.flying .bet-amount{
+  color:var(--white);
+  text-shadow:0 0 10px rgba(255,255,255,0.8);
+}
+.bet-display.cashed .bet-amount{
+  color:#000;
+}
+.bet-display .gradient-bar{
+  position:absolute;
+  bottom:0; left:0;
+  height:0%;
+  width:100%;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,0.4));
+  transition:height 0.1s ease-out;
+}
+.auto-row{
+  display:flex;
+  gap:4px;
+  margin-bottom:8px;
+}
+.auto-btn{
+  flex:1;
+  padding:4px 2px;
+  border:none;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.auto-off{ background:#444; color:#ccc; }
+.auto-on{ background:var(--orange); color:#000; }
+.quick{
+  display:flex;
+  gap:4px;
+  margin-bottom:10px;
+}
+.quick span{
+  flex:1;
+  background:#3a2c6f;
+  border-radius:8px;
+  padding:6px 2px;
+  text-align:center;
+  font-size:11px;
+  opacity:.5;
+  cursor:pointer;
+}
+.quick span.active,
+.quick span:hover{
+  opacity:1;
+  background:var(--accent);
+  color:#000;
+}
+.place{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .2s;
+}
+.place-bet{
+  background:linear-gradient(135deg,var(--btn),#2563eb);
+  color:#fff;
+}
+.place-bet:disabled{
+  background:#555;
+  cursor:not-allowed;
+}
+.place-cashout{
+  background:linear-gradient(135deg,var(--win),#1fd17a) !important;
+  color:#000 !important;
+  animation:pulse-green 0.8s infinite;
+}
+.place-cashed{
+  background:#666 !important;
+  color:#ccc !important;
+  cursor:not-allowed;
+}
+@keyframes pulse-green{
+  0%,100%{ box-shadow:0 0 0 0 rgba(40,209,124,0.7); }
+  50%{ box-shadow:0 0 0 15px rgba(40,209,124,0); }
+}
 
-    .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--surface2); border: 1px solid var(--border);
-      padding: 12px 20px; border-radius: 8px; font-size: 0.9rem;
-      z-index: 100; opacity: 0; pointer-events: none; transition: 0.25s;
-    }
-    .toast.show { opacity: 1; }
+.history{
+  background:#0e0825;
+  padding:8px 10px;
+  font-size:13px;
+  color:#cfc9ff;
+  white-space:nowrap;
+  overflow-x:auto;
+  margin:0 8px 8px;
+  border-radius:12px;
+}
+.history span{
+  margin-right:10px;
+  padding:4px 8px;
+  background:rgba(255,255,255,0.1);
+  border-radius:10px;
+  font-weight:500;
+}
 
-    .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-      display: none; align-items: center; justify-content: center;
-      z-index: 80; padding: 20px;
-    }
-    .overlay.active { display: flex; }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px; width: 100%; max-width: 380px;
-    }
-    .modal h2 { margin-bottom: 12px; }
-    .modal p { color: var(--muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.45; }
-    .modal-actions { display: flex; gap: 10px; }
-    .modal-actions .btn { flex: 1; }
+.notification{
+  position:fixed;
+  top:80px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:12px;
+  font-weight:600;
+  z-index:1000;
+  animation:slideDown 0.3s ease;
+}
+@keyframes slideDown{
+  from{ transform:translate(-50%,-100%); opacity:0; }
+  to{ transform:translate(-50%,0); opacity:1; }
+}
+.notification.win{ background:var(--win); color:#000; }
+.notification.lose{ background:#ff4444; color:#fff; }
+.notification.info{ background:var(--accent); color:#000; }
 
-    .signal-box {
-      margin-top: 10px; padding: 12px; background: #1a1025;
-      border: 1px solid #7c3aed; border-radius: 8px; text-align: center;
-      display: none;
-    }
-    .signal-box.show { display: block; }
-    .signal-value { font-size: 1.6rem; font-weight: 800; color: #c4b5fd; }
-  </style>
+/* Account / Mode overlays */
+.overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+  padding:20px;
+}
+.overlay.active{ display:flex; }
+.modal{
+  background:#1b113a;
+  border:1px solid #3a2c6f;
+  border-radius:16px;
+  padding:24px;
+  width:100%;
+  max-width:360px;
+}
+.modal h2{ margin:0 0 12px; font-size:1.3rem; }
+.modal p{ color:#b8b4d9; font-size:0.9rem; margin-bottom:16px; line-height:1.4; }
+.modal input{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:1px solid #3a2c6f;
+  border-radius:10px;
+  background:#140a2f;
+  color:#fff;
+  font-size:15px;
+}
+.modal .btn-row{ display:flex; gap:8px; }
+.modal .btn{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.modal .btn-primary{ background:var(--accent); color:#000; }
+.modal .btn-secondary{ background:#3a2c6f; color:#fff; }
+.mode-tag{
+  font-size:11px;
+  font-weight:700;
+  padding:3px 8px;
+  border-radius:8px;
+  margin-left:6px;
+}
+.mode-demo{ background:#3b82f6; color:#fff; }
+.mode-real{ background:var(--accent); color:#000; }
+</style>
 </head>
 <body>
 
-  <!-- LOADING -->
-  <div id="screen-loading" class="screen active">
-    <div class="spinner"></div>
-    <div>Connecting to no-gen.bonto.run…</div>
+<div class="header">
+  <div class="back" id="btn-back">←</div>
+  <div class="title">Aviatrix ✈️ <span class="mode-tag mode-demo" id="mode-tag">DEMO</span></div>
+  <div class="level" id="level">🏆 Level 4</div>
+  <div class="deposit" id="btn-deposit">+ Deposit</div>
+</div>
+
+<div class="infobar">
+  <div class="balance">
+    <span class="balance-label" id="balance-label">DEMO</span>
+    KES <strong id="balance">10,000</strong>
   </div>
+  <div class="status" id="status">Connecting…</div>
+  <div class="players" id="players">—</div>
+</div>
 
-  <!-- AUTH -->
-  <div id="screen-auth" class="screen">
-    <div class="auth-card">
-      <h1>Crash<span style="color:var(--accent)">.</span></h1>
-      <p class="subtitle">Live signals from no-gen.bonto.run</p>
+<div class="game" id="game">
+  <canvas class="gameCanvas" id="gameCanvas" width="400" height="400"></canvas>
+  <div class="multiplier" id="multiplier">1.00x</div>
+</div>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="login">Login</button>
-        <button class="tab" data-tab="register">Register</button>
-      </div>
+<div class="stats">
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:var(--win);" id="totalWin">0</div>
+    <div>Wins</div>
+  </div>
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:var(--orange);" id="maxMulti">1.00x</div>
+    <div>Max Multi</div>
+  </div>
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;" id="winRate">0%</div>
+    <div>Win Rate</div>
+  </div>
+  <div class="stat-item">
+    <div style="font-size:18px;font-weight:900;color:#ff7a2f;" id="gamesPlayed">0</div>
+    <div>Games</div>
+  </div>
+</div>
 
-      <div id="form-login">
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="login-username" autocomplete="username" />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="login-password" autocomplete="current-password" />
-        </div>
-        <div class="error-msg" id="login-error"></div>
-        <button class="btn btn-primary" id="btn-login">Login</button>
-        <button class="btn btn-ghost" id="btn-skip-demo">Continue in Demo Mode</button>
-      </div>
-
-      <div id="form-register" style="display:none">
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="reg-username" autocomplete="username" />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="reg-password" autocomplete="new-password" />
-        </div>
-        <div class="form-group">
-          <label>Confirm Password</label>
-          <input type="password" id="reg-confirm" autocomplete="new-password" />
-        </div>
-        <div class="error-msg" id="reg-error"></div>
-        <button class="btn btn-primary" id="btn-register">Create Account</button>
-      </div>
+<div class="bets">
+  <div class="bet-card" id="bet1">
+    <div class="bet-display" id="display1">
+      <div class="gradient-bar" id="bar1"></div>
+      <div class="bet-amount" id="amount1">100</div>
     </div>
-  </div>
-
-  <!-- MAIN APP -->
-  <div id="screen-app" class="screen">
-    <header>
-      <div class="brand">Crash<span>.</span></div>
-      <div class="env-switch">
-        <button class="env-btn" id="btn-env-demo">DEMO</button>
-        <button class="env-btn" id="btn-env-real">REAL</button>
-      </div>
-      <div class="header-right">
-        <div class="balance-box">
-          <div class="balance-label" id="balance-label">DEMO BALANCE</div>
-          <div class="balance-value demo" id="balance-value">KSh 10,000.00</div>
-        </div>
-        <div class="avatar" id="avatar-btn">?</div>
-      </div>
-    </header>
-
-    <div class="main">
-      <div class="game-panel">
-        <div class="multiplier-area">
-          <div class="phase-badge phase-waiting" id="phase-badge">WAITING</div>
-          <div class="multiplier waiting" id="multiplier">1.00×</div>
-          <div class="countdown-text" id="countdown-text"></div>
-          <div class="round-id" id="round-id">—</div>
-        </div>
-
-        <div class="controls">
-          <div class="bet-row">
-            <input type="number" class="bet-input" id="bet-amount" value="100" min="10" step="10" />
-          </div>
-          <div class="quick-bets">
-            <button class="quick-bet" data-amount="50">50</button>
-            <button class="quick-bet" data-amount="100">100</button>
-            <button class="quick-bet" data-amount="250">250</button>
-            <button class="quick-bet" data-amount="500">500</button>
-            <button class="quick-bet" data-amount="1000">1k</button>
-          </div>
-          <button class="action-btn btn-bet" id="btn-action">Place Bet</button>
-          <button class="action-btn btn-signal" id="btn-signal">Get Signal</button>
-          <div class="signal-box" id="signal-box">
-            <div style="font-size:0.75rem;color:#a78bfa;margin-bottom:4px">LIVE SIGNAL</div>
-            <div class="signal-value" id="signal-value">—</div>
-          </div>
-          <div class="status-line" id="status-line"></div>
-        </div>
-      </div>
-
-      <div class="side-panel">
-        <div class="card">
-          <h3>Round History</h3>
-          <div class="history-list" id="history-list"></div>
-        </div>
-        <div class="card">
-          <h3>Account</h3>
-          <div class="account-info">
-            <div class="row"><span class="label">Username</span><span id="acc-username">—</span></div>
-            <div class="row"><span class="label">Account ID</span><span id="acc-id">—</span></div>
-            <div class="row"><span class="label">Environment</span><span id="acc-env">DEMO</span></div>
-            <div class="row"><span class="label">Payment</span><span id="acc-payment">—</span></div>
-            <div class="row"><span class="label">Status</span><span id="acc-status">Guest</span></div>
-          </div>
-          <button class="btn-logout" id="btn-logout">Logout</button>
-        </div>
-      </div>
+    <div class="auto-row">
+      <button class="auto-btn auto-off" id="auto1">AUTO</button>
+      <input type="number" id="autoMulti1" value="2.00" min="1.01" max="100" step="0.01"
+        style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;font-size:10px;text-align:center;">
     </div>
-  </div>
-
-  <!-- REAL MODE – WAITING FOR PAYMENT VERIFICATION -->
-  <div class="overlay" id="payment-overlay">
-    <div class="modal">
-      <h2>Payment Verification Required</h2>
-      <p>
-        Real mode is locked until payment is verified by the server.<br><br>
-        Waiting for <strong>payment verification</strong> event from<br>
-        <code>no-gen.bonto.run</code>…
-      </p>
-      <p style="font-size:0.85rem;color:var(--muted)">
-        The server must emit a <code>payment_verified</code> event for your account.
-      </p>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="btn-cancel-real">Back to Demo</button>
-      </div>
+    <div class="quick">
+      <span data-slot="1" data-amount="50">50</span>
+      <span data-slot="1" data-amount="100" class="active">100</span>
+      <span data-slot="1" data-amount="200">200</span>
+      <span data-slot="1" data-amount="500">500</span>
     </div>
+    <button class="place place-bet" id="place1">PLACE BET</button>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="bet-card" id="bet2">
+    <div class="bet-display" id="display2">
+      <div class="gradient-bar" id="bar2"></div>
+      <div class="bet-amount" id="amount2">100</div>
+    </div>
+    <div class="auto-row">
+      <button class="auto-btn auto-off" id="auto2">AUTO</button>
+      <input type="number" id="autoMulti2" value="2.00" min="1.01" max="100" step="0.01"
+        style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;font-size:10px;text-align:center;">
+    </div>
+    <div class="quick">
+      <span data-slot="2" data-amount="50">50</span>
+      <span data-slot="2" data-amount="100" class="active">100</span>
+      <span data-slot="2" data-amount="200">200</span>
+      <span data-slot="2" data-amount="500">500</span>
+    </div>
+    <button class="place place-bet" id="place2">PLACE BET</button>
+  </div>
+</div>
+
+<div class="history" id="history">Waiting for rounds…</div>
+
+<!-- AUTH MODAL -->
+<div class="overlay" id="auth-overlay">
+  <div class="modal">
+    <h2 id="auth-title">Login</h2>
+    <input type="text" id="auth-username" placeholder="Username" autocomplete="username">
+    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+    <input type="password" id="auth-confirm" placeholder="Confirm password" style="display:none">
+    <p id="auth-error" style="color:#ff4444;min-height:18px;margin:0 0 8px;font-size:13px;"></p>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="auth-switch">Register</button>
+      <button class="btn btn-primary" id="auth-submit">Login</button>
+    </div>
+    <button class="btn btn-secondary" id="auth-demo" style="width:100%;margin-top:10px;">Continue in Demo</button>
+  </div>
+</div>
+
+<!-- ACCOUNT / MODE MODAL -->
+<div class="overlay" id="account-overlay">
+  <div class="modal">
+    <h2>Account</h2>
+    <p>
+      <strong id="acc-name">—</strong><br>
+      ID: <span id="acc-id">—</span><br>
+      Mode: <span id="acc-mode">DEMO</span><br>
+      Payment: <span id="acc-pay">—</span>
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-switch-mode">Switch to Real</button>
+      <button class="btn btn-primary" id="btn-close-account">Close</button>
+    </div>
+    <button class="btn btn-secondary" id="btn-logout" style="width:100%;margin-top:10px;background:#ff4444;color:#fff;">Logout</button>
+  </div>
+</div>
+
+<!-- PAYMENT WAIT -->
+<div class="overlay" id="payment-overlay">
+  <div class="modal">
+    <h2>Payment Verification</h2>
+    <p>Real mode requires payment verification.<br>Waiting for confirmation…</p>
+    <button class="btn btn-secondary" id="btn-cancel-payment" style="width:100%;">Back to Demo</button>
+  </div>
+</div>
 
 <script>
 /* ============================================================
-   CONFIG
+   CONFIG & STORAGE
 ============================================================ */
 const SERVER_URL = "https://no-gen.bonto.run";
 
 const STORAGE = {
-  users: "app.users",                 // local accounts
-  session: "app.session",             // current logged-in user id
-  env: "app.environment",
-  demoPrefs: "app.demo.preferences",
-  rememberedUser: "app.rememberedUsername"
+  users: "aviatrix.users",
+  session: "aviatrix.session",
+  env: "aviatrix.env",
+  demo: "aviatrix.demo"
 };
 
 /* ============================================================
    STATE
 ============================================================ */
 const auth = {
-  isLoggedIn: false,
-  user: null,               // { id, username, balance, paymentVerified }
+  loggedIn: false,
+  user: null          // { id, username, balance, paymentVerified }
 };
 
-const environment = {
-  current: "demo"           // "demo" | "real"
-};
+let environment = "demo";   // "demo" | "real"
 
 const demo = {
-  balance: 10000,
-  activeBet: null,
-  cashedOut: false
+  balance: 10000
 };
 
-const game = {
-  phase: "waiting",
-  roundId: null,
-  multiplier: 1.00,
-  countdown: 0,
-  history: []
-};
-
-const ui = {
-  lastBetAmount: 100
-};
+let gameState = "waiting";  // waiting | countdown | flying | crashed
+let multiplier = 1.00;
+let currentRoundId = null;
+let activeBets = {};        // { 1: { amount, cashedOut }, 2: {...} }
+let betAmounts = { 1: 100, 2: 100 };
+let autoEnabled = { 1: false, 2: false };
+let autoTargets = { 1: 2.00, 2: 2.00 };
+let history = [];
+let stats = { wins: 0, games: 0, totalWin: 0, maxMulti: 1.00 };
+let currentPlayers = 1200;
 
 let socket = null;
-let waitingForPayment = false;
+let canvas, ctx;
+let particles = [];
 
 /* ============================================================
    HELPERS
 ============================================================ */
 function $(id) { return document.getElementById(id); }
 
-function showScreen(name) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $(`screen-${name}`).classList.add("active");
+function formatKES(n) {
+  return new Intl.NumberFormat("en-KE", { minimumFractionDigits: 0 }).format(Math.floor(n));
 }
 
-function toast(msg, ms = 2800) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), ms);
-}
-
-function formatMoney(n) {
-  return "KSh " + Number(n).toLocaleString("en-KE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-/* Simple non-cryptographic hash (for localStorage only – temporary) */
 function simpleHash(str) {
-  let hash = 0;
+  let h = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
   }
-  return "h" + Math.abs(hash).toString(16) + str.length;
+  return "h" + Math.abs(h).toString(16) + str.length;
 }
 
-function generateId() {
-  return "ACC" + Math.random().toString(36).substring(2, 10).toUpperCase();
+function uid() {
+  return "A" + Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+
+function showNotification(text, type) {
+  const el = document.createElement("div");
+  el.className = "notification " + type;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
 }
 
 /* ============================================================
-   LOCAL STORAGE AUTH (temporary – no backend auth yet)
+   LOCAL ACCOUNT SYSTEM
 ============================================================ */
 function loadUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE.users) || "[]");
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE.users) || "[]"); }
+  catch { return []; }
+}
+function saveUsers(list) {
+  localStorage.setItem(STORAGE.users, JSON.stringify(list));
 }
 
-function saveUsers(users) {
-  localStorage.setItem(STORAGE.users, JSON.stringify(users));
-}
-
-function registerLocal(username, password, confirm) {
-  username = username.trim();
-  if (username.length < 3) throw new Error("Username must be at least 3 characters");
-  if (password.length < 4) throw new Error("Password must be at least 4 characters");
+function register(username, password, confirm) {
+  username = (username || "").trim();
+  if (username.length < 3) throw new Error("Username min 3 characters");
+  if ((password || "").length < 4) throw new Error("Password min 4 characters");
   if (password !== confirm) throw new Error("Passwords do not match");
-
   const users = loadUsers();
   if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
     throw new Error("Username already taken");
   }
-
   const user = {
-    id: generateId(),
+    id: uid(),
     username,
     passwordHash: simpleHash(password),
-    balance: 0,                 // real balance starts at 0
-    paymentVerified: false,     // must be set by server event
-    createdAt: new Date().toISOString()
+    balance: 0,
+    paymentVerified: false,
+    createdAt: Date.now()
   };
-
   users.push(user);
   saveUsers(users);
   return user;
 }
 
-function loginLocal(username, password) {
+function login(username, password) {
   const users = loadUsers();
-  const user = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-  if (!user) throw new Error("Invalid username or password");
-  if (user.passwordHash !== simpleHash(password)) {
+  const user = users.find(u => u.username.toLowerCase() === (username || "").trim().toLowerCase());
+  if (!user || user.passwordHash !== simpleHash(password)) {
     throw new Error("Invalid username or password");
   }
   return user;
 }
 
 function setSession(user) {
-  auth.isLoggedIn = true;
-  auth.user = { ...user };
-  // Do NOT store the password hash in the session
-  delete auth.user.passwordHash;
-  localStorage.setItem(STORAGE.session, JSON.stringify({
+  auth.loggedIn = true;
+  auth.user = {
     id: user.id,
-    username: user.username
-  }));
-  localStorage.setItem(STORAGE.rememberedUser, user.username);
+    username: user.username,
+    balance: user.balance || 0,
+    paymentVerified: !!user.paymentVerified
+  };
+  localStorage.setItem(STORAGE.session, JSON.stringify({ id: user.id }));
 }
 
 function clearSession() {
-  auth.isLoggedIn = false;
+  auth.loggedIn = false;
   auth.user = null;
   localStorage.removeItem(STORAGE.session);
 }
@@ -535,13 +673,9 @@ function restoreSession() {
   try {
     const raw = localStorage.getItem(STORAGE.session);
     if (!raw) return false;
-    const sess = JSON.parse(raw);
-    const users = loadUsers();
-    const user = users.find(u => u.id === sess.id);
-    if (!user) {
-      clearSession();
-      return false;
-    }
+    const { id } = JSON.parse(raw);
+    const user = loadUsers().find(u => u.id === id);
+    if (!user) { clearSession(); return false; }
     setSession(user);
     return true;
   } catch {
@@ -550,559 +684,652 @@ function restoreSession() {
   }
 }
 
-/* Update the stored user (e.g. after payment_verified) */
-function updateStoredUser(updated) {
+function persistUser() {
+  if (!auth.user) return;
   const users = loadUsers();
-  const idx = users.findIndex(u => u.id === updated.id);
+  const idx = users.findIndex(u => u.id === auth.user.id);
   if (idx >= 0) {
-    users[idx] = { ...users[idx], ...updated };
+    users[idx].balance = auth.user.balance;
+    users[idx].paymentVerified = auth.user.paymentVerified;
     saveUsers(users);
   }
-  if (auth.user && auth.user.id === updated.id) {
-    auth.user = { ...auth.user, ...updated };
-    delete auth.user.passwordHash;
+}
+
+/* ============================================================
+   BALANCE (Demo vs Real)
+============================================================ */
+function getBalance() {
+  return environment === "demo" ? demo.balance : (auth.user ? auth.user.balance : 0);
+}
+
+function setBalance(val) {
+  if (environment === "demo") {
+    demo.balance = val;
+    localStorage.setItem(STORAGE.demo, JSON.stringify({ balance: demo.balance }));
+  } else if (auth.user) {
+    auth.user.balance = val;
+    persistUser();
   }
+  updateBalanceUI();
 }
 
-/* ============================================================
-   PREFERENCES
-============================================================ */
-function loadPrefs() {
-  try {
-    const env = localStorage.getItem(STORAGE.env);
-    if (env === "demo" || env === "real") environment.current = env;
-
-    const demoRaw = localStorage.getItem(STORAGE.demoPrefs);
-    if (demoRaw) {
-      const p = JSON.parse(demoRaw);
-      if (typeof p.balance === "number") demo.balance = p.balance;
-      if (typeof p.lastBet === "number") ui.lastBetAmount = p.lastBet;
-    }
-
-    const remembered = localStorage.getItem(STORAGE.rememberedUser);
-    if (remembered) $("login-username").value = remembered;
-  } catch (_) {}
-}
-
-function saveDemoPrefs() {
-  localStorage.setItem(STORAGE.demoPrefs, JSON.stringify({
-    balance: demo.balance,
-    lastBet: ui.lastBetAmount
-  }));
-}
-
-function saveEnv() {
-  localStorage.setItem(STORAGE.env, environment.current);
-}
-
-/* ============================================================
-   UI UPDATES
-============================================================ */
 function updateBalanceUI() {
-  const label = $("balance-label");
-  const value = $("balance-value");
+  $("balance").textContent = formatKES(getBalance());
+  $("balance-label").textContent = environment === "demo" ? "DEMO" : "REAL";
+  $("mode-tag").textContent = environment.toUpperCase();
+  $("mode-tag").className = "mode-tag " + (environment === "demo" ? "mode-demo" : "mode-real");
+}
 
-  if (environment.current === "demo") {
-    label.textContent = "DEMO BALANCE";
-    value.textContent = formatMoney(demo.balance);
-    value.className = "balance-value demo";
-  } else {
-    label.textContent = "BALANCE";
-    value.textContent = auth.user ? formatMoney(auth.user.balance) : "—";
-    value.className = "balance-value real";
+/* ============================================================
+   UI HELPERS
+============================================================ */
+function updateStats() {
+  $("totalWin").textContent = formatKES(stats.totalWin);
+  $("maxMulti").textContent = stats.maxMulti.toFixed(2) + "x";
+  $("gamesPlayed").textContent = stats.games;
+  $("winRate").textContent = stats.games > 0
+    ? ((stats.wins / stats.games) * 100).toFixed(1) + "%"
+    : "0%";
+}
+
+function updateHistory() {
+  $("history").innerHTML = history.slice(0, 15).map(m => {
+    const v = parseFloat(m);
+    const bg = v > 10 ? "var(--win)" : v > 2 ? "var(--orange)" : "#ff4444";
+    return `<span style="background:${bg}">${m}x</span>`;
+  }).join("") || "No history yet";
+}
+
+function setStatus(text) {
+  $("status").textContent = text;
+}
+
+/* ============================================================
+   BET BUTTON STATE MACHINE (critical for cashout)
+============================================================ */
+function setButtonPlace(slot) {
+  const btn = $("place" + slot);
+  btn.textContent = "PLACE BET";
+  btn.className = "place place-bet";
+  btn.disabled = (gameState !== "countdown" && gameState !== "waiting");
+  btn.onclick = () => placeBet(slot);
+}
+
+function setButtonCashout(slot) {
+  const btn = $("place" + slot);
+  btn.textContent = "CASH OUT";
+  btn.className = "place place-cashout";
+  btn.disabled = false;
+  btn.onclick = () => cashOut(slot);
+}
+
+function setButtonCashed(slot, payout) {
+  const btn = $("place" + slot);
+  btn.textContent = "CASHED ✅";
+  btn.className = "place place-cashed";
+  btn.disabled = true;
+  btn.onclick = null;
+  $("amount" + slot).textContent = formatKES(payout);
+  $("display" + slot).className = "bet-display cashed";
+  $("bar" + slot).style.height = "0%";
+  $("bet" + slot).classList.remove("active");
+}
+
+function resetSlotUI(slot) {
+  $("display" + slot).className = "bet-display";
+  $("amount" + slot).textContent = betAmounts[slot];
+  $("bar" + slot).style.height = "0%";
+  $("bet" + slot).classList.remove("active", "auto-active");
+  setButtonPlace(slot);
+}
+
+/* ============================================================
+   PLACE BET
+============================================================ */
+function placeBet(slot) {
+  if (gameState !== "countdown" && gameState !== "waiting") {
+    showNotification("Wait for next betting round", "info");
+    return;
   }
-}
+  if (activeBets[slot] && !activeBets[slot].cashedOut) return;
 
-function updateAccountCard() {
-  if (environment.current === "demo") {
-    $("acc-username").textContent = auth.isLoggedIn ? auth.user.username : "Demo Player";
-    $("acc-id").textContent = auth.isLoggedIn ? auth.user.id : "DEMO";
-    $("acc-env").textContent = "DEMO";
-    $("acc-payment").textContent = "N/A";
-    $("acc-status").textContent = "Simulation";
-    $("avatar-btn").textContent = auth.isLoggedIn ? auth.user.username.charAt(0).toUpperCase() : "D";
-  } else if (auth.isLoggedIn && auth.user) {
-    $("acc-username").textContent = auth.user.username;
-    $("acc-id").textContent = auth.user.id;
-    $("acc-env").textContent = "REAL";
-    $("acc-payment").textContent = auth.user.paymentVerified ? "Verified ✓" : "Pending";
-    $("acc-status").textContent = auth.user.paymentVerified ? "Ready" : "Awaiting Payment";
-    $("avatar-btn").textContent = auth.user.username.charAt(0).toUpperCase();
-  } else {
-    $("acc-username").textContent = "—";
-    $("acc-id").textContent = "—";
-    $("acc-env").textContent = "REAL";
-    $("acc-payment").textContent = "—";
-    $("acc-status").textContent = "Not logged in";
-    $("avatar-btn").textContent = "?";
-  }
-}
-
-function updateEnvButtons() {
-  $("btn-env-demo").className = "env-btn" + (environment.current === "demo" ? " active-demo" : "");
-  $("btn-env-real").className = "env-btn" + (environment.current === "real" ? " active-real" : "");
-}
-
-function updatePhaseUI() {
-  const badge = $("phase-badge");
-  const mult = $("multiplier");
-  const cd = $("countdown-text");
-  const rid = $("round-id");
-
-  badge.className = "phase-badge phase-" + game.phase;
-  badge.textContent = game.phase.toUpperCase();
-
-  mult.textContent = game.multiplier.toFixed(2) + "×";
-  mult.className = "multiplier " + (
-    game.phase === "running" ? "running" :
-    game.phase === "ended" ? "crashed" : "waiting"
-  );
-
-  if (game.phase === "countdown") {
-    cd.textContent = `Starting in ${game.countdown}s`;
-  } else if (game.phase === "ended") {
-    cd.textContent = `Crashed @ ${game.multiplier.toFixed(2)}×`;
-  } else {
-    cd.textContent = "";
-  }
-  rid.textContent = game.roundId ? `Round ${game.roundId}` : "—";
-}
-
-function updateActionButton() {
-  const btn = $("btn-action");
-  const status = $("status-line");
-
-  // Real mode without payment verification → locked
-  if (environment.current === "real") {
-    if (!auth.isLoggedIn) {
-      btn.disabled = true;
-      btn.textContent = "Login required";
-      btn.className = "action-btn btn-bet";
-      status.textContent = "";
+  // Real mode guards
+  if (environment === "real") {
+    if (!auth.loggedIn) {
+      openAuth();
       return;
     }
     if (!auth.user.paymentVerified) {
-      btn.disabled = true;
-      btn.textContent = "Waiting for Payment Verification";
-      btn.className = "action-btn btn-bet";
-      status.textContent = "Server must emit payment_verified";
+      $("payment-overlay").classList.add("active");
       return;
     }
-    // Payment verified but no real betting endpoints yet
-    btn.disabled = true;
-    btn.textContent = "Real Betting Soon";
-    btn.className = "action-btn btn-bet";
-    status.textContent = "Payment verified – betting endpoints pending";
-    return;
-  }
-
-  // DEMO mode
-  if (demo.activeBet && game.phase === "running" && !demo.cashedOut) {
-    btn.disabled = false;
-    btn.textContent = `Cash Out @ ${game.multiplier.toFixed(2)}×`;
-    btn.className = "action-btn btn-cashout";
-    status.textContent = `Bet ${formatMoney(demo.activeBet.amount)} active`;
-  } else if (game.phase === "countdown" || game.phase === "waiting") {
-    btn.disabled = false;
-    btn.textContent = "Place Bet";
-    btn.className = "action-btn btn-bet";
-    status.textContent = demo.activeBet ? "Bet placed – waiting for round" : "";
-  } else {
-    btn.disabled = true;
-    btn.textContent = "Place Bet";
-    btn.className = "action-btn btn-bet";
-    status.textContent = "";
-  }
-}
-
-function pushHistory(mult) {
-  game.history.unshift(mult);
-  if (game.history.length > 40) game.history.pop();
-  const list = $("history-list");
-  list.innerHTML = game.history.map(m => {
-    let cls = "low";
-    if (m >= 2 && m < 10) cls = "mid";
-    if (m >= 10) cls = "high";
-    return `<span class="hist-item ${cls}">${m.toFixed(2)}×</span>`;
-  }).join("");
-}
-
-function renderAll() {
-  updateBalanceUI();
-  updateAccountCard();
-  updateEnvButtons();
-  updatePhaseUI();
-  updateActionButton();
-  $("bet-amount").value = ui.lastBetAmount;
-}
-
-/* ============================================================
-   DEMO BET LOGIC
-============================================================ */
-function placeDemoBet() {
-  if (environment.current !== "demo") return;
-  if (game.phase !== "countdown" && game.phase !== "waiting") {
-    toast("Wait for next round");
-    return;
-  }
-  const amount = Number($("bet-amount").value);
-  if (!amount || amount < 10) {
-    toast("Minimum bet is 10");
-    return;
-  }
-  if (amount > demo.balance) {
-    toast("Insufficient demo balance");
-    return;
-  }
-  demo.balance -= amount;
-  demo.activeBet = { amount, roundId: game.roundId };
-  demo.cashedOut = false;
-  ui.lastBetAmount = amount;
-  saveDemoPrefs();
-  renderAll();
-  toast(`Demo bet ${formatMoney(amount)} placed`);
-}
-
-function cashOutDemo() {
-  if (!demo.activeBet || demo.cashedOut || game.phase !== "running") return;
-  const win = Math.floor(demo.activeBet.amount * game.multiplier * 100) / 100;
-  demo.balance += win;
-  demo.cashedOut = true;
-  saveDemoPrefs();
-  renderAll();
-  toast(`Cashed out ${formatMoney(win)} @ ${game.multiplier.toFixed(2)}×`);
-}
-
-function resolveDemoBetOnCrash() {
-  if (!demo.activeBet) return;
-  if (!demo.cashedOut) {
-    toast(`Crashed – lost ${formatMoney(demo.activeBet.amount)}`);
-  }
-  demo.activeBet = null;
-  demo.cashedOut = false;
-  renderAll();
-}
-
-/* ============================================================
-   ENVIRONMENT SWITCH
-============================================================ */
-function switchToDemo() {
-  environment.current = "demo";
-  waitingForPayment = false;
-  $("payment-overlay").classList.remove("active");
-  saveEnv();
-  demo.activeBet = null;
-  demo.cashedOut = false;
-  renderAll();
-  toast("Switched to DEMO mode");
-}
-
-function trySwitchToReal() {
-  if (!auth.isLoggedIn) {
-    toast("Please login first to use Real mode");
-    showScreen("auth");
-    return;
-  }
-
-  // Always require payment verification from the socket
-  if (!auth.user.paymentVerified) {
-    waitingForPayment = true;
-    $("payment-overlay").classList.add("active");
-    toast("Waiting for payment verification from server…");
-    // Optionally notify server that this user wants verification
-    if (socket && socket.connected) {
-      socket.emit("request_payment_status", { userId: auth.user.id, username: auth.user.username });
+    if (!socket || !socket.connected) {
+      showNotification("Waiting for live connection…", "info");
+      return;
     }
+  }
+
+  const amount = betAmounts[slot];
+  if (getBalance() < amount) {
+    showNotification("Insufficient balance!", "lose");
     return;
   }
 
-  // Payment already verified
-  environment.current = "real";
-  saveEnv();
-  renderAll();
-  toast("Switched to REAL mode");
+  setBalance(getBalance() - amount);
+  activeBets[slot] = { amount, cashedOut: false, cashoutMulti: null };
+
+  $("display" + slot).className = "bet-display active";
+  $("amount" + slot).textContent = amount;
+  $("bet" + slot).classList.add("active");
+  setButtonCashout(slot);           // ready for cashout as soon as flying starts
+
+  showNotification(`Bet ${amount} KES placed`, "win");
 }
 
 /* ============================================================
-   SOCKET.IO – live connection to no-gen.bonto.run
+   CASH OUT  – works any time during flying, before crash
+============================================================ */
+function cashOut(slot) {
+  const bet = activeBets[slot];
+  if (!bet || bet.cashedOut) return;
+  if (gameState !== "flying") {
+    showNotification("Cash out only while flying", "info");
+    return;
+  }
+
+  // Capture the exact multiplier at click time
+  const cashMulti = multiplier;
+  const payout = Math.floor(bet.amount * cashMulti);
+
+  bet.cashedOut = true;
+  bet.cashoutMulti = cashMulti;
+
+  setBalance(getBalance() + payout);
+  stats.totalWin += payout;
+  stats.wins++;
+  updateStats();
+
+  setButtonCashed(slot, payout);
+  createParticles(canvas.width / 2, canvas.height / 2, "#28d17c");
+  showNotification(`Cashed out ${formatKES(payout)} KES @ ${cashMulti.toFixed(2)}x`, "win");
+}
+
+/* ============================================================
+   AUTO CASHOUT CHECK (called on every multiplier tick)
+============================================================ */
+function checkAutoCashouts() {
+  [1, 2].forEach(slot => {
+    if (!autoEnabled[slot]) return;
+    const bet = activeBets[slot];
+    if (!bet || bet.cashedOut) return;
+    if (multiplier >= autoTargets[slot]) {
+      cashOut(slot);
+    }
+  });
+}
+
+/* ============================================================
+   LIVE DISPLAY DURING FLIGHT
+============================================================ */
+function updateFlyingDisplays() {
+  $("multiplier").textContent = multiplier.toFixed(2) + "x";
+  $("multiplier").className = "multiplier";
+
+  [1, 2].forEach(slot => {
+    const bet = activeBets[slot];
+    if (bet && !bet.cashedOut) {
+      const current = Math.floor(bet.amount * multiplier);
+      $("amount" + slot).textContent = current;
+      $("bar" + slot).style.height = Math.min(100, (multiplier - 1) * 50) + "%";
+      $("display" + slot).className = "bet-display flying";
+      // Ensure cashout button stays active
+      if ($("place" + slot).className.indexOf("place-cashout") === -1) {
+        setButtonCashout(slot);
+      }
+    }
+  });
+
+  checkAutoCashouts();
+}
+
+/* ============================================================
+   ROUND LIFECYCLE (driven by socket)
+============================================================ */
+function onCountdown(seconds, roundId) {
+  gameState = "countdown";
+  currentRoundId = roundId;
+  multiplier = 1.00;
+
+  $("game").className = "game countdown";
+  $("multiplier").className = "multiplier countdown";
+  $("multiplier").textContent = seconds > 0 ? seconds : "GO";
+  setStatus(seconds > 0 ? `Next round in ${seconds}s` : "Starting…");
+
+  // Enable place buttons for empty slots
+  [1, 2].forEach(slot => {
+    if (!activeBets[slot] || activeBets[slot].cashedOut) {
+      setButtonPlace(slot);
+      $("place" + slot).disabled = false;
+    }
+  });
+}
+
+function onFlyingStart(roundId) {
+  gameState = "flying";
+  currentRoundId = roundId;
+  multiplier = 1.00;
+  stats.games++;
+  updateStats();
+
+  $("game").className = "game";
+  $("multiplier").className = "multiplier";
+  $("multiplier").textContent = "1.00x";
+  setStatus("Flying – Cash out anytime!");
+
+  // Lock place, keep cashout open for active bets
+  [1, 2].forEach(slot => {
+    if (activeBets[slot] && !activeBets[slot].cashedOut) {
+      setButtonCashout(slot);
+    } else {
+      $("place" + slot).disabled = true;
+    }
+  });
+}
+
+function onMultiplierUpdate(m) {
+  if (gameState !== "flying") return;
+  multiplier = m;
+  updateFlyingDisplays();
+}
+
+function onCrash(finalMulti) {
+  gameState = "crashed";
+  multiplier = finalMulti;
+  stats.maxMulti = Math.max(stats.maxMulti, finalMulti);
+  updateStats();
+
+  $("multiplier").textContent = finalMulti.toFixed(2) + "x";
+  $("multiplier").className = "multiplier crashed";
+  setStatus(`Crashed @ ${finalMulti.toFixed(2)}x`);
+
+  // Lose any non-cashed bets
+  [1, 2].forEach(slot => {
+    const bet = activeBets[slot];
+    if (bet && !bet.cashedOut) {
+      bet.cashedOut = true; // mark lost
+      $("display" + slot).className = "bet-display";
+      $("amount" + slot).textContent = "0";
+      $("bar" + slot).style.height = "0%";
+      $("place" + slot).textContent = "LOST";
+      $("place" + slot).className = "place place-cashed";
+      $("place" + slot).disabled = true;
+      $("bet" + slot).classList.remove("active");
+      showNotification(`Bet ${slot} lost`, "lose");
+    }
+  });
+
+  // Crash visual
+  const crashEl = document.createElement("div");
+  crashEl.className = "crash-point";
+  crashEl.textContent = finalMulti.toFixed(2) + "x";
+  $("game").appendChild(crashEl);
+  createParticles(canvas.width / 2, canvas.height / 2, "#ff4444", 40);
+
+  history.unshift(finalMulti.toFixed(2));
+  if (history.length > 30) history.pop();
+  updateHistory();
+
+  setTimeout(() => {
+    if (crashEl.parentNode) crashEl.parentNode.removeChild(crashEl);
+    resetRound();
+  }, 3200);
+}
+
+function resetRound() {
+  activeBets = {};
+  multiplier = 1.00;
+  gameState = "waiting";
+  $("game").className = "game waiting";
+  $("multiplier").className = "multiplier";
+  $("multiplier").textContent = "1.00x";
+  setStatus("Waiting for next round…");
+  [1, 2].forEach(slot => resetSlotUI(slot));
+}
+
+/* ============================================================
+   SOCKET.IO
 ============================================================ */
 function connectSocket() {
-  if (socket) {
-    socket.disconnect();
-  }
+  if (socket) socket.disconnect();
 
   socket = io(SERVER_URL, {
     transports: ["websocket", "polling"],
     reconnection: true,
-    reconnectionAttempts: 15
+    reconnectionAttempts: 20
   });
 
   socket.on("connect", () => {
-    console.log("Connected to", SERVER_URL);
-    toast("Connected to live server");
+    setStatus("Connected – waiting for round");
     socket.emit("get_round_state");
   });
 
   socket.on("disconnect", () => {
-    console.log("Disconnected");
+    setStatus("Reconnecting…");
   });
 
-  // ----- Round events (exact backend contract) -----
-  socket.on("round_state", (state) => {
-    game.roundId = state.roundId;
-    game.phase = state.phase || "waiting";
-    game.multiplier = state.multiplier || 1.00;
-    game.countdown = state.countdown || 0;
-    if (state.phase === "ended" && state.prediction) {
-      game.multiplier = state.prediction;
+  socket.on("round_state", (s) => {
+    if (!s) return;
+    currentRoundId = s.roundId;
+    if (s.phase === "countdown") {
+      onCountdown(s.countdown || 5, s.roundId);
+    } else if (s.phase === "running") {
+      gameState = "flying";
+      multiplier = s.multiplier || 1;
+      $("game").className = "game";
+      updateFlyingDisplays();
+      setStatus("Flying – Cash out anytime!");
+    } else if (s.phase === "ended") {
+      // just show last result, wait for next
+      multiplier = s.prediction || s.multiplier || 1;
+      $("multiplier").textContent = multiplier.toFixed(2) + "x";
+      $("multiplier").className = "multiplier crashed";
+    } else {
+      gameState = "waiting";
+      setStatus("Waiting…");
     }
-    renderAll();
   });
 
   socket.on("round_countdown", ({ roundId, seconds }) => {
-    game.roundId = roundId;
-    game.phase = "countdown";
-    game.countdown = seconds;
-    game.multiplier = 1.00;
-    if (demo.activeBet && demo.activeBet.roundId !== roundId) {
-      demo.activeBet = null;
-      demo.cashedOut = false;
-    }
-    // Hide old signal
-    $("signal-box").classList.remove("show");
-    renderAll();
+    onCountdown(seconds, roundId);
   });
 
-  socket.on("round_started", ({ roundId, multiplier }) => {
-    game.roundId = roundId;
-    game.phase = "running";
-    game.multiplier = multiplier || 1.00;
-    game.countdown = 0;
-    renderAll();
+  socket.on("round_started", ({ roundId, multiplier: m }) => {
+    onFlyingStart(roundId);
+    if (m) multiplier = m;
   });
 
-  socket.on("round_update", ({ roundId, multiplier }) => {
-    if (game.roundId !== roundId) return;
-    game.phase = "running";
-    game.multiplier = multiplier;
-    updatePhaseUI();
-    updateActionButton();
+  socket.on("round_update", ({ roundId, multiplier: m }) => {
+    if (roundId && currentRoundId && roundId !== currentRoundId) return;
+    onMultiplierUpdate(m);
   });
 
-  socket.on("round_ended", ({ roundId, multiplier, prediction }) => {
-    game.roundId = roundId;
-    game.phase = "ended";
-    game.multiplier = prediction || multiplier;
-    pushHistory(game.multiplier);
-    if (environment.current === "demo") resolveDemoBetOnCrash();
-    $("signal-box").classList.remove("show");
-    renderAll();
+  socket.on("round_ended", ({ roundId, multiplier: m, prediction }) => {
+    const final = prediction || m || multiplier;
+    onCrash(final);
   });
 
   socket.on("round_reset", () => {
-    game.phase = "waiting";
-    game.roundId = null;
-    game.multiplier = 1.00;
-    game.countdown = 0;
-    renderAll();
+    // soft reset handled after crash animation
   });
 
-  // ----- Live Signal from server -----
-  socket.on("prediction_ready", (data) => {
-    if (!data || !data.prediction) return;
-    $("signal-value").textContent = data.prediction + "×";
-    $("signal-box").classList.add("show");
-    toast(`Signal received: ${data.prediction}×`);
-  });
-
-  socket.on("prediction_error", (data) => {
-    toast(data.message || "No signal available right now");
-    $("signal-box").classList.remove("show");
-  });
-
-  // ----- Payment verification (server must emit this) -----
+  // Payment verification for Real mode
   socket.on("payment_verified", (payload) => {
-    // Expected payload example: { userId, username, verified: true, balance? }
-    if (!auth.isLoggedIn || !auth.user) return;
-
-    const matches =
+    if (!auth.loggedIn || !auth.user) return;
+    const match =
       (payload.userId && payload.userId === auth.user.id) ||
       (payload.username && payload.username.toLowerCase() === auth.user.username.toLowerCase());
-
-    if (!matches) return;
+    if (!match) return;
 
     auth.user.paymentVerified = true;
-    if (typeof payload.balance === "number") {
-      auth.user.balance = payload.balance;
-    }
-    updateStoredUser({
-      id: auth.user.id,
-      paymentVerified: true,
-      balance: auth.user.balance
-    });
-
-    waitingForPayment = false;
+    if (typeof payload.balance === "number") auth.user.balance = payload.balance;
+    persistUser();
     $("payment-overlay").classList.remove("active");
-
-    environment.current = "real";
-    saveEnv();
-    renderAll();
-    toast("Payment verified! Real mode unlocked");
-  });
-
-  // Optional status reply
-  socket.on("payment_status", (payload) => {
-    if (!auth.isLoggedIn || !auth.user) return;
-    if (payload.verified) {
-      auth.user.paymentVerified = true;
-      updateStoredUser({ id: auth.user.id, paymentVerified: true });
-      $("payment-overlay").classList.remove("active");
-      environment.current = "real";
-      saveEnv();
-      renderAll();
-      toast("Payment already verified");
-    }
+    environment = "real";
+    localStorage.setItem(STORAGE.env, "real");
+    updateBalanceUI();
+    showNotification("Payment verified – Real mode active", "win");
   });
 }
 
 /* ============================================================
-   BOOT
+   CANVAS PARTICLES
 ============================================================ */
-function boot() {
-  loadPrefs();
-  showScreen("loading");
+function initCanvas() {
+  canvas = $("gameCanvas");
+  ctx = canvas.getContext("2d");
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+}
 
-  const hasSession = restoreSession();
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles = particles.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.life -= 1; p.vy += 0.1;
+    ctx.save();
+    ctx.globalAlpha = p.life / 30;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return p.life > 0;
+  });
+  if (particles.length) requestAnimationFrame(animateParticles);
+}
 
-  // Always connect to the live game server
-  connectSocket();
-
-  setTimeout(() => {
-    if (hasSession) {
-      // Restore last environment, but Real still needs payment check
-      if (environment.current === "real" && auth.user && !auth.user.paymentVerified) {
-        environment.current = "demo"; // force safe default
-        saveEnv();
-      }
-      showScreen("app");
-      renderAll();
-    } else {
-      showScreen("auth");
-    }
-  }, 600);
+function createParticles(x, y, color, count = 15) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.5) * 10 - 5,
+      size: Math.random() * 4 + 2,
+      life: 30,
+      color
+    });
+  }
+  animateParticles();
 }
 
 /* ============================================================
-   EVENTS
+   ACCOUNT UI
 ============================================================ */
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    const name = tab.dataset.tab;
-    $("form-login").style.display = name === "login" ? "block" : "none";
-    $("form-register").style.display = name === "register" ? "block" : "none";
-  });
-});
+let authMode = "login"; // login | register
 
-$("btn-login").addEventListener("click", () => {
-  const username = $("login-username").value;
-  const password = $("login-password").value;
-  $("login-error").textContent = "";
-  try {
-    const user = loginLocal(username, password);
-    setSession(user);
-    environment.current = "demo";
-    saveEnv();
-    showScreen("app");
-    renderAll();
-    toast("Logged in (local account)");
-  } catch (err) {
-    $("login-error").textContent = err.message;
-  }
-});
+function openAuth() {
+  authMode = "login";
+  $("auth-title").textContent = "Login";
+  $("auth-confirm").style.display = "none";
+  $("auth-switch").textContent = "Register";
+  $("auth-submit").textContent = "Login";
+  $("auth-error").textContent = "";
+  $("auth-overlay").classList.add("active");
+}
 
-$("btn-register").addEventListener("click", () => {
-  const username = $("reg-username").value;
-  const password = $("reg-password").value;
-  const confirm = $("reg-confirm").value;
-  $("reg-error").textContent = "";
-  try {
-    const user = registerLocal(username, password, confirm);
-    setSession(user);
-    environment.current = "demo";
-    saveEnv();
-    showScreen("app");
-    renderAll();
-    toast("Account created (stored locally)");
-  } catch (err) {
-    $("reg-error").textContent = err.message;
-  }
-});
-
-$("btn-skip-demo").addEventListener("click", () => {
-  clearSession();
-  environment.current = "demo";
-  saveEnv();
-  showScreen("app");
-  renderAll();
-  toast("Entered DEMO mode");
-});
-
-$("btn-env-demo").addEventListener("click", () => {
-  if (environment.current === "demo") return;
-  switchToDemo();
-});
-
-$("btn-env-real").addEventListener("click", () => {
-  if (environment.current === "real" && auth.user?.paymentVerified) return;
-  trySwitchToReal();
-});
-
-$("btn-cancel-real").addEventListener("click", () => {
-  $("payment-overlay").classList.remove("active");
-  waitingForPayment = false;
-  switchToDemo();
-});
-
-$("btn-action").addEventListener("click", () => {
-  if (environment.current !== "demo") return;
-  if (demo.activeBet && game.phase === "running" && !demo.cashedOut) {
-    cashOutDemo();
-  } else {
-    placeDemoBet();
-  }
-});
-
-$("btn-signal").addEventListener("click", () => {
-  if (!socket || !socket.connected) {
-    toast("Not connected to server");
+function openAccount() {
+  if (!auth.loggedIn) {
+    openAuth();
     return;
   }
-  // Request the locked prediction from no-gen.bonto.run
-  socket.emit("request_prediction");
-  toast("Requesting live signal…");
-});
+  $("acc-name").textContent = auth.user.username;
+  $("acc-id").textContent = auth.user.id;
+  $("acc-mode").textContent = environment.toUpperCase();
+  $("acc-pay").textContent = auth.user.paymentVerified ? "Verified" : "Pending";
+  $("btn-switch-mode").textContent = environment === "demo" ? "Switch to Real" : "Switch to Demo";
+  $("account-overlay").classList.add("active");
+}
 
-document.querySelectorAll(".quick-bet").forEach(btn => {
-  btn.addEventListener("click", () => {
-    $("bet-amount").value = btn.dataset.amount;
-    ui.lastBetAmount = Number(btn.dataset.amount);
+/* ============================================================
+   INIT & EVENTS
+============================================================ */
+function init() {
+  // Restore demo balance
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE.demo) || "{}");
+    if (typeof d.balance === "number") demo.balance = d.balance;
+  } catch {}
+
+  const env = localStorage.getItem(STORAGE.env);
+  if (env === "real" || env === "demo") environment = env;
+
+  restoreSession();
+  if (environment === "real" && (!auth.loggedIn || !auth.user.paymentVerified)) {
+    environment = "demo";
+  }
+
+  initCanvas();
+  updateBalanceUI();
+  updateStats();
+  updateHistory();
+  [1, 2].forEach(slot => setButtonPlace(slot));
+
+  connectSocket();
+
+  // Show auth if never logged in and first visit
+  if (!auth.loggedIn) {
+    // still allow demo immediately
+  }
+}
+
+// Quick bet amounts
+document.querySelectorAll(".quick span").forEach(el => {
+  el.addEventListener("click", () => {
+    const slot = +el.dataset.slot;
+    const amount = +el.dataset.amount;
+    betAmounts[slot] = amount;
+    if (!activeBets[slot] || activeBets[slot].cashedOut) {
+      $("amount" + slot).textContent = amount;
+    }
+    el.parentElement.querySelectorAll("span").forEach(s => s.classList.remove("active"));
+    el.classList.add("active");
   });
 });
 
-$("btn-logout").addEventListener("click", () => {
+// Auto buttons
+$("auto1").onclick = () => toggleAuto(1);
+$("auto2").onclick = () => toggleAuto(2);
+
+function toggleAuto(slot) {
+  autoEnabled[slot] = !autoEnabled[slot];
+  const btn = $("auto" + slot);
+  const card = $("bet" + slot);
+  if (autoEnabled[slot]) {
+    btn.className = "auto-btn auto-on";
+    card.classList.add("auto-active");
+    autoTargets[slot] = parseFloat($("autoMulti" + slot).value) || 2.00;
+    showNotification(`Auto @ ${autoTargets[slot].toFixed(2)}x ON`, "info");
+  } else {
+    btn.className = "auto-btn auto-off";
+    card.classList.remove("auto-active");
+    showNotification("Auto OFF", "info");
+  }
+}
+
+// Header buttons
+$("btn-back").onclick = () => openAccount();
+$("btn-deposit").onclick = () => {
+  if (environment === "demo") {
+    const add = [1000, 2500, 5000][Math.floor(Math.random() * 3)];
+    setBalance(getBalance() + add);
+    showNotification(`+${formatKES(add)} KES (Demo)`, "win");
+  } else {
+    showNotification("Use real deposit channel", "info");
+  }
+};
+$("level").onclick = () => openAccount();
+
+// Auth modal
+$("auth-switch").onclick = () => {
+  authMode = authMode === "login" ? "register" : "login";
+  $("auth-title").textContent = authMode === "login" ? "Login" : "Register";
+  $("auth-confirm").style.display = authMode === "register" ? "block" : "none";
+  $("auth-switch").textContent = authMode === "login" ? "Register" : "Login";
+  $("auth-submit").textContent = authMode === "login" ? "Login" : "Create Account";
+  $("auth-error").textContent = "";
+};
+
+$("auth-submit").onclick = () => {
+  const u = $("auth-username").value;
+  const p = $("auth-password").value;
+  const c = $("auth-confirm").value;
+  $("auth-error").textContent = "";
+  try {
+    let user;
+    if (authMode === "register") {
+      user = register(u, p, c);
+      showNotification("Account created", "win");
+    } else {
+      user = login(u, p);
+      showNotification("Welcome back", "win");
+    }
+    setSession(user);
+    $("auth-overlay").classList.remove("active");
+    updateBalanceUI();
+  } catch (e) {
+    $("auth-error").textContent = e.message;
+  }
+};
+
+$("auth-demo").onclick = () => {
+  $("auth-overlay").classList.remove("active");
+  environment = "demo";
+  localStorage.setItem(STORAGE.env, "demo");
+  updateBalanceUI();
+};
+
+// Account modal
+$("btn-close-account").onclick = () => $("account-overlay").classList.remove("active");
+
+$("btn-switch-mode").onclick = () => {
+  if (environment === "demo") {
+    if (!auth.loggedIn) {
+      $("account-overlay").classList.remove("active");
+      openAuth();
+      return;
+    }
+    if (!auth.user.paymentVerified) {
+      $("account-overlay").classList.remove("active");
+      $("payment-overlay").classList.add("active");
+      if (socket && socket.connected) {
+        socket.emit("request_payment_status", {
+          userId: auth.user.id,
+          username: auth.user.username
+        });
+      }
+      return;
+    }
+    environment = "real";
+  } else {
+    environment = "demo";
+  }
+  localStorage.setItem(STORAGE.env, environment);
+  $("account-overlay").classList.remove("active");
+  updateBalanceUI();
+  showNotification(`Switched to ${environment.toUpperCase()}`, "info");
+};
+
+$("btn-logout").onclick = () => {
   clearSession();
-  demo.activeBet = null;
-  environment.current = "demo";
-  saveEnv();
+  environment = "demo";
+  localStorage.setItem(STORAGE.env, "demo");
+  activeBets = {};
+  [1, 2].forEach(resetSlotUI);
+  $("account-overlay").classList.remove("active");
+  updateBalanceUI();
+  showNotification("Logged out", "info");
+};
+
+$("btn-cancel-payment").onclick = () => {
   $("payment-overlay").classList.remove("active");
-  showScreen("auth");
-  toast("Logged out");
-});
+  environment = "demo";
+  localStorage.setItem(STORAGE.env, "demo");
+  updateBalanceUI();
+};
+
+// Fake players counter
+setInterval(() => {
+  if (gameState === "countdown") currentPlayers += Math.floor(Math.random() * 20) + 5;
+  else if (gameState === "flying" && Math.random() < 0.3) currentPlayers -= Math.floor(Math.random() * 40) + 10;
+  currentPlayers = Math.max(80, Math.min(4500, currentPlayers));
+  $("players").textContent = currentPlayers.toLocaleString();
+}, 2000);
 
 /* START */
-boot();
+init();
 </script>
 </body>
-                                                             </html>
+</html>
