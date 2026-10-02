@@ -1,951 +1,6014 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Aviatrix</title>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<style>
-:root{
-  --bg-top:#081322;
-  --bg-main:#3a1c6b;
-  --bg-main-2:#1a0f3f;
-  --panel:#24164d;
-  --panel-dark:#1b113a;
-  --accent:#2ddc87;
-  --btn:#3b82f6;
-  --text-dim:#b8b4d9;
-  --orange:#ff7a2f;
-  --win:#28d17c;
-  --white:#ffffff;
-  --demo:#3b82f6;
-  --real:#2ddc87;
-}
-*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;user-select:none;-webkit-user-select:none}
-body{margin:0;background:#000;color:#fff;overflow-x:hidden;touch-action:manipulation;min-height:100dvh}
+  <meta charset="utf-8">
+  <title>BahatiBet</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#101722">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-/* SCREENS */
-.screen{display:none;min-height:100dvh;flex-direction:column}
-.screen.active{display:flex}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-/* LOADING */
-#screen-loading{align-items:center;justify-content:center;gap:16px;background:#0a0a12}
-.spinner{width:40px;height:40px;border:3px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+  <style>
+    *{
+      box-sizing:border-box;
+      -webkit-font-smoothing:antialiased;
+      margin:0;
+      padding:0
+    }
 
-/* AUTH */
-#screen-auth{align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top,#1a0f3f,#0a0a12)}
-.auth-card{background:var(--panel);border:1px solid #3a2c6f;border-radius:20px;padding:28px 24px;width:100%;max-width:380px}
-.auth-card h1{text-align:center;margin:0 0 4px;font-size:1.6rem}
-.auth-card .sub{text-align:center;color:var(--text-dim);font-size:.9rem;margin-bottom:22px}
-.auth-tabs{display:flex;gap:8px;margin-bottom:18px}
-.auth-tab{flex:1;padding:10px;border:none;border-radius:10px;font-weight:700;cursor:pointer;background:#1b113a;color:var(--text-dim)}
-.auth-tab.active{background:var(--accent);color:#000}
-.auth-card input{width:100%;padding:13px 14px;margin-bottom:10px;border:1px solid #3a2c6f;border-radius:10px;background:#140a2f;color:#fff;font-size:15px;outline:none}
-.auth-card input:focus{border-color:var(--accent)}
-.auth-error{color:#ff4444;font-size:13px;min-height:18px;margin-bottom:8px}
-.auth-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;background:linear-gradient(135deg,var(--btn),#2563eb);color:#fff}
-.auth-btn:disabled{opacity:.5}
+    html,body{
+      height:100%;
+      font-family:Inter,system-ui,sans-serif;
+      background:#0b0e14;
+      color:#f8fafc;
+      overflow:hidden
+    }
 
-/* DASHBOARD */
-#screen-dashboard{background:radial-gradient(circle at top,#1a0f3f,#0a0a12);padding:20px 16px}
-.dash-header{text-align:center;margin-bottom:24px}
-.dash-header h1{margin:0;font-size:1.5rem}
-.dash-header p{color:var(--text-dim);margin:6px 0 0;font-size:.9rem}
-.dash-user{background:var(--panel);border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #3a2c6f}
-.dash-user .row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
-.dash-user .label{color:var(--text-dim)}
-.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-.mode-card{background:var(--panel);border:2px solid #3a2c6f;border-radius:16px;padding:18px 14px;text-align:center;cursor:pointer;transition:.2s}
-.mode-card:hover{transform:translateY(-2px)}
-.mode-card.selected-demo{border-color:var(--demo);box-shadow:0 0 20px rgba(59,130,246,.35)}
-.mode-card.selected-real{border-color:var(--real);box-shadow:0 0 20px rgba(45,220,135,.35)}
-.mode-card .mode-title{font-weight:800;font-size:1.1rem;margin-bottom:6px}
-.mode-card .mode-bal{font-size:1.3rem;font-weight:900;margin:8px 0}
-.mode-card .mode-desc{font-size:12px;color:var(--text-dim);line-height:1.35}
-.mode-card.demo .mode-title,.mode-card.demo .mode-bal{color:var(--demo)}
-.mode-card.real .mode-title,.mode-card.real .mode-bal{color:var(--real)}
-.dash-actions{display:flex;flex-direction:column;gap:10px}
-.dash-btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
-.dash-btn-play{background:linear-gradient(135deg,var(--accent),#1fd17a);color:#000}
-.dash-btn-play:disabled{opacity:.4;cursor:not-allowed}
-.dash-btn-out{background:transparent;border:1px solid #ff4444;color:#ff4444}
+    .hidden{display:none!important}
 
-/* GAME (your original UI) */
-.header{height:52px;background:linear-gradient(180deg,#0b1830,#081322);display:flex;align-items:center;padding:0 12px;gap:10px;position:sticky;top:0;z-index:100}
-.header .back{font-size:18px;cursor:pointer;padding:8px;border-radius:8px}
-.header .title{flex:1;text-align:center;font-weight:700;font-size:16px}
-.header .deposit{background:linear-gradient(135deg,var(--win),#1fd17a);color:#000;padding:8px 14px;border-radius:20px;font-weight:700;font-size:14px;cursor:pointer}
-.header .level{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#000;padding:4px 8px;border-radius:12px;font-size:12px;font-weight:700}
-.mode-tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;margin-left:6px}
-.mode-demo{background:var(--demo);color:#fff}
-.mode-real{background:var(--real);color:#000}
+    /* =========================
+       LOGIN
+    ========================= */
 
-.infobar{background:linear-gradient(180deg,#0b1830,#0b1530);display:flex;align-items:center;padding:8px 12px;gap:10px}
-.balance{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
-.balance-label{font-size:11px;opacity:.75}
-.status{margin-left:auto;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(45,220,135,.2)}
-.players{padding:6px 10px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(255,255,255,.1)}
+    .auth-landing-wrapper{
+      min-height:100vh;
+      background:#0b0e14;
+      background-image:repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,.015) 0,
+        rgba(255,255,255,.015) 1px,
+        transparent 0,
+        transparent 20px
+      );
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      position:relative;
+      overflow-y:auto
+    }
 
-.game{height:45vh;background:radial-gradient(circle at top right,#4b2b9a 0%,#2b1768 40%,#1a0f3f 70%);position:relative;display:flex;justify-content:center;align-items:center;overflow:hidden;border-radius:20px;margin:8px}
-.game.waiting{background:radial-gradient(circle at center,#2a164f 0%,#1a0f3f 70%)}
-.game.countdown{background:radial-gradient(circle at center,#1a0f3f 0%,#0f0825 100%)}
-.gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:20px}
-.multiplier{position:absolute;bottom:20%;font-size:64px;font-weight:900;color:var(--white);text-shadow:0 0 20px rgba(255,255,255,.8);z-index:20}
-.multiplier.crashed{color:#ff4444!important;text-shadow:0 0 30px rgba(255,68,68,.8);animation:shake .5s ease-in-out}
-.multiplier.countdown{color:var(--accent);font-size:120px;text-shadow:0 0 40px rgba(45,220,135,.8)}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-15px)}75%{transform:translateX(15px)}}
-.crash-point{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:900;color:#ff4444;text-shadow:0 0 40px rgba(255,68,68,.8);animation:pulse 2s infinite;z-index:25}
-@keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.2);opacity:.8}}
+    .glow-backdrop{
+      position:absolute;
+      width:700px;
+      height:700px;
+      background:radial-gradient(
+        circle,
+        #4f67f61f,
+        #e11d4814 40%,
+        #0000 70%
+      );
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      pointer-events:none
+    }
 
-.stats{display:flex;gap:8px;margin:0 8px 8px}
-.stat-item{flex:1;background:rgba(255,255,255,.05);padding:8px;border-radius:10px;text-align:center;font-size:12px}
+    .glass-card{
+      background:#111622;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      box-shadow:0 20px 60px #000000d9;
+      width:100%;
+      max-width:420px;
+      padding:32px 28px;
+      position:relative;
+      z-index:1
+    }
 
-.bets{background:linear-gradient(180deg,#24164d,#1b113a);padding:10px;display:flex;gap:10px;margin:0 8px}
-.bet-card{flex:1;background:#2a1b59;border-radius:16px;padding:12px}
-.bet-card.active{border:2px solid var(--accent);box-shadow:0 0 25px rgba(45,220,135,.4)}
-.bet-card.auto-active{border:2px solid var(--orange);box-shadow:0 0 25px rgba(255,122,47,.4)}
-.bet-display{position:relative;height:50px;background:linear-gradient(135deg,#140a2f,#1a0f3f);border-radius:12px;margin-bottom:10px;overflow:hidden}
-.bet-display.active{background:linear-gradient(135deg,var(--win),#1fd17a)}
-.bet-display.flying{background:linear-gradient(135deg,var(--orange),#ff9a4f)}
-.bet-display.cashed{background:linear-gradient(135deg,var(--win),#1fd17a)}
-.bet-amount{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:900;z-index:2}
-.bet-display.active .bet-amount,.bet-display.flying .bet-amount{color:#fff;text-shadow:0 0 10px rgba(255,255,255,.8)}
-.bet-display.cashed .bet-amount{color:#000}
-.bet-display .gradient-bar{position:absolute;bottom:0;left:0;height:0%;width:100%;background:linear-gradient(180deg,transparent,rgba(255,255,255,.4));transition:height .1s}
-.auto-row{display:flex;gap:4px;margin-bottom:8px}
-.auto-btn{flex:1;padding:4px 2px;border:none;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer}
-.auto-off{background:#444;color:#ccc}
-.auto-on{background:var(--orange);color:#000}
-.quick{display:flex;gap:4px;margin-bottom:10px}
-.quick span{flex:1;background:#3a2c6f;border-radius:8px;padding:6px 2px;text-align:center;font-size:11px;opacity:.5;cursor:pointer}
-.quick span.active,.quick span:hover{opacity:1;background:var(--accent);color:#000}
-.place{width:100%;padding:12px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer}
-.place-bet{background:linear-gradient(135deg,var(--btn),#2563eb);color:#fff}
-.place-bet:disabled{background:#555;cursor:not-allowed}
-.place-cashout{background:linear-gradient(135deg,var(--win),#1fd17a)!important;color:#000!important;animation:pulse-green .8s infinite}
-.place-cashed{background:#666!important;color:#ccc!important;cursor:not-allowed}
-@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(40,209,124,.7)}50%{box-shadow:0 0 0 15px rgba(40,209,124,0)}}
+    .auth-site-logo{
+      width:min(116px,36vw);
+      max-height:52px;
+      margin:0 auto 10px;
+      display:block;
+      border-radius:10px;
+      object-fit:contain
+    }
 
-.history{background:#0e0825;padding:8px 10px;font-size:13px;color:#cfc9ff;white-space:nowrap;overflow-x:auto;margin:0 8px 8px;border-radius:12px}
-.history span{margin-right:10px;padding:4px 8px;background:rgba(255,255,255,.1);border-radius:10px;font-weight:500}
+    .auth-title{
+      color:#fff;
+      font-size:2.2rem;
+      font-weight:800;
+      text-align:center;
+      margin:0 0 20px
+    }
 
-.notification{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:12px;font-weight:600;z-index:1000;animation:slideDown .3s ease}
-@keyframes slideDown{from{transform:translate(-50%,-100%);opacity:0}to{transform:translate(-50%,0);opacity:1}}
-.notification.win{background:var(--win);color:#000}
-.notification.lose{background:#ff4444;color:#fff}
-.notification.info{background:var(--accent);color:#000}
+    .auth-form{
+      display:flex;
+      flex-direction:column;
+      gap:14px
+    }
 
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
-.overlay.active{display:flex}
-.modal{background:#1b113a;border:1px solid #3a2c6f;border-radius:16px;padding:24px;width:100%;max-width:360px}
-.modal h2{margin:0 0 12px;font-size:1.25rem}
-.modal p{color:#b8b4d9;font-size:.9rem;margin-bottom:16px;line-height:1.4}
-.modal .btn{width:100%;padding:12px;border:none;border-radius:10px;font-weight:700;cursor:pointer;margin-top:8px}
-.modal .btn-primary{background:var(--accent);color:#000}
-.modal .btn-secondary{background:#3a2c6f;color:#fff}
-</style>
+    .form-group{
+      display:flex;
+      flex-direction:column
+    }
+
+    .select-wrapper{
+      position:relative
+    }
+
+    .country-select{
+      width:100%;
+      background:#1c2230;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:14px 16px;
+      color:#fff;
+      font-size:1rem;
+      font-weight:600;
+      appearance:none;
+      outline:none
+    }
+
+    .select-arrow{
+      position:absolute;
+      right:16px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#9ca3af;
+      pointer-events:none
+    }
+
+    .phone-input-row{
+      display:flex;
+      gap:10px;
+      align-items:center
+    }
+
+    .country-code-box{
+      background:#1c2230;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:14px 18px;
+      color:#fff;
+      font-size:1.1rem;
+      font-weight:800
+    }
+
+    .phone-input,
+    .password-input{
+      flex:1;
+      width:100%;
+      background:#1c2230;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:14px 16px;
+      color:#fff;
+      font-size:.95rem;
+      outline:none
+    }
+
+    .phone-input:focus,
+    .password-input:focus{
+      border-color:#4f67f6;
+      box-shadow:0 0 0 3px #4f67f640
+    }
+
+    .field-hint{
+      color:#5a6578;
+      font-size:.75rem;
+      margin-top:6px
+    }
+
+    .password-input-wrapper{
+      position:relative
+    }
+
+    .password-toggle-btn{
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      background:transparent;
+      border:none;
+      color:#8e9bae;
+      font-weight:700;
+      font-size:.8rem;
+      cursor:pointer
+    }
+
+    .submit-blue-btn{
+      width:100%;
+      background:#4f67f6;
+      color:#fff;
+      font-weight:800;
+      font-size:1.05rem;
+      padding:15px;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      margin-top:14px
+    }
+
+    .auth-links-footer{
+      margin-top:20px;
+      text-align:center
+    }
+
+    .underlined-link{
+      color:#fff;
+      text-decoration:underline;
+      cursor:pointer;
+      font-weight:700
+    }
+
+    .alert-box{
+      padding:10px 14px;
+      border-radius:10px;
+      font-size:.85rem;
+      font-weight:600;
+      margin-bottom:16px
+    }
+
+    .alert-box.error{
+      background:#e11d4826;
+      color:#f87171;
+      border:1px solid rgba(225,29,72,.3)
+    }
+
+    .alert-box.success{
+      background:#22c55e26;
+      color:#4ade80;
+      border:1px solid rgba(34,197,94,.3)
+    }
+
+    .demo-switch-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin:12px 0 4px;
+      padding:10px 14px;
+      background:#1c2230;
+      border-radius:12px
+    }
+
+    .demo-toggle{
+      position:relative;
+      width:46px;
+      height:24px;
+      background:#35393d;
+      border-radius:12px;
+      cursor:pointer;
+      transition:background .2s
+    }
+
+    .demo-toggle.on{
+      background:#19ae08
+    }
+
+    .demo-toggle::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:18px;
+      height:18px;
+      background:#fff;
+      border-radius:50%;
+      transition:transform .2s
+    }
+
+    .demo-toggle.on::after{
+      transform:translateX(22px)
+    }
+
+    .demo-badge{
+      padding:2px 8px;
+      border-radius:6px;
+      background:#f59e0b33;
+      color:#fbbf24;
+      font-size:11px;
+      font-weight:800
+    }
+
+    /* =========================
+       GAME
+    ========================= */
+
+    .aviator-root{
+      height:100dvh;
+      display:flex;
+      flex-direction:column;
+      background:#111518;
+      color:#e9edf1;
+      font-family:Arial,Helvetica,sans-serif;
+      overflow:hidden
+    }
+
+    .top-nav{
+      height:56px;
+      min-height:56px;
+      position:relative;
+      background:#182431;
+      flex-shrink:0
+    }
+
+    .go-back-btn{
+      position:absolute;
+      top:0;
+      left:0;
+      height:24px;
+      padding:0 12px;
+      border:0;
+      background:transparent;
+      color:#fff;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer
+    }
+
+    .brand{
+      position:absolute;
+      top:24px;
+      left:0;
+      right:0;
+      height:32px;
+      display:flex;
+      align-items:center;
+      padding:0 10px;
+      background:#1c1f1f;
+      border-top:1px solid #1c2227
+    }
+
+    .brand-title{
+      color:#ed0a45;
+      font-family:Georgia,serif;
+      font-size:20px;
+      font-style:italic;
+      font-weight:700
+    }
+
+    .nav-actions{
+      position:absolute;
+      right:8px;
+      bottom:4px;
+      height:24px;
+      display:flex;
+      align-items:center;
+      gap:8px
+    }
+
+    .balance-amount{
+      color:#20b90a;
+      font-size:12px;
+      font-weight:700
+    }
+
+    .wallet-route-btn{
+      height:24px;
+      padding:0 10px;
+      border:1px solid #ffcf21;
+      border-radius:6px;
+      background:#f4bc0d;
+      color:#1b180b;
+      font:800 10px Arial;
+      cursor:pointer
+    }
+
+    .demo-indicator{
+      padding:2px 7px;
+      border-radius:6px;
+      background:#f59e0b33;
+      color:#fbbf24;
+      font-size:10px;
+      font-weight:800
+    }
+
+    .main-layout{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      padding:3px 4px 4px;
+      overflow:hidden
+    }
+
+    .live-banner{
+      flex:0 0 30px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:0 12px;
+      border:1px solid #166f1d;
+      border-radius:15px;
+      background:linear-gradient(
+        100deg,
+        #2f1728,
+        #242127 44%,
+        #1d3d2e
+      )
+    }
+
+    .live-dot{
+      font-size:9px;
+      color:#c8ced2;
+      display:flex;
+      align-items:center;
+      gap:5px
+    }
+
+    .live-dot::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      border:1px solid #54dc66;
+      box-shadow:inset 0 0 0 2px #26352b
+    }
+
+    .live-dot.offline::before{
+      border-color:#f87171
+    }
+
+    .banner-text{
+      flex:1;
+      text-align:center;
+      font-size:11px;
+      font-weight:700;
+      color:#e5e5e5;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+
+    .connection-pill{
+      font-size:9px;
+      font-weight:700;
+      padding:2px 6px;
+      border-radius:8px
+    }
+
+    .connection-pill.online{
+      background:#166f1d55;
+      color:#54dc66
+    }
+
+    .connection-pill.offline{
+      background:#7f1d1d55;
+      color:#f87171
+    }
+
+    .history-bar{
+      flex:0 0 40px;
+      display:flex;
+      flex-direction:column;
+      gap:4px
+    }
+
+    .room-selector{
+      display:flex;
+      gap:6px;
+      overflow-x:auto
+    }
+
+    .room-selector button{
+      height:18px;
+      padding:0 10px;
+      border:0;
+      border-radius:6px;
+      background:#1d2022;
+      color:#899196;
+      font-size:10px;
+      cursor:pointer;
+      white-space:nowrap
+    }
+
+    .room-selector button.active{
+      border:1px solid #16af16;
+      background:#111713;
+      color:#e2e6e8
+    }
+
+    .multiplier-ribbon{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding:0 4px;
+      scrollbar-width:none
+    }
+
+    .multiplier-ribbon::-webkit-scrollbar{
+      display:none
+    }
+
+    .mult-pill{
+      font-size:10px;
+      font-weight:600;
+      white-space:nowrap
+    }
+
+    .mult-pill.low{color:#00b8d1}
+    .mult-pill.mid{color:#9a35cf}
+    .mult-pill.high{color:#d826c0}
+
+    .canvas-viewport{
+      position:relative;
+      flex:1 1 auto;
+      min-height:160px;
+      max-height:min(42vh,420px);
+      border:1px solid #272c2d;
+      border-radius:12px;
+      background:#050606;
+      overflow:hidden
+    }
+
+    .canvas-viewport canvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block
+    }
+
+    .canvas-overlay{
+      position:absolute;
+      inset:0;
+      z-index:2;
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:center
+    }
+
+    .stage-overlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center
+    }
+
+    .stage-overlay.hidden{
+      display:none
+    }
+
+    .partner-branding-box{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px
+    }
+
+    .ufc-partner-badge{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:clamp(28px,6vw,52px);
+      font-weight:900
+    }
+
+    .ufc-title{
+      color:#e10c2d;
+      font-style:italic
+    }
+
+    .divider{
+      color:#e5e5e5;
+      font-weight:200
+    }
+
+    .aviator-title{
+      color:#ed1744;
+      font-family:Georgia,serif;
+      font-size:.64em;
+      font-style:italic
+    }
+
+    .partner-subtitle{
+      color:#f7f7f7;
+      font-size:clamp(11px,1.8vw,18px);
+      font-weight:900;
+      letter-spacing:.8px
+    }
+
+    .red-line-countdown-wrap{
+      width:min(120px,30vw);
+      height:4px;
+      margin:8px auto;
+      background:#ed004240;
+      border-radius:2px;
+      overflow:hidden
+    }
+
+    .red-line-countdown{
+      height:100%;
+      background:linear-gradient(90deg,#ff1744,#ed0042);
+      border-radius:2px;
+      box-shadow:0 0 10px #ed0042;
+      transition:width .05s linear
+    }
+
+    .spribe-cert-badge{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      width:78px;
+      height:52px;
+      margin-top:6px;
+      border:1px solid #8ab438;
+      border-radius:8px;
+      background:#26350d;
+      font-weight:800
+    }
+
+    .cert-title{
+      color:#fff;
+      font-size:10px
+    }
+
+    .cert-status{
+      padding:1px 4px;
+      border-radius:3px;
+      background:#5a921d;
+      color:#effadd;
+      font-size:7px
+    }
+
+    .live-mult{
+      color:#fff;
+      font-size:clamp(48px,12vw,84px);
+      font-weight:900;
+      text-shadow:0 0 30px rgba(255,255,255,.25);
+      letter-spacing:-1px
+    }
+
+    .flew-away{
+      color:#e7e7e7;
+      font-size:clamp(18px,4vw,28px);
+      font-weight:900;
+      margin-bottom:4px
+    }
+
+    .crash-mult{
+      color:#e2002e;
+      font-size:clamp(48px,12vw,84px);
+      font-weight:900
+    }
+
+    /* =========================
+       BET PANELS
+    ========================= */
+
+    .dual-bet-panels{
+      flex:0 0 auto;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:4px
+    }
+
+    .bet-panel-box{
+      background:#1a1d1e;
+      border:1px solid #22282b;
+      border-radius:12px;
+      padding:6px 8px 8px;
+      min-width:0
+    }
+
+    .panel-header-row{
+      display:flex;
+      justify-content:center;
+      margin-bottom:4px
+    }
+
+    .panel-subtabs{
+      display:flex;
+      width:140px;
+      height:20px;
+      padding:2px;
+      border-radius:10px;
+      background:#111314
+    }
+
+    .panel-subtabs button{
+      flex:1;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#aeb4b9;
+      font-size:9px;
+      cursor:pointer
+    }
+
+    .panel-subtabs button.active{
+      background:#35393b;
+      color:#fff
+    }
+
+    .panel-body{
+      display:grid;
+      grid-template-columns:minmax(76px,82px) minmax(0,1fr);
+      gap:7px;
+      min-width:0
+    }
+
+    .controls-col{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0
+    }
+
+    .amount-stepper{
+      display:flex;
+      align-items:center;
+      height:20px;
+      min-width:0
+    }
+
+    .step-btn{
+      width:18px;
+      height:18px;
+      min-width:18px;
+      border:0;
+      border-radius:50%;
+      background:#34383b;
+      color:#aeb6bb;
+      font-size:14px;
+      cursor:pointer
+    }
+
+    .amount-input{
+      flex:1;
+      min-width:0;
+      border:0;
+      background:transparent;
+      color:#d9efff;
+      font-size:12px;
+      font-weight:700;
+      text-align:center;
+      outline:0
+    }
+
+    .preset-buttons{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:3px
+    }
+
+    .preset-buttons button{
+      height:16px;
+      border:0;
+      border-radius:7px;
+      background:#141718;
+      color:#8096a2;
+      font-size:9px;
+      cursor:pointer
+    }
+
+    .action-col{
+      display:flex;
+      justify-content:flex-end;
+      align-items:stretch;
+      min-width:0
+    }
+
+    .big-bet-btn{
+      width:min(100%,108px);
+      min-width:82px;
+      min-height:48px;
+      max-height:52px;
+      border:1px solid #dce9e7;
+      border-radius:9px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      transition:background .15s,border-color .15s;
+      padding:3px 7px
+    }
+
+    .big-bet-btn .btn-title{
+      font-size:13px;
+      font-weight:700;
+      line-height:1.1;
+      white-space:nowrap
+    }
+
+    .big-bet-btn .btn-sub{
+      font-size:11px;
+      font-weight:500;
+      white-space:nowrap
+    }
+
+    .big-bet-btn.green{
+      background:#19ae08;
+      color:#fff;
+      border-color:#2fd61a
+    }
+
+    .big-bet-btn.orange{
+      background:#e67e00;
+      color:#fff;
+      border-color:#ff9a1a
+    }
+
+    .big-bet-btn.gold{
+      background:#e2a300;
+      color:#111;
+      border-color:#ffc107
+    }
+
+    .big-bet-btn.red{
+      background:#c41e3a;
+      color:#fff;
+      border-color:#e63950
+    }
+
+    .big-bet-btn:disabled{
+      opacity:.75;
+      cursor:default
+    }
+
+    /* =========================
+       AUTO CASHOUT
+    ========================= */
+
+    .auto-settings{
+      background:#111415;
+      border-radius:8px;
+      padding:5px 7px;
+      margin-bottom:5px
+    }
+
+    .auto-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:5px
+    }
+
+    .auto-label{
+      color:#c7cdd0;
+      font-size:9px;
+      font-weight:700
+    }
+
+    .auto-toggle{
+      position:relative;
+      width:32px;
+      height:17px;
+      background:#34383b;
+      border-radius:10px;
+      cursor:pointer;
+      flex-shrink:0
+    }
+
+    .auto-toggle.on{
+      background:#19ae08
+    }
+
+    .auto-toggle::after{
+      content:"";
+      position:absolute;
+      width:11px;
+      height:11px;
+      left:3px;
+      top:3px;
+      background:#fff;
+      border-radius:50%;
+      transition:.2s
+    }
+
+    .auto-toggle.on::after{
+      transform:translateX(15px)
+    }
+
+    .auto-mult{
+      display:flex;
+      align-items:center;
+      gap:3px;
+      margin-top:4px
+    }
+
+    .auto-mult span{
+      color:#7e8a91;
+      font-size:9px
+    }
+
+    .auto-mult input{
+      width:58px;
+      height:19px;
+      border:1px solid #303638;
+      border-radius:5px;
+      background:#1c2021;
+      color:#fff;
+      text-align:center;
+      font-size:9px;
+      outline:none
+    }
+
+    /* =========================
+       WIN BUBBLE
+    ========================= */
+
+    .win-bubble{
+      position:absolute;
+      z-index:50;
+      left:50%;
+      top:14%;
+      transform:translateX(-50%) scale(.55);
+      opacity:0;
+      background:linear-gradient(
+        180deg,
+        #163a12 0%,
+        #0c220a 100%
+      );
+      border:2px solid #3dff3d;
+      border-radius:18px;
+      padding:12px 28px 14px;
+      text-align:center;
+      pointer-events:none;
+      box-shadow:
+        0 0 28px rgba(61,255,61,.5),
+        0 6px 20px rgba(0,0,0,.55);
+      transition:
+        transform .32s cubic-bezier(.2,1.5,.4,1),
+        opacity .22s ease;
+      min-width:140px
+    }
+
+    .win-bubble.show{
+      transform:translateX(-50%) scale(1);
+      opacity:1
+    }
+
+    .win-bubble .stars{
+      font-size:15px;
+      letter-spacing:5px;
+      color:#ffd700;
+      margin-bottom:3px;
+      text-shadow:0 0 10px #ffd700;
+      line-height:1
+    }
+
+    .win-bubble .win-label{
+      font-size:11px;
+      color:#a8e6a8;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.5px
+    }
+
+    .win-bubble .win-amount{
+      font-size:22px;
+      font-weight:900;
+      color:#3dff3d;
+      text-shadow:0 0 14px rgba(61,255,61,.7);
+      margin-top:2px
+    }
+
+    /* =========================
+       IN-GAME NOTICE
+    ========================= */
+
+    .game-notice{
+      position:absolute;
+      z-index:70;
+      left:50%;
+      top:4%;
+      transform:translate(-50%,-12px);
+      opacity:0;
+      pointer-events:none;
+      padding:8px 14px;
+      border-radius:10px;
+      background:#241316;
+      border:1px solid #e63950;
+      color:#ff8b99;
+      font-size:10px;
+      font-weight:800;
+      text-align:center;
+      box-shadow:0 6px 20px #0009;
+      transition:.25s ease;
+      white-space:nowrap
+    }
+
+    .game-notice.show{
+      opacity:1;
+      transform:translate(-50%,0)
+    }
+
+    .game-notice.success{
+      background:#10250d;
+      border-color:#32d61b;
+      color:#78ff68
+    }
+
+    .game-notice.info{
+      background:#111c29;
+      border-color:#3b82f6;
+      color:#7db3ff
+    }
+
+    /* =========================
+       BETS FOOTER
+    ========================= */
+
+    .bets-footer{
+      flex:0 0 auto;
+      background:#1a1d1e;
+      border:1px solid #22282b;
+      border-radius:12px;
+      padding:4px 6px;
+      max-height:22vh;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column
+    }
+
+    .bets-tabs{
+      display:flex;
+      height:26px;
+      background:#111415;
+      border-radius:13px;
+      padding:2px;
+      margin-bottom:3px
+    }
+
+    .bets-tabs button{
+      flex:1;
+      border:0;
+      border-radius:11px;
+      background:transparent;
+      color:#9da6af;
+      font-size:10px;
+      font-weight:600;
+      cursor:pointer
+    }
+
+    .bets-tabs button.active{
+      background:#35393d;
+      color:#fff
+    }
+
+    .bets-list{
+      flex:1;
+      overflow-y:auto;
+      font-size:10px
+    }
+
+    .bet-row{
+      display:grid;
+      grid-template-columns:1.4fr 1fr .7fr 1fr;
+      padding:3px 4px;
+      border-radius:8px;
+      background:#101314;
+      margin-bottom:2px;
+      color:#c7cdd0
+    }
+
+    .bet-row.my-bet{
+      border-left:2px solid #ec0043
+    }
+
+    .bet-row.cashed{
+      background:linear-gradient(
+        90deg,
+        #1a3a12,
+        #0d220a
+      );
+      color:#3dff3d
+    }
+
+    .bet-row.lost{
+      background:#251315;
+      color:#f87171
+    }
+
+    .empty-bets{
+      text-align:center;
+      color:#667178;
+      padding:12px 5px;
+      font-size:10px
+    }
+
+    /* =========================
+       MODALS
+    ========================= */
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:300;
+      background:rgba(0,0,0,.72);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px
+    }
+
+    .modal-card{
+      width:min(380px,100%);
+      background:#111622;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 20px 60px #000d
+    }
+
+    .modal-title{
+      color:#fff;
+      font-size:18px;
+      font-weight:800;
+      margin-bottom:7px
+    }
+
+    .modal-text{
+      color:#aeb7c0;
+      font-size:12px;
+      line-height:1.5;
+      margin-bottom:14px
+    }
+
+    .deposit-warning{
+      background:#2b2110;
+      border:1px solid #9a6d18;
+      color:#f5c65c;
+      padding:9px;
+      border-radius:9px;
+      font-size:10px;
+      line-height:1.4;
+      margin-bottom:12px
+    }
+
+    .deposit-options{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px
+    }
+
+    .deposit-option{
+      height:38px;
+      border:1px solid #30363a;
+      border-radius:8px;
+      background:#1b2022;
+      color:#fff;
+      cursor:pointer;
+      font-weight:700;
+      font-size:11px
+    }
+
+    .deposit-option:hover{
+      background:#242b2e
+    }
+
+    .custom-deposit{
+      display:flex;
+      gap:6px;
+      margin-top:7px
+    }
+
+    .custom-deposit input{
+      flex:1;
+      min-width:0;
+      background:#1b2022;
+      border:1px solid #30363a;
+      border-radius:8px;
+      color:#fff;
+      padding:10px;
+      outline:none
+    }
+
+    .modal-actions{
+      display:flex;
+      gap:7px;
+      margin-top:15px
+    }
+
+    .modal-btn{
+      flex:1;
+      height:38px;
+      border:0;
+      border-radius:8px;
+      font-size:11px;
+      font-weight:800;
+      cursor:pointer
+    }
+
+    .modal-btn.cancel{
+      background:#292e31;
+      color:#d3d8db
+    }
+
+    .modal-btn.primary{
+      background:#19ae08;
+      color:#fff
+    }
+
+    .modal-btn.danger{
+      background:#c41e3a;
+      color:#fff
+    }
+
+    @media(max-width:600px){
+
+      .dual-bet-panels{
+        grid-template-columns:1fr
+      }
+
+      .canvas-viewport{
+        max-height:min(36vh,340px)
+      }
+
+      .panel-body{
+        grid-template-columns:minmax(76px,82px) minmax(0,1fr)
+      }
+
+      .big-bet-btn{
+        width:96px;
+        min-width:78px
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- ========== LOADING ========== -->
-<div id="screen-loading" class="screen active">
-  <div class="spinner"></div>
-  <div>Loading…</div>
-</div>
+  <!-- =========================
+       LOGIN / REGISTER
+  ========================== -->
 
-<!-- ========== AUTH (mandatory first) ========== -->
-<div id="screen-auth" class="screen">
-  <div class="auth-card">
-    <h1>Aviatrix ✈️</h1>
-    <p class="sub">Create an account to continue</p>
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="login">Login</button>
-      <button class="auth-tab" data-tab="register">Register</button>
+  <div id="loginView" class="auth-landing-wrapper">
+
+    <div class="glow-backdrop"></div>
+
+    <div class="glass-card">
+
+      <img
+        src="https://i.ibb.co/mrRfJTRG/IMG-20260729-WA0055.jpg"
+        alt="BahatiBet"
+        class="auth-site-logo"
+      >
+
+      <h2 class="auth-title" id="authTitle">Log In</h2>
+
+      <div
+        id="loginAlert"
+        class="alert-box error hidden"
+      ></div>
+
+      <form id="loginForm" class="auth-form">
+
+        <div class="form-group">
+
+          <div class="select-wrapper">
+
+            <select
+              id="countrySelect"
+              class="country-select"
+            >
+              <option value="+254">
+                Kenya (+254)
+              </option>
+
+              <option value="+255">
+                Tanzania (+255)
+              </option>
+
+              <option value="+256">
+                Uganda (+256)
+              </option>
+
+              <option value="+234">
+                Nigeria (+234)
+              </option>
+
+              <option value="+27">
+                South Africa (+27)
+              </option>
+            </select>
+
+            <span class="select-arrow">
+              ▼
+            </span>
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <div class="phone-input-row">
+
+            <div
+              class="country-code-box"
+              id="countryCodeBox"
+            >
+              +254
+            </div>
+
+            <input
+              type="text"
+              id="phoneInput"
+              class="phone-input"
+              placeholder="Phone Number (9 digits)"
+              maxlength="9"
+              inputmode="numeric"
+              required
+            >
+
+          </div>
+
+          <div class="field-hint">
+            Enter phone without country code
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <div class="password-input-wrapper">
+
+            <input
+              id="passwordInput"
+              class="password-input"
+              type="password"
+              placeholder="Password"
+              required
+            >
+
+            <button
+              type="button"
+              id="togglePassword"
+              class="password-toggle-btn"
+            >
+              SHOW
+            </button>
+
+          </div>
+
+        </div>
+
+        <div
+          class="form-group hidden"
+          id="confirmPasswordGroup"
+        >
+
+          <div class="password-input-wrapper">
+
+            <input
+              id="confirmPasswordInput"
+              class="password-input"
+              type="password"
+              placeholder="Confirm Password"
+            >
+
+          </div>
+
+        </div>
+
+        <div class="demo-switch-row">
+
+          <span
+            style="color:#d1d5db;font-size:.85rem;font-weight:600"
+          >
+            Demo Mode
+          </span>
+
+          <div
+            id="demoToggle"
+            class="demo-toggle"
+          ></div>
+
+          <span
+            id="demoStatus"
+            class="demo-badge hidden"
+          >
+            DEMO
+          </span>
+
+        </div>
+
+        <button
+          type="submit"
+          class="submit-blue-btn"
+          id="authSubmitBtn"
+        >
+          LOG IN
+        </button>
+
+        <div class="auth-links-footer">
+
+          <div id="registerSwitch">
+
+            <span style="color:#fff">
+              Don't Have An account?
+            </span>
+
+            <a
+              class="underlined-link"
+              id="registerLink"
+            >
+              Register here
+            </a>
+
+          </div>
+
+          <div
+            id="loginSwitch"
+            class="hidden"
+          >
+
+            <span style="color:#fff">
+              Already Have An account?
+            </span>
+
+            <a
+              class="underlined-link"
+              id="loginLink"
+            >
+              Log in here
+            </a>
+
+          </div>
+
+          <div
+            id="forgotPasswordRow"
+            style="margin-top:6px"
+          >
+
+            <a
+              class="underlined-link"
+              id="forgotPasswordLink"
+            >
+              Forgot Password
+            </a>
+
+          </div>
+
+        </div>
+
+      </form>
+
     </div>
-    <div id="auth-form-login">
-      <input type="text" id="login-user" placeholder="Username" autocomplete="username">
-      <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password">
-    </div>
-    <div id="auth-form-register" style="display:none">
-      <input type="text" id="reg-user" placeholder="Username" autocomplete="username">
-      <input type="password" id="reg-pass" placeholder="Password" autocomplete="new-password">
-      <input type="password" id="reg-confirm" placeholder="Confirm password" autocomplete="new-password">
-    </div>
-    <div class="auth-error" id="auth-error"></div>
-    <button class="auth-btn" id="auth-submit">Login</button>
+
   </div>
-</div>
 
-<!-- ========== DASHBOARD (mode select) ========== -->
-<div id="screen-dashboard" class="screen">
-  <div class="dash-header">
-    <h1>Welcome, <span id="dash-username">Player</span></h1>
-    <p>Choose how you want to play</p>
-  </div>
 
-  <div class="dash-user">
-    <div class="row"><span class="label">Account ID</span><span id="dash-id">—</span></div>
-    <div class="row"><span class="label">Status</span><span id="dash-status">Active</span></div>
-  </div>
+  <!-- =========================
+       GAME
+  ========================== -->
 
-  <div class="mode-cards">
-    <div class="mode-card demo selected-demo" id="card-demo">
-      <div class="mode-title">DEMO</div>
-      <div class="mode-bal" id="dash-demo-bal">KES 10,000</div>
-      <div class="mode-desc">Practice with virtual funds.<br>No real money.</div>
-    </div>
-    <div class="mode-card real" id="card-real">
-      <div class="mode-title">REAL</div>
-      <div class="mode-bal" id="dash-real-bal">KES 0</div>
-      <div class="mode-desc">Real balance.<br>Requires verification.</div>
-    </div>
-  </div>
+  <div
+    id="gameView"
+    class="aviator-root hidden"
+  >
 
-  <div class="dash-actions">
-    <button class="dash-btn dash-btn-play" id="btn-enter-game">Enter Game – DEMO</button>
-    <button class="dash-btn dash-btn-out" id="btn-logout">Logout</button>
-  </div>
-</div>
+    <header class="top-nav">
 
-<!-- ========== GAME ========== -->
-<div id="screen-game" class="screen">
-  <div class="header">
-    <div class="back" id="btn-back">←</div>
-    <div class="title">Aviatrix ✈️ <span class="mode-tag mode-demo" id="mode-tag">DEMO</span></div>
-    <div class="level" id="level">🏆 Level 4</div>
-    <div class="deposit" id="btn-deposit">+ Deposit</div>
-  </div>
+      <button
+        class="go-back-btn"
+        id="goBackBtn"
+      >
+        ‹ Go Back
+      </button>
 
-  <div class="infobar">
-    <div class="balance">
-      <span class="balance-label" id="balance-label">DEMO</span>
-      KES <strong id="balance">10,000</strong>
-    </div>
-    <div class="status" id="status">Connecting…</div>
-    <div class="players" id="players">—</div>
-  </div>
+      <div class="brand">
 
-  <div class="game" id="game">
-    <canvas class="gameCanvas" id="gameCanvas" width="400" height="400"></canvas>
-    <div class="multiplier" id="multiplier">1.00x</div>
-  </div>
+        <span class="brand-title">
+          Aviator
+        </span>
 
-  <div class="stats">
-    <div class="stat-item">
-      <div style="font-size:18px;font-weight:900;color:var(--win)" id="totalWin">0</div>
-      <div>Wins</div>
-    </div>
-    <div class="stat-item">
-      <div style="font-size:18px;font-weight:900;color:var(--orange)" id="maxMulti">1.00x</div>
-      <div>Max Multi</div>
-    </div>
-    <div class="stat-item">
-      <div style="font-size:18px;font-weight:900" id="winRate">0%</div>
-      <div>Win Rate</div>
-    </div>
-    <div class="stat-item">
-      <div style="font-size:18px;font-weight:900;color:#ff7a2f" id="gamesPlayed">0</div>
-      <div>Games</div>
-    </div>
-  </div>
-
-  <div class="bets">
-    <div class="bet-card" id="bet1">
-      <div class="bet-display" id="display1">
-        <div class="gradient-bar" id="bar1"></div>
-        <div class="bet-amount" id="amount1">100</div>
       </div>
-      <div class="auto-row">
-        <button class="auto-btn auto-off" id="auto1">AUTO</button>
-        <input type="number" id="autoMulti1" value="2.00" min="1.01" max="100" step="0.01"
-          style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:10px;text-align:center">
+
+      <div class="nav-actions">
+
+        <span
+          id="demoIndicator"
+          class="demo-indicator hidden"
+        >
+          DEMO
+        </span>
+
+        <span
+          class="balance-amount"
+          id="balanceDisplay"
+        >
+          0.00 KES
+        </span>
+
+        <button
+          class="wallet-route-btn"
+          id="depositBtn"
+        >
+          DEPOSIT
+        </button>
+
       </div>
-      <div class="quick">
-        <span data-slot="1" data-amount="50">50</span>
-        <span data-slot="1" data-amount="100" class="active">100</span>
-        <span data-slot="1" data-amount="200">200</span>
-        <span data-slot="1" data-amount="500">500</span>
+
+    </header>
+
+
+    <div class="main-layout">
+
+      <div class="live-banner">
+
+        <span
+          class="live-dot"
+          id="liveDot"
+        >
+          LIVE
+        </span>
+
+        <span
+          class="banner-text"
+          id="bannerText"
+        >
+          Connecting…
+        </span>
+
+        <span
+          class="connection-pill offline"
+          id="connPill"
+        >
+          OFFLINE
+        </span>
+
       </div>
-      <button class="place place-bet" id="place1">PLACE BET</button>
+
+
+      <div class="history-bar">
+
+        <!-- ONLY ROOM 1 -->
+        <div class="room-selector">
+
+          <button class="active">
+            × Room #1
+          </button>
+
+        </div>
+
+        <div
+          class="multiplier-ribbon"
+          id="multRibbon"
+        ></div>
+
+      </div>
+
+
+      <div
+        class="canvas-viewport"
+        id="canvasViewport"
+      >
+
+        <div
+          id="winBubble"
+          class="win-bubble"
+        >
+
+          <div class="stars">
+            ✦ ✦ ✦
+          </div>
+
+          <div class="win-label">
+            You Win
+          </div>
+
+          <div
+            class="win-amount"
+            id="winAmount"
+          >
+            0.00 KES
+          </div>
+
+        </div>
+
+
+        <div
+          id="gameNotice"
+          class="game-notice"
+        ></div>
+
+
+        <canvas id="gameCanvas"></canvas>
+
+
+        <div class="canvas-overlay">
+
+          <div
+            class="stage-overlay"
+            id="overlayWaiting"
+          >
+
+            <div class="partner-branding-box">
+
+              <div class="ufc-partner-badge">
+
+                <span class="ufc-title">
+                  UFC
+                </span>
+
+                <span class="divider">
+                  |
+                </span>
+
+                <span class="aviator-title">
+                  Aviator
+                </span>
+
+              </div>
+
+              <div class="partner-subtitle">
+                OFFICIAL PARTNERS
+              </div>
+
+              <div class="red-line-countdown-wrap">
+
+                <div
+                  class="red-line-countdown"
+                  id="countdownBar"
+                  style="width:100%"
+                ></div>
+
+              </div>
+
+              <div class="spribe-cert-badge">
+
+                <span class="cert-title">
+                  🎮 SPRIBE
+                </span>
+
+                <span class="cert-status">
+                  Official Game ✔
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="stage-overlay hidden"
+            id="overlayRunning"
+          >
+
+            <div
+              class="live-mult"
+              id="liveMult"
+            >
+              1.00x
+            </div>
+
+          </div>
+
+
+          <div
+            class="stage-overlay hidden"
+            id="overlayCrashed"
+          >
+
+            <div style="text-align:center">
+
+              <div class="flew-away">
+                FLEW AWAY!
+              </div>
+
+              <div
+                class="crash-mult"
+                id="crashMult"
+              >
+                1.00x
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           TWO BET PANELS
+      ========================== -->
+
+      <div class="dual-bet-panels">
+
+
+        <!-- PANEL 1 -->
+
+        <div class="bet-panel-box">
+
+          <div class="panel-header-row">
+
+            <div
+              class="panel-subtabs"
+              data-panel-tabs="1"
+            >
+
+              <button
+                class="active"
+                data-tab="bet"
+              >
+                Bet
+              </button>
+
+              <button
+                data-tab="auto"
+              >
+                Auto
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="auto-settings hidden"
+            id="autoSettings1"
+          >
+
+            <div class="auto-row">
+
+              <span class="auto-label">
+                Auto Cashout
+              </span>
+
+              <div
+                class="auto-toggle"
+                id="autoToggle1"
+              ></div>
+
+            </div>
+
+            <div class="auto-mult">
+
+              <span>
+                Cash out at
+              </span>
+
+              <input
+                id="autoCashout1"
+                type="number"
+                value="2.00"
+                min="1.01"
+                step="0.01"
+              >
+
+              <span>
+                x
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="panel-body">
+
+            <div class="controls-col">
+
+              <div class="amount-stepper">
+
+                <button
+                  class="step-btn"
+                  data-p="1"
+                  data-d="-"
+                >
+                  −
+                </button>
+
+                <input
+                  type="number"
+                  class="amount-input"
+                  id="amount1"
+                  value="10"
+                  min="10"
+                  step="10"
+                >
+
+                <button
+                  class="step-btn"
+                  data-p="1"
+                  data-d="+"
+                >
+                  +
+                </button>
+
+              </div>
+
+
+              <div class="preset-buttons">
+
+                <button
+                  data-a="10"
+                  data-p="1"
+                >
+                  10
+                </button>
+
+                <button
+                  data-a="250"
+                  data-p="1"
+                >
+                  250
+                </button>
+
+                <button
+                  data-a="1000"
+                  data-p="1"
+                >
+                  1,000
+                </button>
+
+                <button
+                  data-a="25000"
+                  data-p="1"
+                >
+                  25,000
+                </button>
+
+              </div>
+
+            </div>
+
+
+            <div class="action-col">
+
+              <button
+                class="big-bet-btn green"
+                id="betBtn1"
+                data-panel="1"
+              >
+
+                <span class="btn-title">
+                  BET NEXT
+                </span>
+
+                <span
+                  class="btn-sub"
+                  id="betSub1"
+                >
+                  10.00 KES
+                </span>
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- PANEL 2 -->
+
+        <div class="bet-panel-box">
+
+          <div class="panel-header-row">
+
+            <div
+              class="panel-subtabs"
+              data-panel-tabs="2"
+            >
+
+              <button
+                class="active"
+                data-tab="bet"
+              >
+                Bet
+              </button>
+
+              <button
+                data-tab="auto"
+              >
+                Auto
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="auto-settings hidden"
+            id="autoSettings2"
+          >
+
+            <div class="auto-row">
+
+              <span class="auto-label">
+                Auto Cashout
+              </span>
+
+              <div
+                class="auto-toggle"
+                id="autoToggle2"
+              ></div>
+
+            </div>
+
+            <div class="auto-mult">
+
+              <span>
+                Cash out at
+              </span>
+
+              <input
+                id="autoCashout2"
+                type="number"
+                value="2.00"
+                min="1.01"
+                step="0.01"
+              >
+
+              <span>
+                x
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="panel-body">
+
+            <div class="controls-col">
+
+              <div class="amount-stepper">
+
+                <button
+                  class="step-btn"
+                  data-p="2"
+                  data-d="-"
+                >
+                  −
+                </button>
+
+                <input
+                  type="number"
+                  class="amount-input"
+                  id="amount2"
+                  value="10"
+                  min="10"
+                  step="10"
+                >
+
+                <button
+                  class="step-btn"
+                  data-p="2"
+                  data-d="+"
+                >
+                  +
+                </button>
+
+              </div>
+
+
+              <div class="preset-buttons">
+
+                <button
+                  data-a="10"
+                  data-p="2"
+                >
+                  10
+                </button>
+
+                <button
+                  data-a="250"
+                  data-p="2"
+                >
+                  250
+                </button>
+
+                <button
+                  data-a="1000"
+                  data-p="2"
+                >
+                  1,000
+                </button>
+
+                <button
+                  data-a="25000"
+                  data-p="2"
+                >
+                  25,000
+                </button>
+
+              </div>
+
+            </div>
+
+
+            <div class="action-col">
+
+              <button
+                class="big-bet-btn green"
+                id="betBtn2"
+                data-panel="2"
+              >
+
+                <span class="btn-title">
+                  BET NEXT
+                </span>
+
+                <span
+                  class="btn-sub"
+                  id="betSub2"
+                >
+                  10.00 KES
+                </span>
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           BETS FOOTER
+      ========================== -->
+
+      <div class="bets-footer">
+
+        <div
+          class="bets-tabs"
+          id="betsTabs"
+        >
+
+          <button
+            class="active"
+            data-filter="all"
+          >
+            All Bets
+          </button>
+
+          <button
+            data-filter="previous"
+          >
+            Previous
+          </button>
+
+          <button
+            data-filter="top"
+          >
+            Top
+          </button>
+
+        </div>
+
+        <div
+          class="bets-list"
+          id="betsList"
+        ></div>
+
+      </div>
+
     </div>
-    <div class="bet-card" id="bet2">
-      <div class="bet-display" id="display2">
-        <div class="gradient-bar" id="bar2"></div>
-        <div class="bet-amount" id="amount2">100</div>
-      </div>
-      <div class="auto-row">
-        <button class="auto-btn auto-off" id="auto2">AUTO</button>
-        <input type="number" id="autoMulti2" value="2.00" min="1.01" max="100" step="0.01"
-          style="flex:1;padding:4px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:10px;text-align:center">
-      </div>
-      <div class="quick">
-        <span data-slot="2" data-amount="50">50</span>
-        <span data-slot="2" data-amount="100" class="active">100</span>
-        <span data-slot="2" data-amount="200">200</span>
-        <span data-slot="2" data-amount="500">500</span>
-      </div>
-      <button class="place place-bet" id="place2">PLACE BET</button>
-    </div>
+
   </div>
 
-  <div class="history" id="history">Waiting for rounds…</div>
-</div>
 
-<!-- Payment wait -->
-<div class="overlay" id="payment-overlay">
-  <div class="modal">
-    <h2>Verification Required</h2>
-    <p>Real mode needs payment verification before you can play with real balance.</p>
-    <button class="btn btn-secondary" id="btn-cancel-pay">Back to Dashboard</button>
+  <!-- =========================
+       DEPOSIT MODAL
+  ========================== -->
+
+  <div
+    id="depositModal"
+    class="modal-backdrop hidden"
+  >
+
+    <div class="modal-card">
+
+      <div class="modal-title">
+        Deposit
+      </div>
+
+      <div class="modal-text">
+        Add balance for testing without changing
+        the existing game interface.
+      </div>
+
+      <div class="deposit-warning">
+        DEMO/TEST ONLY: No real M-Pesa, card, or
+        bank transaction is processed here.
+        A real deposit requires a verified backend
+        payment integration.
+      </div>
+
+      <div
+        id="demoDepositArea"
+      >
+
+        <div class="deposit-options">
+
+          <button
+            class="deposit-option"
+            data-deposit="100"
+          >
+            +100 KES
+          </button>
+
+          <button
+            class="deposit-option"
+            data-deposit="500"
+          >
+            +500 KES
+          </button>
+
+          <button
+            class="deposit-option"
+            data-deposit="1000"
+          >
+            +1,000 KES
+          </button>
+
+          <button
+            class="deposit-option"
+            data-deposit="5000"
+          >
+            +5,000 KES
+          </button>
+
+        </div>
+
+        <div class="custom-deposit">
+
+          <input
+            id="customDepositInput"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="Custom test amount"
+          >
+
+          <button
+            class="modal-btn primary"
+            id="customDepositBtn"
+          >
+            ADD
+          </button>
+
+        </div>
+
+      </div>
+
+      <div
+        id="realDepositMessage"
+        class="hidden"
+        style="
+          background:#251518;
+          border:1px solid #75313a;
+          border-radius:9px;
+          padding:10px;
+          color:#f5a3ac;
+          font-size:10px;
+          line-height:1.5;
+        "
+      >
+        Real-money deposits are disabled in this
+        frontend version. Connect a secure backend
+        and payment provider before enabling them.
+      </div>
+
+      <div class="modal-actions">
+
+        <button
+          class="modal-btn cancel"
+          id="closeDepositBtn"
+        >
+          CLOSE
+        </button>
+
+      </div>
+
+    </div>
+
   </div>
-</div>
 
-<script>
-const SERVER_URL = "https://no-gen.bonto.run";
-const STORAGE = {
-  users: "aviatrix.users",
-  session: "aviatrix.session",
-  demo: "aviatrix.demo"
-};
 
-/* ---- state ---- */
-const auth = { loggedIn: false, user: null };
-let environment = "demo";
-const demo = { balance: 10000 };
-let gameState = "waiting";
-let multiplier = 1.00;
-let currentRoundId = null;
-let activeBets = {};
-let betAmounts = { 1: 100, 2: 100 };
-let autoEnabled = { 1: false, 2: false };
-let autoTargets = { 1: 2.00, 2: 2.00 };
-let history = [];
-let stats = { wins: 0, games: 0, totalWin: 0, maxMulti: 1.00 };
-let currentPlayers = 1200;
-let socket = null;
-let canvas, ctx, particles = [];
-let selectedMode = "demo";
+  <!-- =========================
+       LOGOUT MODAL
+  ========================== -->
 
-/* ---- helpers ---- */
-function $(id){ return document.getElementById(id); }
-function showScreen(name){
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $("screen-" + name).classList.add("active");
-}
-function formatKES(n){ return new Intl.NumberFormat("en-KE",{minimumFractionDigits:0}).format(Math.floor(n)); }
-function simpleHash(str){
-  let h = 0;
-  for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; }
-  return "h"+Math.abs(h).toString(16)+str.length;
-}
-function uid(){ return "A"+Math.random().toString(36).slice(2,10).toUpperCase(); }
-function notify(text, type){
-  const el = document.createElement("div");
-  el.className = "notification " + type;
-  el.textContent = text;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
+  <div
+    id="logoutModal"
+    class="modal-backdrop hidden"
+  >
 
-/* ---- local accounts ---- */
-function loadUsers(){ try{ return JSON.parse(localStorage.getItem(STORAGE.users)||"[]"); }catch{ return []; } }
-function saveUsers(list){ localStorage.setItem(STORAGE.users, JSON.stringify(list)); }
+    <div class="modal-card">
 
-function registerUser(username, password, confirm){
-  username = (username||"").trim();
-  if(username.length < 3) throw new Error("Username min 3 characters");
-  if((password||"").length < 4) throw new Error("Password min 4 characters");
-  if(password !== confirm) throw new Error("Passwords do not match");
-  const users = loadUsers();
-  if(users.some(u => u.username.toLowerCase() === username.toLowerCase()))
-    throw new Error("Username already taken");
-  const user = {
-    id: uid(),
-    username,
-    passwordHash: simpleHash(password),
-    balance: 0,
-    paymentVerified: false,
-    createdAt: Date.now()
-  };
-  users.push(user);
-  saveUsers(users);
-  return user;
-}
-function loginUser(username, password){
-  const users = loadUsers();
-  const user = users.find(u => u.username.toLowerCase() === (username||"").trim().toLowerCase());
-  if(!user || user.passwordHash !== simpleHash(password))
-    throw new Error("Invalid username or password");
-  return user;
-}
-function setSession(user){
-  auth.loggedIn = true;
-  auth.user = {
-    id: user.id,
-    username: user.username,
-    balance: user.balance || 0,
-    paymentVerified: !!user.paymentVerified
-  };
-  localStorage.setItem(STORAGE.session, JSON.stringify({ id: user.id }));
-}
-function clearSession(){
-  auth.loggedIn = false;
-  auth.user = null;
-  localStorage.removeItem(STORAGE.session);
-}
-function restoreSession(){
-  try{
-    const raw = localStorage.getItem(STORAGE.session);
-    if(!raw) return false;
-    const { id } = JSON.parse(raw);
-    const user = loadUsers().find(u => u.id === id);
-    if(!user){ clearSession(); return false; }
-    setSession(user);
-    return true;
-  }catch{ clearSession(); return false; }
-}
-function persistUser(){
-  if(!auth.user) return;
-  const users = loadUsers();
-  const i = users.findIndex(u => u.id === auth.user.id);
-  if(i >= 0){
-    users[i].balance = auth.user.balance;
-    users[i].paymentVerified = auth.user.paymentVerified;
-    saveUsers(users);
-  }
-}
+      <div class="modal-title">
+        Leave Game?
+      </div>
 
-/* ---- balance ---- */
-function getBalance(){
-  return environment === "demo" ? demo.balance : (auth.user ? auth.user.balance : 0);
-}
-function setBalance(v){
-  if(environment === "demo"){
-    demo.balance = v;
-    localStorage.setItem(STORAGE.demo, JSON.stringify({ balance: demo.balance }));
-  } else if(auth.user){
-    auth.user.balance = v;
-    persistUser();
-  }
-  updateBalanceUI();
-}
-function updateBalanceUI(){
-  $("balance").textContent = formatKES(getBalance());
-  $("balance-label").textContent = environment === "demo" ? "DEMO" : "REAL";
-  $("mode-tag").textContent = environment.toUpperCase();
-  $("mode-tag").className = "mode-tag " + (environment === "demo" ? "mode-demo" : "mode-real");
-  if($("dash-demo-bal")) $("dash-demo-bal").textContent = "KES " + formatKES(demo.balance);
-  if($("dash-real-bal") && auth.user) $("dash-real-bal").textContent = "KES " + formatKES(auth.user.balance);
-}
+      <div class="modal-text">
+        Your account and saved balance will remain
+        stored on this device. You can log in again
+        later.
+      </div>
 
-/* ---- dashboard ---- */
-function openDashboard(){
-  $("dash-username").textContent = auth.user.username;
-  $("dash-id").textContent = auth.user.id;
-  $("dash-status").textContent = "Active";
-  selectedMode = "demo";
-  $("card-demo").classList.add("selected-demo");
-  $("card-real").classList.remove("selected-real");
-  $("btn-enter-game").textContent = "Enter Game – DEMO";
-  $("btn-enter-game").disabled = false;
-  updateBalanceUI();
-  showScreen("dashboard");
-}
+      <div class="modal-actions">
 
-/* ---- game UI helpers ---- */
-function updateStats(){
-  $("totalWin").textContent = formatKES(stats.totalWin);
-  $("maxMulti").textContent = stats.maxMulti.toFixed(2)+"x";
-  $("gamesPlayed").textContent = stats.games;
-  $("winRate").textContent = stats.games > 0 ? ((stats.wins/stats.games)*100).toFixed(1)+"%" : "0%";
-}
-function updateHistory(){
-  $("history").innerHTML = history.slice(0,15).map(m => {
-    const v = parseFloat(m);
-    const bg = v > 10 ? "var(--win)" : v > 2 ? "var(--orange)" : "#ff4444";
-    return `<span style="background:${bg}">${m}x</span>`;
-  }).join("") || "Waiting for rounds…";
-}
-function setStatus(t){ $("status").textContent = t; }
+        <button
+          class="modal-btn cancel"
+          id="cancelLogoutBtn"
+        >
+          CANCEL
+        </button>
 
-function setBtnPlace(slot){
-  const btn = $("place"+slot);
-  btn.textContent = "PLACE BET";
-  btn.className = "place place-bet";
-  btn.disabled = gameState !== "countdown" && gameState !== "waiting";
-  btn.onclick = () => placeBet(slot);
-}
-function setBtnCashout(slot){
-  const btn = $("place"+slot);
-  btn.textContent = "CASH OUT";
-  btn.className = "place place-cashout";
-  btn.disabled = false;
-  btn.onclick = () => cashOut(slot);
-}
-function setBtnCashed(slot, payout){
-  const btn = $("place"+slot);
-  btn.textContent = "CASHED ✅";
-  btn.className = "place place-cashed";
-  btn.disabled = true;
-  btn.onclick = null;
-  $("amount"+slot).textContent = formatKES(payout);
-  $("display"+slot).className = "bet-display cashed";
-  $("bar"+slot).style.height = "0%";
-  $("bet"+slot).classList.remove("active");
-}
-function resetSlot(slot){
-  $("display"+slot).className = "bet-display";
-  $("amount"+slot).textContent = betAmounts[slot];
-  $("bar"+slot).style.height = "0%";
-  $("bet"+slot).classList.remove("active","auto-active");
-  setBtnPlace(slot);
-}
+        <button
+          class="modal-btn danger"
+          id="confirmLogoutBtn"
+        >
+          LOG OUT
+        </button>
 
-/* ---- place / cashout ---- */
-function placeBet(slot){
-  if(gameState !== "countdown" && gameState !== "waiting"){
-    notify("Wait for next round","info");
-    return;
-  }
-  if(activeBets[slot] && !activeBets[slot].cashedOut) return;
+      </div>
 
-  if(environment === "real"){
-    if(!auth.user.paymentVerified){
-      $("payment-overlay").classList.add("active");
-      return;
-    }
-    if(!socket || !socket.connected){
-      notify("Waiting for connection…","info");
-      return;
-    }
-  }
+    </div>
 
-  const amount = betAmounts[slot];
-  if(getBalance() < amount){
-    notify("Insufficient balance","lose");
-    return;
-  }
-  setBalance(getBalance() - amount);
-  activeBets[slot] = { amount, cashedOut: false };
+  </div>
 
-  $("display"+slot).className = "bet-display active";
-  $("amount"+slot).textContent = amount;
-  $("bet"+slot).classList.add("active");
-  setBtnCashout(slot);
-  notify(`Bet ${amount} KES placed`,"win");
-}
 
-function cashOut(slot){
-  const bet = activeBets[slot];
-  if(!bet || bet.cashedOut) return;
-  if(gameState !== "flying"){
-    notify("Cash out only while flying","info");
-    return;
-  }
-  const multi = multiplier;
-  const payout = Math.floor(bet.amount * multi);
-  bet.cashedOut = true;
-  setBalance(getBalance() + payout);
-  stats.totalWin += payout;
-  stats.wins++;
-  updateStats();
-  setBtnCashed(slot, payout);
-  createParticles(canvas.width/2, canvas.height/2, "#28d17c");
-  notify(`Cashed ${formatKES(payout)} @ ${multi.toFixed(2)}x`,"win");
-}
+  <script>
 
-function checkAutos(){
-  [1,2].forEach(slot => {
-    if(!autoEnabled[slot]) return;
-    const bet = activeBets[slot];
-    if(bet && !bet.cashedOut && multiplier >= autoTargets[slot]) cashOut(slot);
-  });
-}
+    /* ==========================================
+       CONFIGURATION
+    ========================================== */
 
-function updateFlyingUI(){
-  $("multiplier").textContent = multiplier.toFixed(2)+"x";
-  $("multiplier").className = "multiplier";
-  [1,2].forEach(slot => {
-    const bet = activeBets[slot];
-    if(bet && !bet.cashedOut){
-      $("amount"+slot).textContent = Math.floor(bet.amount * multiplier);
-      $("bar"+slot).style.height = Math.min(100,(multiplier-1)*50)+"%";
-      $("display"+slot).className = "bet-display flying";
-      if($("place"+slot).className.indexOf("place-cashout")===-1) setBtnCashout(slot);
-    }
-  });
-  checkAutos();
-}
+    const SIGNAL_HOST =
+      'https://no-gen.bonto.run';
 
-/* ---- round handlers (socket driven) ---- */
-function onCountdown(seconds, roundId){
-  gameState = "countdown";
-  currentRoundId = roundId;
-  multiplier = 1.00;
-  $("game").className = "game countdown";
-  $("multiplier").className = "multiplier countdown";
-  $("multiplier").textContent = seconds > 0 ? seconds : "GO";
-  setStatus(seconds > 0 ? `Next round in ${seconds}s` : "Starting…");
-  [1,2].forEach(slot => {
-    if(!activeBets[slot] || activeBets[slot].cashedOut){
-      setBtnPlace(slot);
-      $("place"+slot).disabled = false;
-    }
-  });
-}
+    const LS_USER =
+      'bahatibet_user';
 
-function onFlyStart(roundId){
-  gameState = "flying";
-  currentRoundId = roundId;
-  multiplier = 1.00;
-  stats.games++;
-  updateStats();
-  $("game").className = "game";
-  $("multiplier").className = "multiplier";
-  $("multiplier").textContent = "1.00x";
-  setStatus("Flying – Cash out anytime!");
-  [1,2].forEach(slot => {
-    if(activeBets[slot] && !activeBets[slot].cashedOut) setBtnCashout(slot);
-    else $("place"+slot).disabled = true;
-  });
-}
+    const LS_ACCOUNTS =
+      'bahatibet_accounts';
 
-function onMulti(m){
-  if(gameState !== "flying") return;
-  multiplier = m;
-  updateFlyingUI();
-}
+    const LS_DEMO =
+      'bahatibet_demo';
 
-function onCrash(finalM){
-  gameState = "crashed";
-  multiplier = finalM;
-  stats.maxMulti = Math.max(stats.maxMulti, finalM);
-  updateStats();
-  $("multiplier").textContent = finalM.toFixed(2)+"x";
-  $("multiplier").className = "multiplier crashed";
-  setStatus(`Crashed @ ${finalM.toFixed(2)}x`);
 
-  [1,2].forEach(slot => {
-    const bet = activeBets[slot];
-    if(bet && !bet.cashedOut){
-      bet.cashedOut = true;
-      $("display"+slot).className = "bet-display";
-      $("amount"+slot).textContent = "0";
-      $("bar"+slot).style.height = "0%";
-      $("place"+slot).textContent = "LOST";
-      $("place"+slot).className = "place place-cashed";
-      $("place"+slot).disabled = true;
-      $("bet"+slot).classList.remove("active");
-      notify(`Bet ${slot} lost`,"lose");
-    }
-  });
+    /* ==========================================
+       STATE
+    ========================================== */
 
-  const el = document.createElement("div");
-  el.className = "crash-point";
-  el.textContent = finalM.toFixed(2)+"x";
-  $("game").appendChild(el);
-  createParticles(canvas.width/2, canvas.height/2, "#ff4444", 40);
-  history.unshift(finalM.toFixed(2));
-  if(history.length > 30) history.pop();
-  updateHistory();
+    let isDemo =
+      localStorage.getItem(LS_DEMO) === 'true';
 
-  setTimeout(() => {
-    if(el.parentNode) el.parentNode.removeChild(el);
-    activeBets = {};
-    multiplier = 1.00;
-    gameState = "waiting";
-    $("game").className = "game waiting";
-    $("multiplier").className = "multiplier";
-    $("multiplier").textContent = "1.00x";
-    setStatus("Waiting for next round…");
-    [1,2].forEach(resetSlot);
-  }, 3200);
-}
+    let currentUser = null;
 
-/* ---- SOCKET – exact events from no-gen.bonto.run ---- */
-function connectSocket(){
-  if(socket){ socket.disconnect(); socket = null; }
+    let socket = null;
 
-  socket = io(SERVER_URL, {
-    transports: ["websocket", "polling"],
-    reconnection: true,
-    reconnectionAttempts: 30,
-    timeout: 10000
-  });
+    let pollTimer = null;
 
-  socket.on("connect", () => {
-    setStatus("Live – waiting for round");
-    socket.emit("get_round_state");
-  });
+    let currentPhase = 'waiting';
 
-  socket.on("connect_error", () => {
-    setStatus("Connection error – retrying…");
-  });
+    let currentMult = 1.00;
 
-  socket.on("disconnect", () => {
-    setStatus("Disconnected – reconnecting…");
-  });
+    let history = [];
 
-  socket.on("round_state", (s) => {
-    if(!s) return;
-    currentRoundId = s.roundId || null;
-    if(s.phase === "countdown"){
-      onCountdown(s.countdown || 5, s.roundId);
-    } else if(s.phase === "running"){
-      gameState = "flying";
-      multiplier = s.multiplier || 1;
-      currentRoundId = s.roundId;
-      $("game").className = "game";
-      updateFlyingUI();
-      setStatus("Flying – Cash out anytime!");
-      [1,2].forEach(slot => {
-        if(activeBets[slot] && !activeBets[slot].cashedOut) setBtnCashout(slot);
-      });
-    } else if(s.phase === "ended"){
-      const m = s.prediction || s.multiplier || 1;
-      $("multiplier").textContent = Number(m).toFixed(2)+"x";
-      $("multiplier").className = "multiplier crashed";
-      setStatus("Round ended");
-    } else {
-      gameState = "waiting";
-      setStatus("Waiting…");
-    }
-  });
+    let trail = [];
 
-  socket.on("round_countdown", (data) => {
-    onCountdown(data.seconds, data.roundId);
-  });
+    let activeBetFilter = 'all';
 
-  socket.on("round_started", (data) => {
-    onFlyStart(data.roundId);
-    if(data.multiplier) multiplier = data.multiplier;
-  });
+    let noticeTimer = null;
 
-  socket.on("round_update", (data) => {
-    if(data.roundId && currentRoundId && data.roundId !== currentRoundId) return;
-    onMulti(data.multiplier);
-  });
 
-  socket.on("round_ended", (data) => {
-    const finalM = data.prediction || data.multiplier || multiplier;
-    onCrash(Number(finalM));
-  });
+    const panels = {
 
-  socket.on("round_reset", () => {
-    // handled after crash animation
-  });
+      1:{
+        state:'idle',
+        amount:10,
+        autoEnabled:false,
+        autoCashout:2.00,
+        autoTriggered:false,
+        betId:null
+      },
 
-  socket.on("payment_verified", (payload) => {
-    if(!auth.user) return;
-    const ok =
-      (payload.userId && payload.userId === auth.user.id) ||
-      (payload.username && payload.username.toLowerCase() === auth.user.username.toLowerCase());
-    if(!ok) return;
-    auth.user.paymentVerified = true;
-    if(typeof payload.balance === "number") auth.user.balance = payload.balance;
-    persistUser();
-    $("payment-overlay").classList.remove("active");
-    updateBalanceUI();
-    notify("Payment verified","win");
-  });
-}
-
-/* ---- canvas ---- */
-function initCanvas(){
-  canvas = $("gameCanvas");
-  ctx = canvas.getContext("2d");
-  const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
-  resize();
-  window.addEventListener("resize", resize);
-}
-function animateParticles(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  particles = particles.filter(p => {
-    p.x+=p.vx; p.y+=p.vy; p.life-=1; p.vy+=0.1;
-    ctx.save(); ctx.globalAlpha=p.life/30; ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); ctx.restore();
-    return p.life>0;
-  });
-  if(particles.length) requestAnimationFrame(animateParticles);
-}
-function createParticles(x,y,color,count=15){
-  for(let i=0;i<count;i++){
-    particles.push({x,y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10-5,size:Math.random()*4+2,life:30,color});
-  }
-  animateParticles();
-}
-
-/* ---- boot flow: Loading → Auth → Dashboard → Game ---- */
-function boot(){
-  try{
-    const d = JSON.parse(localStorage.getItem(STORAGE.demo)||"{}");
-    if(typeof d.balance === "number") demo.balance = d.balance;
-  }catch{}
-
-  const hasSession = restoreSession();
-
-  initCanvas();
-  updateStats();
-  updateHistory();
-  [1,2].forEach(setBtnPlace);
-
-  // Always connect socket early so rounds are ready
-  connectSocket();
-
-  setTimeout(() => {
-    if(hasSession){
-      openDashboard();
-    } else {
-      showScreen("auth");
-    }
-  }, 500);
-}
-
-/* ---- events ---- */
-// Auth tabs
-document.querySelectorAll(".auth-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    const isLogin = tab.dataset.tab === "login";
-    $("auth-form-login").style.display = isLogin ? "block" : "none";
-    $("auth-form-register").style.display = isLogin ? "none" : "block";
-    $("auth-submit").textContent = isLogin ? "Login" : "Create Account";
-    $("auth-error").textContent = "";
-  });
-});
-
-$("auth-submit").onclick = () => {
-  $("auth-error").textContent = "";
-  const isLogin = $("auth-form-login").style.display !== "none";
-  try{
-    let user;
-    if(isLogin){
-      user = loginUser($("login-user").value, $("login-pass").value);
-    } else {
-      user = registerUser($("reg-user").value, $("reg-pass").value, $("reg-confirm").value);
-    }
-    setSession(user);
-    notify(isLogin ? "Welcome back" : "Account created","win");
-    openDashboard();
-  }catch(e){
-    $("auth-error").textContent = e.message;
-  }
-};
-
-// Mode cards
-$("card-demo").onclick = () => {
-  selectedMode = "demo";
-  $("card-demo").classList.add("selected-demo");
-  $("card-real").classList.remove("selected-real");
-  $("btn-enter-game").textContent = "Enter Game – DEMO";
-  $("btn-enter-game").disabled = false;
-};
-$("card-real").onclick = () => {
-  selectedMode = "real";
-  $("card-real").classList.add("selected-real");
-  $("card-demo").classList.remove("selected-demo");
-  $("btn-enter-game").textContent = "Enter Game – REAL";
-  $("btn-enter-game").disabled = false;
-};
-
-$("btn-enter-game").onclick = () => {
-  if(selectedMode === "real"){
-    if(!auth.user.paymentVerified){
-      $("payment-overlay").classList.add("active");
-      if(socket && socket.connected){
-        socket.emit("request_payment_status", {
-          userId: auth.user.id,
-          username: auth.user.username
-        });
+      2:{
+        state:'idle',
+        amount:10,
+        autoEnabled:false,
+        autoCashout:2.00,
+        autoTriggered:false,
+        betId:null
       }
-      return;
+
+    };
+
+
+    /* ==========================================
+       ELEMENTS
+    ========================================== */
+
+    const loginView =
+      document.getElementById('loginView');
+
+    const gameView =
+      document.getElementById('gameView');
+
+    const canvas =
+      document.getElementById('gameCanvas');
+
+    const ctx =
+      canvas.getContext('2d');
+
+    const canvasViewport =
+      document.getElementById('canvasViewport');
+
+    const overlayWaiting =
+      document.getElementById('overlayWaiting');
+
+    const overlayRunning =
+      document.getElementById('overlayRunning');
+
+    const overlayCrashed =
+      document.getElementById('overlayCrashed');
+
+    const liveMultEl =
+      document.getElementById('liveMult');
+
+    const crashMultEl =
+      document.getElementById('crashMult');
+
+    const countdownBar =
+      document.getElementById('countdownBar');
+
+    const multRibbon =
+      document.getElementById('multRibbon');
+
+    const liveDot =
+      document.getElementById('liveDot');
+
+    const bannerText =
+      document.getElementById('bannerText');
+
+    const connPill =
+      document.getElementById('connPill');
+
+    const balanceDisplay =
+      document.getElementById('balanceDisplay');
+
+    const demoIndicator =
+      document.getElementById('demoIndicator');
+
+    const winBubble =
+      document.getElementById('winBubble');
+
+    const winAmountEl =
+      document.getElementById('winAmount');
+
+    const gameNotice =
+      document.getElementById('gameNotice');
+
+    const betsList =
+      document.getElementById('betsList');
+
+
+    /* ==========================================
+       ACCOUNT STORAGE
+    ========================================== */
+
+    function loadAccounts(){
+
+      try{
+
+        const raw =
+          localStorage.getItem(LS_ACCOUNTS);
+
+        if(!raw)
+          return {};
+
+        const accounts =
+          JSON.parse(raw);
+
+        return accounts &&
+          typeof accounts === 'object'
+          ? accounts
+          : {};
+
+      }catch{
+
+        return {};
+
+      }
+
     }
-    if(!socket || !socket.connected){
-      notify("Connecting… please wait","info");
-      return;
+
+
+    function saveAccounts(accounts){
+
+      localStorage.setItem(
+        LS_ACCOUNTS,
+        JSON.stringify(accounts)
+      );
+
     }
-  }
-  environment = selectedMode;
-  activeBets = {};
-  [1,2].forEach(resetSlot);
-  updateBalanceUI();
-  showScreen("game");
-  if(socket && socket.connected) socket.emit("get_round_state");
-  else setStatus("Connecting to live rounds…");
-};
 
-$("btn-logout").onclick = () => {
-  clearSession();
-  environment = "demo";
-  showScreen("auth");
-  notify("Logged out","info");
-};
 
-$("btn-back").onclick = () => {
-  activeBets = {};
-  [1,2].forEach(resetSlot);
-  openDashboard();
-};
+    function accountKey(country,phone){
 
-$("btn-deposit").onclick = () => {
-  if(environment === "demo"){
-    const add = [1000,2500,5000][Math.floor(Math.random()*3)];
-    setBalance(getBalance()+add);
-    notify(`+${formatKES(add)} KES (Demo)`,"win");
-  } else {
-    notify("Use your deposit channel","info");
-  }
-};
+      return country + phone;
 
-$("btn-cancel-pay").onclick = () => {
-  $("payment-overlay").classList.remove("active");
-  selectedMode = "demo";
-  $("card-demo").classList.add("selected-demo");
-  $("card-real").classList.remove("selected-real");
-  $("btn-enter-game").textContent = "Enter Game – DEMO";
-};
+    }
 
-// Quick amounts
-document.querySelectorAll(".quick span").forEach(el => {
-  el.addEventListener("click", () => {
-    const slot = +el.dataset.slot;
-    const amount = +el.dataset.amount;
-    betAmounts[slot] = amount;
-    if(!activeBets[slot] || activeBets[slot].cashedOut) $("amount"+slot).textContent = amount;
-    el.parentElement.querySelectorAll("span").forEach(s => s.classList.remove("active"));
-    el.classList.add("active");
-  });
-});
 
-// Auto
-function toggleAuto(slot){
-  autoEnabled[slot] = !autoEnabled[slot];
-  const btn = $("auto"+slot);
-  const card = $("bet"+slot);
-  if(autoEnabled[slot]){
-    btn.className = "auto-btn auto-on";
-    card.classList.add("auto-active");
-    autoTargets[slot] = parseFloat($("autoMulti"+slot).value)||2;
-    notify(`Auto @ ${autoTargets[slot].toFixed(2)}x`,"info");
-  } else {
-    btn.className = "auto-btn auto-off";
-    card.classList.remove("auto-active");
-  }
-}
-$("auto1").onclick = () => toggleAuto(1);
-$("auto2").onclick = () => toggleAuto(2);
+    function normalizePhone(phone){
 
-// Players ticker
-setInterval(() => {
-  if(gameState === "countdown") currentPlayers += Math.floor(Math.random()*15)+5;
-  else if(gameState === "flying" && Math.random() < 0.3) currentPlayers -= Math.floor(Math.random()*30)+10;
-  currentPlayers = Math.max(80, Math.min(4500, currentPlayers));
-  if($("players")) $("players").textContent = currentPlayers.toLocaleString();
-}, 2000);
+      return phone
+        .replace(/\D/g,'')
+        .trim();
 
-boot();
-</script>
+    }
+
+
+    function createSession(account){
+
+      const session = {
+
+        phone:account.phone,
+
+        country:account.country,
+
+        balance:Number(
+          account.balance || 0
+        ),
+
+        demoBalance:Number(
+          account.demoBalance ?? 10000
+        ),
+
+        betHistory:Array.isArray(
+          account.betHistory
+        )
+          ? account.betHistory
+          : [],
+
+        loggedInAt:Date.now()
+
+      };
+
+      currentUser = session;
+
+      localStorage.setItem(
+        LS_USER,
+        JSON.stringify(session)
+      );
+
+    }
+
+
+    function saveCurrentUser(){
+
+      if(!currentUser)
+        return;
+
+      localStorage.setItem(
+        LS_USER,
+        JSON.stringify(currentUser)
+      );
+
+      const accounts =
+        loadAccounts();
+
+      const key =
+        currentUser.phone;
+
+      if(accounts[key]){
+
+        accounts[key].balance =
+          Number(
+            currentUser.balance || 0
+          );
+
+        accounts[key].demoBalance =
+          Number(
+            currentUser.demoBalance ?? 10000
+          );
+
+        accounts[key].betHistory =
+          Array.isArray(
+            currentUser.betHistory
+          )
+            ? currentUser.betHistory
+            : [];
+
+        saveAccounts(accounts);
+
+      }
+
+    }
+
+
+    /* ==========================================
+       AUTH MODE
+    ========================================== */
+
+    let authMode = 'login';
+
+
+    function setAuthMode(mode){
+
+      authMode = mode;
+
+      const title =
+        document.getElementById(
+          'authTitle'
+        );
+
+      const submit =
+        document.getElementById(
+          'authSubmitBtn'
+        );
+
+      const confirmGroup =
+        document.getElementById(
+          'confirmPasswordGroup'
+        );
+
+      const registerSwitch =
+        document.getElementById(
+          'registerSwitch'
+        );
+
+      const loginSwitch =
+        document.getElementById(
+          'loginSwitch'
+        );
+
+      const forgot =
+        document.getElementById(
+          'forgotPasswordRow'
+        );
+
+      const alert =
+        document.getElementById(
+          'loginAlert'
+        );
+
+      alert.classList.add('hidden');
+
+      if(mode === 'register'){
+
+        title.textContent =
+          'Register';
+
+        submit.textContent =
+          'CREATE ACCOUNT';
+
+        confirmGroup.classList.remove(
+          'hidden'
+        );
+
+        registerSwitch.classList.add(
+          'hidden'
+        );
+
+        loginSwitch.classList.remove(
+          'hidden'
+        );
+
+        forgot.classList.add(
+          'hidden'
+        );
+
+        document.getElementById(
+          'confirmPasswordInput'
+        ).required = true;
+
+      }else{
+
+        title.textContent =
+          'Log In';
+
+        submit.textContent =
+          'LOG IN';
+
+        confirmGroup.classList.add(
+          'hidden'
+        );
+
+        registerSwitch.classList.remove(
+          'hidden'
+        );
+
+        loginSwitch.classList.add(
+          'hidden'
+        );
+
+        forgot.classList.remove(
+          'hidden'
+        );
+
+        document.getElementById(
+          'confirmPasswordInput'
+        ).required = false;
+
+      }
+
+    }
+
+
+    function showAuthAlert(
+      message,
+      type='error'
+    ){
+
+      const alert =
+        document.getElementById(
+          'loginAlert'
+        );
+
+      alert.textContent =
+        message;
+
+      alert.className =
+        'alert-box ' + type;
+
+      alert.classList.remove(
+        'hidden'
+      );
+
+    }
+
+
+    /* ==========================================
+       CANVAS
+    ========================================== */
+
+    function resizeCanvas(){
+
+      const r =
+        canvasViewport.getBoundingClientRect();
+
+      const dpr =
+        Math.min(
+          window.devicePixelRatio || 1,
+          2
+        );
+
+      canvas.width =
+        Math.floor(r.width * dpr);
+
+      canvas.height =
+        Math.floor(r.height * dpr);
+
+      canvas.style.width =
+        r.width + 'px';
+
+      canvas.style.height =
+        r.height + 'px';
+
+      ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+      );
+
+      drawScene();
+
+    }
+
+
+    window.addEventListener(
+      'resize',
+      resizeCanvas
+    );
+
+
+    window.addEventListener(
+      'orientationchange',
+      ()=>{
+        setTimeout(
+          resizeCanvas,
+          120
+        );
+      }
+    );
+
+
+    function drawScene(){
+
+      const w =
+        canvas.width /
+        (window.devicePixelRatio || 1);
+
+      const h =
+        canvas.height /
+        (window.devicePixelRatio || 1);
+
+
+      const g =
+        ctx.createRadialGradient(
+          w*.35,
+          h*.55,
+          10,
+          w*.4,
+          h*.5,
+          Math.max(w,h)*.8
+        );
+
+      g.addColorStop(
+        0,
+        '#0a1520'
+      );
+
+      g.addColorStop(
+        .4,
+        '#050b12'
+      );
+
+      g.addColorStop(
+        1,
+        '#020508'
+      );
+
+      ctx.fillStyle = g;
+
+      ctx.fillRect(
+        0,
+        0,
+        w,
+        h
+      );
+
+
+      ctx.save();
+
+      ctx.translate(
+        w*.25,
+        h*.7
+      );
+
+
+      for(
+        let i=0;
+        i<18;
+        i++
+      ){
+
+        const a =
+          (i/18) *
+          Math.PI *
+          1.2 -
+          .3;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+          0,
+          0
+        );
+
+        ctx.lineTo(
+          Math.cos(a)*w*1.2,
+          Math.sin(a)*-h*1.1
+        );
+
+        ctx.strokeStyle =
+          `rgba(30,60,100,${0.04+(i%3)*0.015})`;
+
+        ctx.lineWidth =
+          18;
+
+        ctx.stroke();
+
+      }
+
+      ctx.restore();
+
+
+      if(
+        currentPhase==='running' ||
+        currentPhase==='crashed'
+      ){
+
+        const progress =
+          Math.min(
+            .92,
+            Math.log(
+              Math.max(
+                1.01,
+                currentMult
+              )
+            ) /
+            Math.log(40)
+          );
+
+        const planeX =
+          30 +
+          progress*(w*.7);
+
+        const planeY =
+          h -
+          30 -
+          progress*(h*.72);
+
+
+        trail.push({
+          x:planeX,
+          y:planeY
+        });
+
+
+        if(trail.length>90)
+          trail.shift();
+
+
+        if(trail.length>1){
+
+          ctx.beginPath();
+
+          ctx.lineCap =
+            'round';
+
+          ctx.lineJoin =
+            'round';
+
+
+          trail.forEach(
+            (p,i)=>{
+
+              if(i===0)
+                ctx.moveTo(
+                  p.x,
+                  p.y
+                );
+              else
+                ctx.lineTo(
+                  p.x,
+                  p.y
+                );
+
+            }
+          );
+
+
+          const tg =
+            ctx.createLinearGradient(
+              trail[0].x,
+              trail[0].y,
+              planeX,
+              planeY
+            );
+
+          tg.addColorStop(
+            0,
+            'rgba(255,20,60,0)'
+          );
+
+          tg.addColorStop(
+            .5,
+            'rgba(255,30,70,.55)'
+          );
+
+          tg.addColorStop(
+            1,
+            'rgba(255,40,80,.95)'
+          );
+
+
+          ctx.strokeStyle =
+            tg;
+
+          ctx.lineWidth =
+            6;
+
+          ctx.shadowColor =
+            '#ff1744';
+
+          ctx.shadowBlur =
+            14;
+
+          ctx.stroke();
+
+          ctx.shadowBlur =
+            0;
+
+
+          ctx.beginPath();
+
+
+          for(
+            let i=Math.max(
+              0,
+              trail.length-25
+            );
+            i<trail.length;
+            i++
+          ){
+
+            const p =
+              trail[i];
+
+            if(
+              i===
+              Math.max(
+                0,
+                trail.length-25
+              )
+            ){
+
+              ctx.moveTo(
+                p.x,
+                p.y
+              );
+
+            }else{
+
+              ctx.lineTo(
+                p.x,
+                p.y
+              );
+
+            }
+
+          }
+
+
+          ctx.strokeStyle =
+            'rgba(255,120,140,.9)';
+
+          ctx.lineWidth =
+            2.5;
+
+          ctx.stroke();
+
+        }
+
+
+        drawPlane(
+          planeX,
+          planeY,
+          currentPhase==='crashed'
+        );
+
+      }else{
+
+        trail=[];
+
+      }
+
+    }
+
+
+    function drawPlane(
+      x,
+      y,
+      crashed
+    ){
+
+      ctx.save();
+
+      ctx.translate(
+        x,
+        y
+      );
+
+      ctx.rotate(
+        crashed ? -.4 : -.55
+      );
+
+      ctx.scale(
+        1.15,
+        1.15
+      );
+
+      ctx.shadowColor =
+        crashed
+          ? '#ff1744'
+          : '#ff2a55';
+
+      ctx.shadowBlur =
+        16;
+
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        -18,
+        0
+      );
+
+      ctx.lineTo(
+        14,
+        -3
+      );
+
+      ctx.lineTo(
+        18,
+        0
+      );
+
+      ctx.lineTo(
+        14,
+        3
+      );
+
+      ctx.closePath();
+
+      ctx.fillStyle =
+        crashed
+          ? '#ff1744'
+          : '#ff2a55';
+
+      ctx.fill();
+
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        -4,
+        0
+      );
+
+      ctx.lineTo(
+        2,
+        -12
+      );
+
+      ctx.lineTo(
+        8,
+        -10
+      );
+
+      ctx.lineTo(
+        4,
+        0
+      );
+
+      ctx.closePath();
+
+      ctx.fill();
+
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        -14,
+        0
+      );
+
+      ctx.lineTo(
+        -18,
+        -8
+      );
+
+      ctx.lineTo(
+        -12,
+        -6
+      );
+
+      ctx.lineTo(
+        -10,
+        0
+      );
+
+      ctx.closePath();
+
+      ctx.fill();
+
+
+      ctx.beginPath();
+
+      ctx.arc(
+        16,
+        0,
+        2.5,
+        0,
+        Math.PI*2
+      );
+
+      ctx.fillStyle =
+        '#fff';
+
+      ctx.fill();
+
+      ctx.shadowBlur =
+        0;
+
+      ctx.restore();
+
+    }
+
+
+    /* ==========================================
+       GAME PHASE
+    ========================================== */
+
+    function setPhase(
+      phase,
+      mult=1
+    ){
+
+      currentPhase =
+        phase;
+
+      currentMult =
+        mult;
+
+
+      overlayWaiting.classList.toggle(
+        'hidden',
+        phase!=='waiting' &&
+        phase!=='countdown'
+      );
+
+      overlayRunning.classList.toggle(
+        'hidden',
+        phase!=='running'
+      );
+
+      overlayCrashed.classList.toggle(
+        'hidden',
+        phase!=='crashed'
+      );
+
+
+      if(
+        phase==='running'
+      ){
+
+        liveMultEl.textContent =
+          mult.toFixed(2) +
+          'x';
+
+
+        [1,2].forEach(
+          p=>{
+
+            if(
+              panels[p].state ===
+              'queued'
+            ){
+
+              panels[p].state =
+                'active';
+
+              panels[p].autoTriggered =
+                false;
+
+            }
+
+
+            if(
+              panels[p].state ===
+              'active'
+            ){
+
+              setBtnState(
+                p,
+                'gold',
+                'CASHOUT',
+                (
+                  panels[p].amount *
+                  mult
+                ).toFixed(2) +
+                ' KES'
+              );
+
+            }
+
+          }
+        );
+
+
+        checkAutoCashouts();
+
+      }
+
+
+      else if(
+        phase==='crashed'
+      ){
+
+        crashMultEl.textContent =
+          mult.toFixed(2) +
+          'x';
+
+
+        pushHistory(
+          mult
+        );
+
+
+        [1,2].forEach(
+          p=>{
+
+            if(
+              panels[p].state ===
+              'active' ||
+              panels[p].state ===
+              'queued'
+            ){
+
+              panels[p].state =
+                'lost';
+
+
+              markBetLost(
+                p,
+                panels[p].amount,
+                mult
+              );
+
+
+              setBtnState(
+                p,
+                'red',
+                'LOST',
+                panels[p].amount.toFixed(2) +
+                ' KES'
+              );
+
+
+              setTimeout(
+                ()=>{
+
+                  if(
+                    panels[p].state ===
+                    'lost'
+                  ){
+
+                    panels[p].state =
+                      'idle';
+
+                    setBtnState(
+                      p,
+                      'green',
+                      'BET NEXT',
+                      panels[p].amount.toFixed(2) +
+                      ' KES'
+                    );
+
+                  }
+
+                },
+                1400
+              );
+
+            }else if(
+              panels[p].state ===
+              'idle'
+            ){
+
+              setBtnState(
+                p,
+                'green',
+                'BET NEXT',
+                panels[p].amount.toFixed(2) +
+                ' KES'
+              );
+
+            }
+
+          }
+        );
+
+      }
+
+
+      else if(
+        phase==='waiting' ||
+        phase==='countdown'
+      ){
+
+        [1,2].forEach(
+          p=>{
+
+            if(
+              panels[p].state ===
+              'idle' ||
+              panels[p].state ===
+              'lost'
+            ){
+
+              panels[p].state =
+                'idle';
+
+              setBtnState(
+                p,
+                'green',
+                'BET NEXT',
+                panels[p].amount.toFixed(2) +
+                ' KES'
+              );
+
+            }
+
+
+            if(
+              panels[p].state ===
+              'queued'
+            ){
+
+              setBtnState(
+                p,
+                'orange',
+                'CANCEL',
+                panels[p].amount.toFixed(2) +
+                ' KES'
+              );
+
+            }
+
+          }
+        );
+
+      }
+
+
+      drawScene();
+
+    }
+
+
+    function pushHistory(
+      m
+    ){
+
+      history.unshift(
+        m
+      );
+
+      if(history.length>35)
+        history.pop();
+
+
+      multRibbon.innerHTML =
+        history.map(
+          v=>{
+
+            let c =
+              'low';
+
+            if(v>=10)
+              c='high';
+            else if(v>=2)
+              c='mid';
+
+
+            return `
+              <div class="mult-pill ${c}">
+                ${v.toFixed(2)}x
+              </div>
+            `;
+
+          }
+        ).join('');
+
+    }
+
+
+    function setBtnState(
+      panel,
+      color,
+      title,
+      sub
+    ){
+
+      const btn =
+        document.getElementById(
+          'betBtn'+panel
+        );
+
+      btn.className =
+        'big-bet-btn ' +
+        color;
+
+      btn.querySelector(
+        '.btn-title'
+      ).textContent =
+        title;
+
+      btn.querySelector(
+        '.btn-sub'
+      ).textContent =
+        sub;
+
+    }
+
+
+    /* ==========================================
+       NOTICES
+    ========================================== */
+
+    function showGameNotice(
+      message,
+      type='error',
+      duration=2600
+    ){
+
+      clearTimeout(
+        noticeTimer
+      );
+
+      gameNotice.textContent =
+        message;
+
+      gameNotice.className =
+        'game-notice ' +
+        type;
+
+      requestAnimationFrame(
+        ()=>{
+          gameNotice.classList.add(
+            'show'
+          );
+        }
+      );
+
+
+      noticeTimer =
+        setTimeout(
+          ()=>{
+            gameNotice.classList.remove(
+              'show'
+            );
+          },
+          duration
+        );
+
+    }
+
+
+    /* ==========================================
+       WIN
+    ========================================== */
+
+    function showWinBubble(
+      amount
+    ){
+
+      winAmountEl.textContent =
+        Number(amount).toLocaleString(
+          'en-KE',
+          {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+          }
+        ) +
+        ' KES';
+
+
+      winBubble.classList.add(
+        'show'
+      );
+
+
+      setTimeout(
+        ()=>{
+          winBubble.classList.remove(
+            'show'
+          );
+        },
+        2800
+      );
+
+    }
+
+
+    /* ==========================================
+       CONNECTION
+    ========================================== */
+
+    function setConnection(
+      online
+    ){
+
+      if(online){
+
+        liveDot.classList.remove(
+          'offline'
+        );
+
+        connPill.textContent =
+          'ONLINE';
+
+        connPill.className =
+          'connection-pill online';
+
+        bannerText.textContent =
+          'Mfalme Wa Anga KES 400,000 Daily Crown';
+
+      }else{
+
+        liveDot.classList.add(
+          'offline'
+        );
+
+        connPill.textContent =
+          'OFFLINE';
+
+        connPill.className =
+          'connection-pill offline';
+
+        bannerText.textContent =
+          'Reconnecting…';
+
+      }
+
+    }
+
+
+    /* ==========================================
+       BET HISTORY
+    ========================================== */
+
+    function getBetHistory(){
+
+      if(
+        !currentUser ||
+        !Array.isArray(
+          currentUser.betHistory
+        )
+      ){
+
+        return [];
+
+      }
+
+      return currentUser.betHistory;
+
+    }
+
+
+    function saveBetRecord(
+      record
+    ){
+
+      if(!currentUser)
+        return;
+
+      if(
+        !Array.isArray(
+          currentUser.betHistory
+        )
+      ){
+
+        currentUser.betHistory =
+          [];
+
+      }
+
+
+      currentUser.betHistory.unshift(
+        record
+      );
+
+
+      if(
+        currentUser.betHistory.length >
+        100
+      ){
+
+        currentUser.betHistory =
+          currentUser.betHistory.slice(
+            0,
+            100
+          );
+
+      }
+
+
+      saveCurrentUser();
+
+      renderBetsList();
+
+    }
+
+
+    function updateBetRecord(
+      id,
+      changes
+    ){
+
+      if(!currentUser)
+        return;
+
+
+      const record =
+        getBetHistory().find(
+          r=>r.id===id
+        );
+
+
+      if(record){
+
+        Object.assign(
+          record,
+          changes
+        );
+
+        saveCurrentUser();
+
+        renderBetsList();
+
+      }
+
+    }
+
+
+    function renderBetsList(){
+
+      const all =
+        getBetHistory();
+
+
+      let records =
+        [];
+
+
+      if(
+        activeBetFilter ===
+        'all'
+      ){
+
+        records =
+          all;
+
+      }else if(
+        activeBetFilter ===
+        'previous'
+      ){
+
+        records =
+          all.filter(
+            r=>
+              r.status ===
+              'cashed' ||
+              r.status ===
+              'lost'
+          );
+
+      }else if(
+        activeBetFilter ===
+        'top'
+      ){
+
+        records =
+          [...all]
+            .filter(
+              r=>r.status ===
+                'cashed'
+            )
+            .sort(
+              (a,b)=>
+                Number(b.win||0) -
+                Number(a.win||0)
+            );
+
+      }
+
+
+      if(!records.length){
+
+        betsList.innerHTML = `
+          <div class="empty-bets">
+            No bets to display
+          </div>
+        `;
+
+        return;
+
+      }
+
+
+      betsList.innerHTML =
+        records.map(
+          r=>{
+
+            let rowClass =
+              'bet-row my-bet';
+
+            if(
+              r.status ===
+              'cashed'
+            ){
+
+              rowClass +=
+                ' cashed';
+
+            }else if(
+              r.status ===
+              'lost'
+            ){
+
+              rowClass +=
+                ' lost';
+
+            }
+
+
+            const multiplier =
+              r.multiplier != null
+                ? Number(
+                    r.multiplier
+                  ).toFixed(2)+'x'
+                : '-';
+
+
+            const result =
+              r.status ===
+              'cashed'
+                ? '+' +
+                  Number(
+                    r.win || 0
+                  ).toFixed(2)
+                : r.status ===
+                  'lost'
+                    ? '-' +
+                      Number(
+                        r.amount || 0
+                      ).toFixed(2)
+                    : '';
+
+
+            return `
+              <div class="${rowClass}">
+                <span>You</span>
+                <span style="text-align:right">
+                  ${Number(r.amount).toFixed(2)}
+                </span>
+                <span style="text-align:center">
+                  ${multiplier}
+                </span>
+                <span style="text-align:right">
+                  ${result}
+                </span>
+              </div>
+            `;
+
+          }
+        ).join('');
+
+    }
+
+
+    function createBetRecord(
+      p,
+      amount
+    ){
+
+      const id =
+        'bet_' +
+        Date.now() +
+        '_' +
+        p +
+        '_' +
+        Math.random()
+          .toString(36)
+          .slice(2,7);
+
+
+      const record = {
+
+        id,
+
+        panel:p,
+
+        amount:Number(
+          amount
+        ),
+
+        multiplier:null,
+
+        win:0,
+
+        status:'queued',
+
+        createdAt:Date.now()
+
+      };
+
+
+      saveBetRecord(
+        record
+      );
+
+
+      panels[p].betId =
+        id;
+
+    }
+
+
+    function markBetCashed(
+      p,
+      win,
+      mult
+    ){
+
+      const id =
+        panels[p].betId;
+
+      if(!id)
+        return;
+
+
+      updateBetRecord(
+        id,
+        {
+          status:'cashed',
+          win:Number(win),
+          multiplier:Number(mult),
+          completedAt:Date.now()
+        }
+      );
+
+
+      panels[p].betId =
+        null;
+
+    }
+
+
+    function markBetLost(
+      p,
+      amount,
+      mult
+    ){
+
+      const id =
+        panels[p].betId;
+
+      if(!id)
+        return;
+
+
+      updateBetRecord(
+        id,
+        {
+          status:'lost',
+          win:0,
+          multiplier:Number(mult),
+          completedAt:Date.now()
+        }
+      );
+
+
+      panels[p].betId =
+        null;
+
+    }
+
+
+    function markBetCancelled(
+      p
+    ){
+
+      const id =
+        panels[p].betId;
+
+      if(!id)
+        return;
+
+
+      updateBetRecord(
+        id,
+        {
+          status:'cancelled',
+          completedAt:Date.now()
+        }
+      );
+
+
+      panels[p].betId =
+        null;
+
+    }
+
+
+    /* ==========================================
+       CASHOUT
+    ========================================== */
+
+    function cashOutPanel(
+      p,
+      automatic=false
+    ){
+
+      const panel =
+        panels[p];
+
+
+      if(
+        panel.state !==
+        'active'
+      )
+        return;
+
+
+      if(
+        currentPhase !==
+        'running'
+      )
+        return;
+
+
+      const amount =
+        panel.amount;
+
+
+      const multiplier =
+        currentMult;
+
+
+      const win =
+        Number(
+          (
+            amount *
+            multiplier
+          ).toFixed(2)
+        );
+
+
+      if(isDemo){
+
+        currentUser.demoBalance =
+          Number(
+            currentUser.demoBalance ||
+            0
+          ) + win;
+
+      }else{
+
+        currentUser.balance =
+          Number(
+            currentUser.balance ||
+            0
+          ) + win;
+
+      }
+
+
+      saveCurrentUser();
+
+      updateBalanceUI();
+
+
+      panel.state =
+        'idle';
+
+      panel.autoTriggered =
+        true;
+
+
+      setBtnState(
+        p,
+        'green',
+        'BET NEXT',
+        amount.toFixed(2) +
+        ' KES'
+      );
+
+
+      showWinBubble(
+        win
+      );
+
+
+      markBetCashed(
+        p,
+        win,
+        multiplier
+      );
+
+
+      if(automatic){
+
+        showGameNotice(
+          'Panel ' +
+          p +
+          ' auto cashed at ' +
+          multiplier.toFixed(2) +
+          'x',
+          'success',
+          2300
+        );
+
+      }
+
+    }
+
+
+    function checkAutoCashouts(){
+
+      if(
+        currentPhase !==
+        'running'
+      )
+        return;
+
+
+      [1,2].forEach(
+        p=>{
+
+          const panel =
+            panels[p];
+
+
+          if(
+            panel.state !==
+            'active'
+          )
+            return;
+
+
+          if(
+            !panel.autoEnabled
+          )
+            return;
+
+
+          if(
+            panel.autoTriggered
+          )
+            return;
+
+
+          if(
+            currentMult >=
+            panel.autoCashout
+          ){
+
+            panel.autoTriggered =
+              true;
+
+            cashOutPanel(
+              p,
+              true
+            );
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /* ==========================================
+       BET BUTTONS
+    ========================================== */
+
+    document
+      .getElementById('betBtn1')
+      .addEventListener(
+        'click',
+        ()=>{
+          handleBetClick(1);
+        }
+      );
+
+
+    document
+      .getElementById('betBtn2')
+      .addEventListener(
+        'click',
+        ()=>{
+          handleBetClick(2);
+        }
+      );
+
+
+    function handleBetClick(
+      p
+    ){
+
+      const panel =
+        panels[p];
+
+      const st =
+        panel.state;
+
+      const amount =
+        panel.amount;
+
+
+      /* IDLE → BET */
+
+      if(st==='idle'){
+
+        if(
+          currentPhase !==
+          'waiting' &&
+          currentPhase !==
+          'countdown'
+        ){
+
+          showGameNotice(
+            'Wait for the next round',
+            'info'
+          );
+
+          return;
+
+        }
+
+
+        const balance =
+          isDemo
+            ? Number(
+                currentUser.demoBalance ||
+                0
+              )
+            : Number(
+                currentUser.balance ||
+                0
+              );
+
+
+        if(balance < amount){
+
+          showGameNotice(
+            isDemo
+              ? 'Insufficient demo balance'
+              : 'Insufficient balance',
+            'error'
+          );
+
+          return;
+
+        }
+
+
+        if(isDemo){
+
+          currentUser.demoBalance =
+            balance -
+            amount;
+
+        }else{
+
+          currentUser.balance =
+            balance -
+            amount;
+
+        }
+
+
+        saveCurrentUser();
+
+        updateBalanceUI();
+
+
+        panel.state =
+          'queued';
+
+        panel.autoTriggered =
+          false;
+
+
+        setBtnState(
+          p,
+          'orange',
+          'CANCEL',
+          amount.toFixed(2) +
+          ' KES'
+        );
+
+
+        createBetRecord(
+          p,
+          amount
+        );
+
+
+        return;
+
+      }
+
+
+      /* QUEUED → CANCEL */
+
+      if(st==='queued'){
+
+        if(
+          currentPhase !==
+          'waiting' &&
+          currentPhase !==
+          'countdown'
+        ){
+
+          return;
+
+        }
+
+
+        if(isDemo){
+
+          currentUser.demoBalance =
+            Number(
+              currentUser.demoBalance ||
+              0
+            ) + amount;
+
+        }else{
+
+          currentUser.balance =
+            Number(
+              currentUser.balance ||
+              0
+            ) + amount;
+
+        }
+
+
+        saveCurrentUser();
+
+        updateBalanceUI();
+
+
+        markBetCancelled(
+          p
+        );
+
+
+        panel.state =
+          'idle';
+
+
+        setBtnState(
+          p,
+          'green',
+          'BET NEXT',
+          amount.toFixed(2) +
+          ' KES'
+        );
+
+
+        return;
+
+      }
+
+
+      /* ACTIVE → CASHOUT */
+
+      if(st==='active'){
+
+        cashOutPanel(
+          p,
+          false
+        );
+
+      }
+
+    }
+
+
+    /* ==========================================
+       AMOUNT CONTROLS
+    ========================================== */
+
+    document
+      .querySelectorAll('.step-btn')
+      .forEach(
+        btn=>{
+
+          btn.addEventListener(
+            'click',
+            ()=>{
+
+              const p =
+                btn.dataset.p;
+
+
+              if(
+                panels[p].state !==
+                'idle'
+              )
+                return;
+
+
+              let v =
+                parseInt(
+                  document.getElementById(
+                    'amount'+p
+                  ).value
+                ) || 10;
+
+
+              v =
+                btn.dataset.d === '+'
+                  ? v + 10
+                  : Math.max(
+                      10,
+                      v - 10
+                    );
+
+
+              document.getElementById(
+                'amount'+p
+              ).value =
+                v;
+
+
+              panels[p].amount =
+                v;
+
+
+              document.getElementById(
+                'betSub'+p
+              ).textContent =
+                v.toFixed(2) +
+                ' KES';
+
+
+              setBtnState(
+                p,
+                'green',
+                'BET NEXT',
+                v.toFixed(2) +
+                ' KES'
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    document
+      .querySelectorAll('.amount-input')
+      .forEach(
+        input=>{
+
+          input.addEventListener(
+            'input',
+            ()=>{
+
+              const p =
+                input.id.replace(
+                  'amount',
+                  ''
+                );
+
+
+              if(
+                panels[p].state !==
+                'idle'
+              )
+                return;
+
+
+              let v =
+                Number(
+                  input.value
+                );
+
+
+              if(
+                !Number.isFinite(v) ||
+                v < 10
+              ){
+
+                v = 10;
+
+              }
+
+
+              panels[p].amount =
+                v;
+
+
+              document.getElementById(
+                'betSub'+p
+              ).textContent =
+                v.toFixed(2) +
+                ' KES';
+
+
+              setBtnState(
+                p,
+                'green',
+                'BET NEXT',
+                v.toFixed(2) +
+                ' KES'
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    document
+      .querySelectorAll(
+        '.preset-buttons button'
+      )
+      .forEach(
+        btn=>{
+
+          btn.addEventListener(
+            'click',
+            ()=>{
+
+              const p =
+                btn.dataset.p;
+
+
+              if(
+                panels[p].state !==
+                'idle'
+              )
+                return;
+
+
+              const a =
+                parseInt(
+                  btn.dataset.a
+                );
+
+
+              document.getElementById(
+                'amount'+p
+              ).value =
+                a;
+
+
+              panels[p].amount =
+                a;
+
+
+              document.getElementById(
+                'betSub'+p
+              ).textContent =
+                a.toFixed(2) +
+                ' KES';
+
+
+              setBtnState(
+                p,
+                'green',
+                'BET NEXT',
+                a.toFixed(2) +
+                ' KES'
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       AUTO TABS
+    ========================================== */
+
+    document
+      .querySelectorAll(
+        '.panel-subtabs'
+      )
+      .forEach(
+        tabs=>{
+
+          const panel =
+            tabs.dataset.panelTabs;
+
+          const buttons =
+            tabs.querySelectorAll(
+              'button'
+            );
+
+          buttons.forEach(
+            button=>{
+
+              button.addEventListener(
+                'click',
+                ()=>{
+
+                  const tab =
+                    button.dataset.tab;
+
+
+                  buttons.forEach(
+                    b=>{
+                      b.classList.toggle(
+                        'active',
+                        b===button
+                      );
+                    }
+                  );
+
+
+                  document
+                    .getElementById(
+                      'autoSettings'+panel
+                    )
+                    .classList.toggle(
+                      'hidden',
+                      tab !== 'auto'
+                    );
+
+                }
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       AUTO TOGGLES
+    ========================================== */
+
+    [1,2].forEach(
+      p=>{
+
+        const toggle =
+          document.getElementById(
+            'autoToggle'+p
+          );
+
+        const input =
+          document.getElementById(
+            'autoCashout'+p
+          );
+
+
+        toggle.addEventListener(
+          'click',
+          ()=>{
+
+            let value =
+              Number(
+                input.value
+              );
+
+
+            if(
+              !Number.isFinite(value) ||
+              value <= 1
+            ){
+
+              value =
+                2.00;
+
+              input.value =
+                '2.00';
+
+            }
+
+
+            panels[p].autoCashout =
+              value;
+
+
+            panels[p].autoEnabled =
+              !panels[p].autoEnabled;
+
+
+            toggle.classList.toggle(
+              'on',
+              panels[p].autoEnabled
+            );
+
+
+            showGameNotice(
+              panels[p].autoEnabled
+                ? 'Auto Cashout ON — ' +
+                  value.toFixed(2) +
+                  'x'
+                : 'Auto Cashout OFF',
+              panels[p].autoEnabled
+                ? 'success'
+                : 'info',
+              1800
+            );
+
+          }
+        );
+
+
+        input.addEventListener(
+          'change',
+          ()=>{
+
+            let value =
+              Number(
+                input.value
+              );
+
+
+            if(
+              !Number.isFinite(value) ||
+              value <= 1
+            ){
+
+              value =
+                2.00;
+
+              input.value =
+                '2.00';
+
+            }
+
+
+            panels[p].autoCashout =
+              value;
+
+          }
+        );
+
+      }
+    );
+
+
+    /* ==========================================
+       BET FILTER TABS
+    ========================================== */
+
+    document
+      .querySelectorAll(
+        '#betsTabs button'
+      )
+      .forEach(
+        button=>{
+
+          button.addEventListener(
+            'click',
+            ()=>{
+
+              activeBetFilter =
+                button.dataset.filter;
+
+
+              document
+                .querySelectorAll(
+                  '#betsTabs button'
+                )
+                .forEach(
+                  b=>{
+                    b.classList.toggle(
+                      'active',
+                      b===button
+                    );
+                  }
+                );
+
+
+              renderBetsList();
+
+            }
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       SOCKET SIGNALS
+    ========================================== */
+
+    function connectSignals(){
+
+      if(socket){
+
+        socket.disconnect();
+
+        socket =
+          null;
+
+      }
+
+
+      if(pollTimer){
+
+        clearInterval(
+          pollTimer
+        );
+
+        pollTimer =
+          null;
+
+      }
+
+
+      try{
+
+        socket =
+          io(
+            SIGNAL_HOST,
+            {
+              transports:[
+                'websocket',
+                'polling'
+              ],
+              reconnection:true,
+              reconnectionAttempts:Infinity,
+              reconnectionDelay:1500,
+              timeout:8000
+            }
+          );
+
+
+        socket.on(
+          'connect',
+          ()=>{
+
+            setConnection(
+              true
+            );
+
+
+            try{
+              socket.emit(
+                'getState'
+              );
+            }catch(e){}
+
+
+            try{
+              socket.emit(
+                'subscribe'
+              );
+            }catch(e){}
+
+
+            try{
+              socket.emit(
+                'join'
+              );
+            }catch(e){}
+
+          }
+        );
+
+
+        socket.on(
+          'disconnect',
+          ()=>{
+            setConnection(
+              false
+            );
+          }
+        );
+
+
+        socket.on(
+          'connect_error',
+          ()=>{
+
+            setConnection(
+              false
+            );
+
+
+            if(!pollTimer)
+              startHttpFallback();
+
+          }
+        );
+
+
+        socket.onAny(
+          (ev,data)=>{
+
+            if(
+              data &&
+              typeof data ===
+              'object'
+            ){
+
+              handleSignal(
+                data
+              );
+
+            }
+
+          }
+        );
+
+
+      }catch(e){
+
+        startHttpFallback();
+
+      }
+
+
+      startHttpFallback();
+
+    }
+
+
+    function startHttpFallback(){
+
+      if(pollTimer)
+        return;
+
+
+      const poll =
+        async()=>{
+
+          try{
+
+            const res =
+              await fetch(
+                SIGNAL_HOST +
+                '/?t=' +
+                Date.now(),
+                {
+                  cache:
+                    'no-store'
+                }
+              );
+
+
+            if(!res.ok)
+              throw new Error(
+                'bad'
+              );
+
+
+            const data =
+              await res.json();
+
+
+            setConnection(
+              true
+            );
+
+
+            handleSignal(
+              data
+            );
+
+          }catch{
+
+            setConnection(
+              false
+            );
+
+          }
+
+        };
+
+
+      poll();
+
+
+      pollTimer =
+        setInterval(
+          poll,
+          500
+        );
+
+    }
+
+
+    function handleSignal(
+      data
+    ){
+
+      if(
+        !data ||
+        typeof data !==
+        'object'
+      ){
+
+        return;
+
+      }
+
+
+      let phase =
+        (
+          data.phase ||
+          data.status ||
+          data.state ||
+          ''
+        )
+        .toString()
+        .toLowerCase();
+
+
+      if(
+        phase ===
+        'online'
+      ){
+
+        phase =
+          data.phase ||
+          'waiting';
+
+      }
+
+
+      if(
+        [
+          'waiting',
+          'countdown',
+          'betting',
+          'idle'
+        ].includes(
+          phase
+        )
+      ){
+
+        setPhase(
+          phase ===
+          'countdown'
+            ? 'countdown'
+            : 'waiting'
+        );
+
+
+        if(
+          typeof data.progress ===
+          'number'
+        ){
+
+          countdownBar.style.width =
+            Math.max(
+              0,
+              Math.min(
+                100,
+                data.progress
+              )
+            ) +
+            '%';
+
+        }else if(
+          typeof data.countdown ===
+          'number'
+        ){
+
+          countdownBar.style.width =
+            Math.max(
+              0,
+              Math.min(
+                100,
+                (data.countdown/6)*100
+              )
+            ) +
+            '%';
+
+        }
+
+
+      }else if(
+        [
+          'running',
+          'fly',
+          'inplay',
+          'live'
+        ].includes(
+          phase
+        )
+      ){
+
+        setPhase(
+          'running',
+          Number(
+            data.multiplier ||
+            data.mult ||
+            data.x ||
+            data.current ||
+            currentMult
+          ) || 1
+        );
+
+
+      }else if(
+        [
+          'crashed',
+          'crash',
+          'ended',
+          'flew'
+        ].includes(
+          phase
+        )
+      ){
+
+        setPhase(
+          'crashed',
+          Number(
+            data.multiplier ||
+            data.crashPoint ||
+            data.x ||
+            data.final ||
+            currentMult
+          ) || 1
+        );
+
+      }
+
+
+      if(
+        data.multiplier != null &&
+        !phase
+      ){
+
+        setPhase(
+          'running',
+          Number(
+            data.multiplier
+          )
+        );
+
+      }
+
+    }
+
+
+    /* ==========================================
+       BALANCE
+    ========================================== */
+
+    function updateBalanceUI(){
+
+      if(!currentUser)
+        return;
+
+
+      const bal =
+        isDemo
+          ? Number(
+              currentUser.demoBalance ??
+              10000
+            )
+          : Number(
+              currentUser.balance ??
+              0
+            );
+
+
+      balanceDisplay.textContent =
+        bal.toLocaleString(
+          'en-KE',
+          {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+          }
+        ) +
+        ' KES';
+
+    }
+
+
+    /* ==========================================
+       DEMO TOGGLE
+    ========================================== */
+
+    document
+      .getElementById(
+        'demoToggle'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          isDemo =
+            !isDemo;
+
+
+          localStorage.setItem(
+            LS_DEMO,
+            isDemo
+              ? 'true'
+              : 'false'
+          );
+
+
+          document
+            .getElementById(
+              'demoToggle'
+            )
+            .classList.toggle(
+              'on',
+              isDemo
+            );
+
+
+          document
+            .getElementById(
+              'demoStatus'
+            )
+            .classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+
+          updateBalanceUI();
+
+
+          if(gameView &&
+             !gameView.classList.contains(
+               'hidden'
+             )){
+
+            demoIndicator.classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+          }
+
+        }
+      );
+
+
+    /* ==========================================
+       COUNTRY
+    ========================================== */
+
+    document
+      .getElementById(
+        'countrySelect'
+      )
+      .addEventListener(
+        'change',
+        e=>{
+
+          document
+            .getElementById(
+              'countryCodeBox'
+            )
+            .textContent =
+            e.target.value;
+
+        }
+      );
+
+
+    /* ==========================================
+       PASSWORD SHOW/HIDE
+    ========================================== */
+
+    document
+      .getElementById(
+        'togglePassword'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          const input =
+            document.getElementById(
+              'passwordInput'
+            );
+
+
+          input.type =
+            input.type ===
+            'password'
+              ? 'text'
+              : 'password';
+
+
+          document
+            .getElementById(
+              'togglePassword'
+            )
+            .textContent =
+            input.type ===
+            'password'
+              ? 'SHOW'
+              : 'HIDE';
+
+        }
+      );
+
+
+    /* ==========================================
+       REGISTER LINK
+    ========================================== */
+
+    document
+      .getElementById(
+        'registerLink'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+          setAuthMode(
+            'register'
+          );
+        }
+      );
+
+
+    document
+      .getElementById(
+        'loginLink'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+          setAuthMode(
+            'login'
+          );
+        }
+      );
+
+
+    /* ==========================================
+       FORGOT PASSWORD
+    ========================================== */
+
+    document
+      .getElementById(
+        'forgotPasswordLink'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+          showAuthAlert(
+            'Password reset needs secure server-side verification. This frontend demo does not reset passwords locally.',
+            'error'
+          );
+        }
+      );
+
+
+    /* ==========================================
+       LOGIN / REGISTER SUBMIT
+    ========================================== */
+
+    document
+      .getElementById(
+        'loginForm'
+      )
+      .addEventListener(
+        'submit',
+        e=>{
+
+          e.preventDefault();
+
+
+          const phone =
+            normalizePhone(
+              document
+                .getElementById(
+                  'phoneInput'
+                )
+                .value
+            );
+
+
+          const password =
+            document
+              .getElementById(
+                'passwordInput'
+              )
+              .value;
+
+
+          const country =
+            document
+              .getElementById(
+                'countrySelect'
+              )
+              .value;
+
+
+          if(
+            phone.length !==
+            9
+          ){
+
+            showAuthAlert(
+              'Valid 9-digit phone required'
+            );
+
+            return;
+
+          }
+
+
+          if(
+            password.length <
+            4
+          ){
+
+            showAuthAlert(
+              'Password min 4 chars'
+            );
+
+            return;
+
+          }
+
+
+          const key =
+            accountKey(
+              country,
+              phone
+            );
+
+
+          const accounts =
+            loadAccounts();
+
+
+          /* REGISTER */
+
+          if(
+            authMode ===
+            'register'
+          ){
+
+            const confirm =
+              document
+                .getElementById(
+                  'confirmPasswordInput'
+                )
+                .value;
+
+
+            if(
+              password !==
+              confirm
+            ){
+
+              showAuthAlert(
+                'Passwords do not match'
+              );
+
+              return;
+
+            }
+
+
+            if(
+              accounts[key]
+            ){
+
+              showAuthAlert(
+                'This phone number is already registered'
+              );
+
+              return;
+
+            }
+
+
+            accounts[key] = {
+
+              phone:key,
+
+              country,
+
+              password,
+
+              balance:0,
+
+              demoBalance:10000,
+
+              betHistory:[],
+
+              createdAt:Date.now()
+
+            };
+
+
+            saveAccounts(
+              accounts
+            );
+
+
+            createSession(
+              accounts[key]
+            );
+
+
+            localStorage.setItem(
+              LS_DEMO,
+              isDemo
+                ? 'true'
+                : 'false'
+            );
+
+
+            showAuthAlert(
+              isDemo
+                ? 'Account created. Demo mode active.'
+                : 'Account created successfully.',
+              'success'
+            );
+
+
+            setTimeout(
+              showGame,
+              500
+            );
+
+
+            return;
+
+          }
+
+
+          /* LOGIN */
+
+          const account =
+            accounts[key];
+
+
+          if(!account){
+
+            showAuthAlert(
+              'Account not found. Please register first.'
+            );
+
+            return;
+
+          }
+
+
+          if(
+            account.password !==
+            password
+          ){
+
+            showAuthAlert(
+              'Incorrect password'
+            );
+
+            return;
+
+          }
+
+
+          createSession(
+            account
+          );
+
+
+          localStorage.setItem(
+            LS_DEMO,
+            isDemo
+              ? 'true'
+              : 'false'
+          );
+
+
+          showAuthAlert(
+            isDemo
+              ? 'Demo login successful — 10,000 KES virtual balance.'
+              : 'Logged in successfully.',
+            'success'
+          );
+
+
+          setTimeout(
+            showGame,
+            400
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       SHOW LOGIN
+    ========================================== */
+
+    function showLogin(){
+
+      loginView.classList.remove(
+        'hidden'
+      );
+
+      gameView.classList.add(
+        'hidden'
+      );
+
+
+      if(socket){
+
+        socket.disconnect();
+
+        socket =
+          null;
+
+      }
+
+
+      if(pollTimer){
+
+        clearInterval(
+          pollTimer
+        );
+
+        pollTimer =
+          null;
+
+      }
+
+
+      setAuthMode(
+        'login'
+      );
+
+    }
+
+
+    /* ==========================================
+       SHOW GAME
+    ========================================== */
+
+    function showGame(){
+
+      loginView.classList.add(
+        'hidden'
+      );
+
+      gameView.classList.remove(
+        'hidden'
+      );
+
+
+      updateBalanceUI();
+
+
+      demoIndicator.classList.toggle(
+        'hidden',
+        !isDemo
+      );
+
+
+      renderBetsList();
+
+
+      requestAnimationFrame(
+        ()=>{
+
+          resizeCanvas();
+
+          connectSignals();
+
+        }
+      );
+
+    }
+
+
+    /* ==========================================
+       DEPOSIT MODAL
+    ========================================== */
+
+    const depositModal =
+      document.getElementById(
+        'depositModal'
+      );
+
+    const demoDepositArea =
+      document.getElementById(
+        'demoDepositArea'
+      );
+
+    const realDepositMessage =
+      document.getElementById(
+        'realDepositMessage'
+      );
+
+
+    document
+      .getElementById(
+        'depositBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          demoDepositArea.classList.toggle(
+            'hidden',
+            !isDemo
+          );
+
+          realDepositMessage.classList.toggle(
+            'hidden',
+            isDemo
+          );
+
+          depositModal.classList.remove(
+            'hidden'
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'closeDepositBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          depositModal.classList.add(
+            'hidden'
+          );
+
+        }
+      );
+
+
+    document
+      .querySelectorAll(
+        '.deposit-option'
+      )
+      .forEach(
+        button=>{
+
+          button.addEventListener(
+            'click',
+            ()=>{
+
+              if(!isDemo){
+
+                showGameNotice(
+                  'Real deposits are not enabled in this frontend version.',
+                  'error'
+                );
+
+                depositModal.classList.add(
+                  'hidden'
+                );
+
+                return;
+
+              }
+
+
+              const amount =
+                Number(
+                  button.dataset.deposit
+                );
+
+
+              currentUser.demoBalance =
+                Number(
+                  currentUser.demoBalance ||
+                  0
+                ) + amount;
+
+
+              saveCurrentUser();
+
+              updateBalanceUI();
+
+
+              depositModal.classList.add(
+                'hidden'
+              );
+
+
+              showGameNotice(
+                '+' +
+                amount.toLocaleString(
+                  'en-KE'
+                ) +
+                ' KES test balance added',
+                'success'
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'customDepositBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          if(!isDemo){
+
+            return;
+
+          }
+
+
+          const input =
+            document.getElementById(
+              'customDepositInput'
+            );
+
+
+          const amount =
+            Number(
+              input.value
+            );
+
+
+          if(
+            !Number.isFinite(amount) ||
+            amount <= 0
+          ){
+
+            return;
+
+          }
+
+
+          currentUser.demoBalance =
+            Number(
+              currentUser.demoBalance ||
+              0
+            ) + amount;
+
+
+          saveCurrentUser();
+
+          updateBalanceUI();
+
+
+          input.value =
+            '';
+
+
+          depositModal.classList.add(
+            'hidden'
+          );
+
+
+          showGameNotice(
+            '+' +
+            amount.toLocaleString(
+              'en-KE'
+            ) +
+            ' KES test balance added',
+            'success'
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       LOGOUT
+    ========================================== */
+
+    const logoutModal =
+      document.getElementById(
+        'logoutModal'
+      );
+
+
+    document
+      .getElementById(
+        'goBackBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.remove(
+            'hidden'
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'cancelLogoutBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'confirmLogoutBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+          localStorage.removeItem(
+            LS_USER
+          );
+
+          currentUser =
+            null;
+
+          showLogin();
+
+        }
+      );
+
+
+    /* ==========================================
+       MODAL BACKDROP CLOSE
+    ========================================== */
+
+    depositModal.addEventListener(
+      'click',
+      e=>{
+
+        if(
+          e.target ===
+          depositModal
+        ){
+
+          depositModal.classList.add(
+            'hidden'
+          );
+
+        }
+
+      }
+    );
+
+
+    logoutModal.addEventListener(
+      'click',
+      e=>{
+
+        if(
+          e.target ===
+          logoutModal
+        ){
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+        }
+
+      }
+    );
+
+
+    /* ==========================================
+       INITIALIZATION
+    ========================================== */
+
+    function init(){
+
+      if(isDemo){
+
+        document
+          .getElementById(
+            'demoToggle'
+          )
+          .classList.add(
+            'on'
+          );
+
+        document
+          .getElementById(
+            'demoStatus'
+          )
+          .classList.remove(
+            'hidden'
+          );
+
+      }
+
+
+      const saved =
+        localStorage.getItem(
+          LS_USER
+        );
+
+
+      if(saved){
+
+        try{
+
+          const session =
+            JSON.parse(
+              saved
+            );
+
+
+          const accounts =
+            loadAccounts();
+
+
+          /*
+           * Only restore the session if
+           * the account actually exists.
+           */
+
+          if(
+            session &&
+            session.phone &&
+            accounts[session.phone]
+          ){
+
+            const account =
+              accounts[
+                session.phone
+              ];
+
+
+            createSession(
+              account
+            );
+
+
+            showGame();
+
+
+          }else{
+
+            localStorage.removeItem(
+              LS_USER
+            );
+
+            showLogin();
+
+          }
+
+        }catch{
+
+          localStorage.removeItem(
+            LS_USER
+          );
+
+          showLogin();
+
+        }
+
+      }else{
+
+        showLogin();
+
+      }
+
+    }
+
+
+    /* ==========================================
+       ANIMATION LOOP
+    ========================================== */
+
+    function loop(){
+
+      if(
+        currentPhase ===
+        'running'
+      ){
+
+        drawScene();
+
+        checkAutoCashouts();
+
+      }
+
+
+      requestAnimationFrame(
+        loop
+      );
+
+    }
+
+
+    requestAnimationFrame(
+      loop
+    );
+
+
+    /* START */
+
+    init();
+
+  </script>
+
 </body>
   </html>
