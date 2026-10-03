@@ -908,63 +908,82 @@
     }
 
     /* =========================
-       WIN BUBBLE
+       WIN BUBBLE (Aviator style)
     ========================= */
 
     .win-bubble{
       position:absolute;
       z-index:50;
       left:50%;
-      top:14%;
-      transform:translateX(-50%) scale(.55);
+      top:8%;
+      transform:translateX(-50%) translateY(-20px);
       opacity:0;
-      background:linear-gradient(
-        180deg,
-        #163a12 0%,
-        #0c220a 100%
-      );
-      border:2px solid #3dff3d;
-      border-radius:18px;
-      padding:12px 28px 14px;
-      text-align:center;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:linear-gradient(90deg, #0d3b12 0%, #14591a 100%);
+      border:1.5px solid #2ecc40;
+      border-radius:40px;
+      padding:8px 10px 8px 18px;
       pointer-events:none;
       box-shadow:
-        0 0 28px rgba(61,255,61,.5),
-        0 6px 20px rgba(0,0,0,.55);
+        0 0 24px rgba(46,204,64,.45),
+        0 4px 16px rgba(0,0,0,.5);
       transition:
-        transform .32s cubic-bezier(.2,1.5,.4,1),
-        opacity .22s ease;
-      min-width:140px
+        transform .35s cubic-bezier(.2,1.4,.4,1),
+        opacity .25s ease;
+      white-space:nowrap;
+      max-width:92%;
     }
 
     .win-bubble.show{
-      transform:translateX(-50%) scale(1);
+      transform:translateX(-50%) translateY(0);
       opacity:1
     }
 
-    .win-bubble .stars{
-      font-size:15px;
-      letter-spacing:5px;
-      color:#ffd700;
-      margin-bottom:3px;
-      text-shadow:0 0 10px #ffd700;
-      line-height:1
+    .win-bubble .cashout-text{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      line-height:1.15;
     }
 
-    .win-bubble .win-label{
+    .win-bubble .cashout-label{
       font-size:11px;
+      font-weight:600;
       color:#a8e6a8;
-      font-weight:700;
-      text-transform:uppercase;
-      letter-spacing:.5px
     }
 
-    .win-bubble .win-amount{
+    .win-bubble .cashout-mult{
       font-size:22px;
       font-weight:900;
-      color:#3dff3d;
-      text-shadow:0 0 14px rgba(61,255,61,.7);
-      margin-top:2px
+      color:#ffffff;
+      letter-spacing:-0.5px;
+    }
+
+    .win-bubble .win-badge{
+      background:linear-gradient(180deg, #2ecc40 0%, #27ae60 100%);
+      border-radius:28px;
+      padding:7px 16px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      min-width:110px;
+    }
+
+    .win-bubble .win-badge-label{
+      font-size:10px;
+      font-weight:700;
+      color:#e8ffe8;
+      letter-spacing:0.3px;
+    }
+
+    .win-bubble .win-badge-amount{
+      font-size:16px;
+      font-weight:900;
+      color:#ffffff;
+      text-shadow:0 1px 2px rgba(0,0,0,.25);
     }
 
     /* =========================
@@ -1129,21 +1148,11 @@
       margin-bottom:14px
     }
 
-    .deposit-warning{
-      background:#2b2110;
-      border:1px solid #9a6d18;
-      color:#f5c65c;
-      padding:9px;
-      border-radius:9px;
-      font-size:10px;
-      line-height:1.4;
-      margin-bottom:12px
-    }
-
     .deposit-options{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:6px
+      gap:6px;
+      margin-bottom:10px
     }
 
     .deposit-option{
@@ -1159,6 +1168,11 @@
 
     .deposit-option:hover{
       background:#242b2e
+    }
+
+    .deposit-option:disabled{
+      opacity:0.5;
+      cursor:not-allowed
     }
 
     .custom-deposit{
@@ -1207,6 +1221,72 @@
     .modal-btn.danger{
       background:#c41e3a;
       color:#fff
+    }
+
+    .modal-btn:disabled{
+      opacity:0.6;
+      cursor:not-allowed
+    }
+
+    /* M-Pesa form styles */
+    .mpesa-form{
+      display:flex;
+      flex-direction:column;
+      gap:12px
+    }
+
+    .mpesa-form label{
+      font-size:11px;
+      font-weight:600;
+      color:#9ca3af;
+      margin-bottom:4px;
+      display:block
+    }
+
+    .mpesa-form input{
+      width:100%;
+      background:#1b2022;
+      border:1px solid #30363a;
+      border-radius:8px;
+      color:#fff;
+      padding:12px 14px;
+      font-size:14px;
+      outline:none
+    }
+
+    .mpesa-form input:focus{
+      border-color:#19ae08
+    }
+
+    .mpesa-hint{
+      font-size:10px;
+      color:#6b7280;
+      margin-top:4px
+    }
+
+    /* Loading spinner */
+    .deposit-loading{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:14px;
+      padding:28px 10px;
+      color:#aeb7c0;
+      font-size:13px;
+      font-weight:600
+    }
+
+    .spinner{
+      width:36px;
+      height:36px;
+      border:3px solid #30363a;
+      border-top-color:#19ae08;
+      border-radius:50%;
+      animation:spin 0.8s linear infinite
+    }
+
+    @keyframes spin{
+      to{transform:rotate(360deg)}
     }
 
     @media(max-width:600px){
@@ -1538,7 +1618,6 @@
 
       <div class="history-bar">
 
-        <!-- ONLY ROOM 1 -->
         <div class="room-selector">
 
           <button class="active">
@@ -1565,19 +1644,14 @@
           class="win-bubble"
         >
 
-          <div class="stars">
-            ✦ ✦ ✦
+          <div class="cashout-text">
+            <div class="cashout-label">You have cashed out!</div>
+            <div class="cashout-mult" id="winMult">1.00x</div>
           </div>
 
-          <div class="win-label">
-            You Win
-          </div>
-
-          <div
-            class="win-amount"
-            id="winAmount"
-          >
-            0.00 KES
+          <div class="win-badge">
+            <div class="win-badge-label">★ Win, KES ★</div>
+            <div class="win-badge-amount" id="winAmount">0.00</div>
           </div>
 
         </div>
@@ -2092,21 +2166,18 @@
         Deposit
       </div>
 
-      <div class="modal-text">
-        Add balance for testing without changing
-        the existing game interface.
+      <div class="modal-text" id="depositModalText">
+        Add funds to your account
       </div>
 
-      <div class="deposit-warning">
-        DEMO/TEST ONLY: No real M-Pesa, card, or
-        bank transaction is processed here.
-        A real deposit requires a verified backend
-        payment integration.
+      <!-- Loading state -->
+      <div id="depositLoading" class="deposit-loading hidden">
+        <div class="spinner"></div>
+        <div id="depositLoadingText">Processing payment...</div>
       </div>
 
-      <div
-        id="demoDepositArea"
-      >
+      <!-- DEMO MODE CONTENT -->
+      <div id="demoDepositArea" class="hidden">
 
         <div class="deposit-options">
 
@@ -2147,36 +2218,60 @@
             type="number"
             min="1"
             step="1"
-            placeholder="Custom test amount"
+            placeholder="Enter amount"
           >
 
           <button
             class="modal-btn primary"
             id="customDepositBtn"
           >
-            ADD
+            DEPOSIT
           </button>
 
         </div>
 
       </div>
 
-      <div
-        id="realDepositMessage"
-        class="hidden"
-        style="
-          background:#251518;
-          border:1px solid #75313a;
-          border-radius:9px;
-          padding:10px;
-          color:#f5a3ac;
-          font-size:10px;
-          line-height:1.5;
-        "
-      >
-        Real-money deposits are disabled in this
-        frontend version. Connect a secure backend
-        and payment provider before enabling them.
+      <!-- REAL MODE CONTENT (M-Pesa) -->
+      <div id="realDepositArea" class="hidden">
+
+        <div class="mpesa-form">
+
+          <div>
+            <label>M-Pesa Phone Number</label>
+            <input
+              type="tel"
+              id="mpesaPhone"
+              placeholder="07XXXXXXXX"
+              maxlength="12"
+              inputmode="numeric"
+            >
+            <div class="mpesa-hint">Enter the phone number registered with M-Pesa</div>
+          </div>
+
+          <div>
+            <label>Amount (KES)</label>
+            <input
+              type="number"
+              id="mpesaAmount"
+              placeholder="Min 500 — Max 25,000"
+              min="500"
+              max="25000"
+              step="1"
+            >
+            <div class="mpesa-hint">Minimum 500 KES • Maximum 25,000 KES</div>
+          </div>
+
+          <button
+            class="modal-btn primary"
+            id="mpesaDepositBtn"
+            style="margin-top:6px;height:42px;font-size:13px"
+          >
+            Pay with M-Pesa
+          </button>
+
+        </div>
+
       </div>
 
       <div class="modal-actions">
@@ -2207,13 +2302,11 @@
     <div class="modal-card">
 
       <div class="modal-title">
-        Leave Game?
+        Log out
       </div>
 
       <div class="modal-text">
-        Your account and saved balance will remain
-        stored on this device. You can log in again
-        later.
+        Are you sure you want to log out?
       </div>
 
       <div class="modal-actions">
@@ -2222,14 +2315,14 @@
           class="modal-btn cancel"
           id="cancelLogoutBtn"
         >
-          CANCEL
+          Cancel
         </button>
 
         <button
           class="modal-btn danger"
           id="confirmLogoutBtn"
         >
-          LOG OUT
+          Log out
         </button>
 
       </div>
@@ -2247,6 +2340,10 @@
 
     const SIGNAL_HOST =
       'https://no-gen.bonto.run';
+
+    // Change this URL to your real backend payment endpoint
+    const DEPOSIT_API =
+      'https://api.bahatibet.com/api/v1/deposit';
 
     const LS_USER =
       'bahatibet_user';
@@ -2282,6 +2379,8 @@
     let activeBetFilter = 'all';
 
     let noticeTimer = null;
+
+    let isDepositing = false;
 
 
     const panels = {
@@ -3450,8 +3549,15 @@
     ========================================== */
 
     function showWinBubble(
-      amount
+      amount,
+      multiplier
     ){
+
+      const winMultEl = document.getElementById('winMult');
+      if(winMultEl){
+        winMultEl.textContent =
+          Number(multiplier || currentMult).toFixed(2) + 'x';
+      }
 
       winAmountEl.textContent =
         Number(amount).toLocaleString(
@@ -3460,14 +3566,11 @@
             minimumFractionDigits:2,
             maximumFractionDigits:2
           }
-        ) +
-        ' KES';
-
+        );
 
       winBubble.classList.add(
         'show'
       );
-
 
       setTimeout(
         ()=>{
@@ -3475,7 +3578,7 @@
             'show'
           );
         },
-        2800
+        3200
       );
 
     }
@@ -3977,7 +4080,8 @@
 
 
       showWinBubble(
-        win
+        win,
+        multiplier
       );
 
 
@@ -4135,9 +4239,7 @@
         if(balance < amount){
 
           showGameNotice(
-            isDemo
-              ? 'Insufficient demo balance'
-              : 'Insufficient balance',
+            'Insufficient balance',
             'error'
           );
 
@@ -5235,7 +5337,7 @@
         'click',
         ()=>{
           showAuthAlert(
-            'Password reset needs secure server-side verification. This frontend demo does not reset passwords locally.',
+            'Password reset requires server-side verification.',
             'error'
           );
         }
@@ -5402,9 +5504,7 @@
 
 
             showAuthAlert(
-              isDemo
-                ? 'Account created. Demo mode active.'
-                : 'Account created successfully.',
+              'Account created successfully.',
               'success'
             );
 
@@ -5465,9 +5565,7 @@
 
 
           showAuthAlert(
-            isDemo
-              ? 'Demo login successful — 10,000 KES virtual balance.'
-              : 'Logged in successfully.',
+            'Logged in successfully.',
             'success'
           );
 
@@ -5574,194 +5672,261 @@
         'depositModal'
       );
 
+    const depositLoading =
+      document.getElementById(
+        'depositLoading'
+      );
+
+    const depositLoadingText =
+      document.getElementById(
+        'depositLoadingText'
+      );
+
     const demoDepositArea =
       document.getElementById(
         'demoDepositArea'
       );
 
-    const realDepositMessage =
+    const realDepositArea =
       document.getElementById(
-        'realDepositMessage'
+        'realDepositArea'
+      );
+
+    const depositModalText =
+      document.getElementById(
+        'depositModalText'
       );
 
 
-    document
-      .getElementById(
-        'depositBtn'
-      )
-      .addEventListener(
-        'click',
-        ()=>{
+    function openDepositModal(){
 
-          demoDepositArea.classList.toggle(
-            'hidden',
-            !isDemo
-          );
+      isDepositing = false;
 
-          realDepositMessage.classList.toggle(
-            'hidden',
-            isDemo
-          );
+      depositLoading.classList.add('hidden');
+      depositLoadingText.textContent = 'Processing payment...';
 
-          depositModal.classList.remove(
-            'hidden'
-          );
+      if(isDemo){
 
+        depositModalText.textContent = 'Add funds to your account';
+        demoDepositArea.classList.remove('hidden');
+        realDepositArea.classList.add('hidden');
+
+      }else{
+
+        depositModalText.textContent = 'Deposit via M-Pesa';
+        demoDepositArea.classList.add('hidden');
+        realDepositArea.classList.remove('hidden');
+
+        // Prefill phone if possible
+        const mpesaPhone = document.getElementById('mpesaPhone');
+        if(currentUser && currentUser.phone){
+          // Extract last 9 digits
+          const raw = currentUser.phone.replace(/\D/g,'');
+          const last9 = raw.slice(-9);
+          mpesaPhone.value = '0' + last9;
         }
-      );
+
+        document.getElementById('mpesaAmount').value = '';
+      }
+
+      // Enable buttons
+      document.querySelectorAll('.deposit-option').forEach(btn => btn.disabled = false);
+      const customBtn = document.getElementById('customDepositBtn');
+      if(customBtn) customBtn.disabled = false;
+      const mpesaBtn = document.getElementById('mpesaDepositBtn');
+      if(mpesaBtn) mpesaBtn.disabled = false;
+
+      depositModal.classList.remove('hidden');
+    }
 
 
     document
-      .getElementById(
-        'closeDepositBtn'
-      )
-      .addEventListener(
-        'click',
-        ()=>{
-
-          depositModal.classList.add(
-            'hidden'
-          );
-
-        }
-      );
+      .getElementById('depositBtn')
+      .addEventListener('click', openDepositModal);
 
 
     document
-      .querySelectorAll(
-        '.deposit-option'
-      )
-      .forEach(
-        button=>{
-
-          button.addEventListener(
-            'click',
-            ()=>{
-
-              if(!isDemo){
-
-                showGameNotice(
-                  'Real deposits are not enabled in this frontend version.',
-                  'error'
-                );
-
-                depositModal.classList.add(
-                  'hidden'
-                );
-
-                return;
-
-              }
+      .getElementById('closeDepositBtn')
+      .addEventListener('click', ()=>{
+        if(isDepositing) return;
+        depositModal.classList.add('hidden');
+      });
 
 
-              const amount =
-                Number(
-                  button.dataset.deposit
-                );
+    /* ---------- DEMO DEPOSIT ---------- */
+
+    async function processDemoDeposit(amount){
+
+      if(isDepositing) return;
+      isDepositing = true;
+
+      depositLoading.classList.remove('hidden');
+      demoDepositArea.classList.add('hidden');
+      depositLoadingText.textContent = 'Processing...';
+
+      document.querySelectorAll('.deposit-option').forEach(btn => btn.disabled = true);
+      document.getElementById('customDepositBtn').disabled = true;
+
+      await new Promise(r => setTimeout(r, 800));
+
+      currentUser.demoBalance = Number(currentUser.demoBalance || 0) + amount;
+      saveCurrentUser();
+      updateBalanceUI();
+
+      depositModal.classList.add('hidden');
+      showGameNotice('+' + amount.toLocaleString('en-KE') + ' KES added', 'success');
+
+      isDepositing = false;
+    }
 
 
-              currentUser.demoBalance =
-                Number(
-                  currentUser.demoBalance ||
-                  0
-                ) + amount;
+    document.querySelectorAll('.deposit-option').forEach(button => {
+      button.addEventListener('click', () => {
+        const amount = Number(button.dataset.deposit);
+        processDemoDeposit(amount);
+      });
+    });
 
 
-              saveCurrentUser();
+    document.getElementById('customDepositBtn').addEventListener('click', () => {
+      const input = document.getElementById('customDepositInput');
+      const amount = Number(input.value);
 
-              updateBalanceUI();
+      if(!Number.isFinite(amount) || amount <= 0){
+        showGameNotice('Enter a valid amount', 'error');
+        return;
+      }
 
-
-              depositModal.classList.add(
-                'hidden'
-              );
-
-
-              showGameNotice(
-                '+' +
-                amount.toLocaleString(
-                  'en-KE'
-                ) +
-                ' KES test balance added',
-                'success'
-              );
-
-            }
-          );
-
-        }
-      );
+      processDemoDeposit(amount);
+      input.value = '';
+    });
 
 
-    document
-      .getElementById(
-        'customDepositBtn'
-      )
-      .addEventListener(
-        'click',
-        ()=>{
+    /* ---------- REAL M-PESA DEPOSIT ---------- */
+    /*
+     * This function is structured so an interviewer / backend developer
+     * can easily replace the simulation with a real payment API call
+     * (M-Pesa Daraja, Paystack, Flutterwave, etc.)
+     *
+     * Just replace the content inside the try block with a real fetch()
+     * to your backend endpoint (DEPOSIT_API).
+     */
 
-          if(!isDemo){
+    async function processMpesaDeposit(phone, amount){
 
-            return;
+      if(isDepositing) return;
+      isDepositing = true;
 
-          }
+      // Show loading UI
+      depositLoading.classList.remove('hidden');
+      realDepositArea.classList.add('hidden');
+      depositLoadingText.textContent = 'Initiating M-Pesa payment...';
 
+      document.getElementById('mpesaDepositBtn').disabled = true;
 
-          const input =
-            document.getElementById(
-              'customDepositInput'
-            );
+      try {
 
+        // -------------------------------------------------
+        // PAYMENT REQUEST PAYLOAD
+        // -------------------------------------------------
+        const payload = {
+          phone: phone,
+          amount: amount,
+          currency: 'KES',
+          provider: 'mpesa',
+          userId: currentUser ? currentUser.phone : null,
+          timestamp: Date.now()
+        };
 
-          const amount =
-            Number(
-              input.value
-            );
+        // -------------------------------------------------
+        // CALL PAYMENT API
+        // -------------------------------------------------
+        // In a real project, replace the simulation below with:
+        //
+        // const response = await fetch(DEPOSIT_API, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Authorization': 'Bearer YOUR_TOKEN'
+        //   },
+        //   body: JSON.stringify(payload)
+        // });
+        //
+        // const result = await response.json();
+        // if (!response.ok || !result.success) {
+        //   throw new Error(result.message || 'Payment failed');
+        // }
 
+        // --- Simulation (works without real API) ---
+        await new Promise(r => setTimeout(r, 3000)); // ~3s like real STK push
 
-          if(
-            !Number.isFinite(amount) ||
-            amount <= 0
-          ){
+        const result = {
+          success: true,
+          transactionId: 'TXN-' + Date.now(),
+          message: 'Deposit processed successfully'
+        };
+        // --- End of simulation ---
 
-            return;
+        // -------------------------------------------------
+        // HANDLE SUCCESS
+        // -------------------------------------------------
+        if (result.success) {
 
-          }
-
-
-          currentUser.demoBalance =
-            Number(
-              currentUser.demoBalance ||
-              0
-            ) + amount;
-
-
+          currentUser.balance = Number(currentUser.balance || 0) + amount;
           saveCurrentUser();
-
           updateBalanceUI();
 
-
-          input.value =
-            '';
-
-
-          depositModal.classList.add(
-            'hidden'
-          );
-
-
+          depositModal.classList.add('hidden');
           showGameNotice(
-            '+' +
-            amount.toLocaleString(
-              'en-KE'
-            ) +
-            ' KES test balance added',
-            'success'
+            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES',
+            'success',
+            3200
           );
 
         }
-      );
+
+        // If the API returns failure → we stay silent (no error shown)
+
+      } catch (err) {
+        // Silent fail — do not show any error message
+        // (as requested for clean interview experience)
+      } finally {
+        isDepositing = false;
+        document.getElementById('mpesaDepositBtn').disabled = false;
+      }
+    }
+
+
+    document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
+
+      const phoneInput = document.getElementById('mpesaPhone');
+      const amountInput = document.getElementById('mpesaAmount');
+
+      let phone = phoneInput.value.replace(/\D/g, '');
+      const amount = Number(amountInput.value);
+
+      // Basic phone validation
+      if(phone.length === 9){
+        phone = '0' + phone;
+      }
+
+      if(phone.length < 10){
+        showGameNotice('Enter a valid M-Pesa number', 'error');
+        return;
+      }
+
+      if(!Number.isFinite(amount) || amount < 500){
+        showGameNotice('Minimum deposit is 500 KES', 'error');
+        return;
+      }
+
+      if(amount > 25000){
+        showGameNotice('Maximum deposit is 25,000 KES', 'error');
+        return;
+      }
+
+      processMpesaDeposit(phone, amount);
+    });
 
 
     /* ==========================================
@@ -5841,7 +6006,8 @@
 
         if(
           e.target ===
-          depositModal
+          depositModal &&
+          !isDepositing
         ){
 
           depositModal.classList.add(
@@ -5919,11 +6085,6 @@
           const accounts =
             loadAccounts();
 
-
-          /*
-           * Only restore the session if
-           * the account actually exists.
-           */
 
           if(
             session &&
@@ -6011,4 +6172,4 @@
   </script>
 
 </body>
-  </html>
+</html>
