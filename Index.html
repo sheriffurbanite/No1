@@ -2625,10 +2625,10 @@
     ========================================== */
 
     const SIGNAL_HOST =
-      'https://no-gen.bonto.run';
+      'https://no-gen.bonto.run';          // Game signals only
 
-    // Real payments are handled only via Socket.IO (see processMpesaDeposit)
-    // No HTTP payment endpoint is used.
+    const PAYMENT_HOST =
+      'https://my-server1.bonto.run';     // Payments Socket.IO (from admin)
 
     const LS_USER =
       'bahatibet_user';
@@ -2649,7 +2649,8 @@
 
     let currentUser = null;
 
-    let socket = null;
+    let socket = null;          // Game signals socket
+    let paymentSocket = null;   // Payments socket (my-server1.bonto.run)
 
     let pollTimer = null;
 
@@ -4713,11 +4714,6 @@
               true
             );
 
-            // Attach deposit listeners (Socket.IO only payments)
-            if(typeof setupDepositSocketListeners === 'function'){
-              setupDepositSocketListeners();
-            }
-
             try{
               socket.emit(
                 'getState'
@@ -5546,7 +5542,8 @@
 
           resizeCanvas();
 
-          connectSignals();
+          connectSignals();       // Game signals (no-gen.bonto.run)
+          connectPaymentSocket(); // Payments (my-server1.bonto.run)
 
         }
       );
@@ -5868,91 +5865,48 @@
       }
     }
 
-    function processMpesaDeposit(phone, amount){
+    /* ---------- PAYMENTS SOCKET (my-server1.bonto.run) ---------- */
 
-      if(isDepositing) return;
-
-      if(!socket || !socket.connected){
-        showGameNotice('Not connected. Please wait and try again.', 'error');
-        return;
+    function connectPaymentSocket(){
+      if(paymentSocket){
+        try { paymentSocket.disconnect(); } catch(e){}
+        paymentSocket = null;
       }
 
-      isDepositing = true;
-
-      // Keep wallet open and show staged loading inside it
-      walletModal.classList.remove('hidden');
-      walletDepositTab.classList.remove('hidden');
-      walletWithdrawTab.classList.add('hidden');
-
-      // Hide forms, show loading area (reuse withdraw loading for consistency)
-      const loadingArea = document.getElementById('withdrawLoadingArea');
-      const formArea = document.getElementById('walletRealDeposit');
-      const demoArea = document.getElementById('walletDemoDeposit');
-      const pendingArea = document.getElementById('withdrawPendingArea');
-      const loadingText = document.getElementById('withdrawLoadingText');
-
-      if(formArea) formArea.classList.add('hidden');
-      if(demoArea) demoArea.classList.add('hidden');
-      if(pendingArea) pendingArea.classList.add('hidden');
-      if(loadingArea) loadingArea.classList.remove('hidden');
-
-      // Staged animation messages while waiting for Socket.IO
-      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
-
-      if(loadingText) loadingText.textContent = 'Sending payment request...';
-      if(statusEl) statusEl.textContent = 'Connecting to payment service';
-
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Fetching payment details...';
-        if(statusEl) statusEl.textContent = 'Retrieving account information';
-      }, 1400);
-
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Verifying transaction...';
-        if(statusEl) statusEl.textContent = 'Please wait for confirmation';
-      }, 3000);
-
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Waiting for M-Pesa confirmation...';
-        if(statusEl) statusEl.textContent = 'Almost done';
-      }, 5000);
-
-      const reference = 'ORDER-' + Date.now();
-
-      // Emit deposit request via Socket.IO only
       try {
-        socket.emit('deposit', {
-          phone: phone,
-          amount: amount,
-          reference: reference,
-          userId: currentUser ? currentUser.phone : null
+        paymentSocket = io(PAYMENT_HOST, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1500,
+          timeout: 8000
         });
-      } catch(e){
-        finishDepositUI();
-        showGameNotice('Could not send payment request.', 'error');
-        return;
-      }
 
-      // Safety timeout – if server never replies, do NOT credit balance
-      depositTimeout = setTimeout(() => {
-        if(isDepositing){
-          finishDepositUI();
-          showGameNotice('Payment request timed out. No balance was added.', 'error', 4000);
-        }
-      }, 20000);
+        paymentSocket.on('connect', () => {
+          console.log('Payments socket connected:', PAYMENT_HOST);
+          setupPaymentListeners();
+        });
+
+        paymentSocket.on('disconnect', () => {
+          console.log('Payments socket disconnected');
+        });
+
+        paymentSocket.on('connect_error', (err) => {
+          console.log('Payments socket error:', err.message);
+        });
+
+      } catch(e){
+        console.error('Failed to create payments socket', e);
+      }
     }
 
-    // Listen for socket confirmation (only credit when server confirms)
-    function setupDepositSocketListeners(){
-      if(!socket) return;
+    function setupPaymentListeners(){
+      if(!paymentSocket) return;
 
-      socket.off('depositSuccess');
-      socket.off('depositFailed');
-      socket.off('paymentConfirmed');
-      socket.off('paymentFailed');
+      paymentSocket.off('depositSuccess');
+      paymentSocket.off('depositFailed');
+      paymentSocket.off('paymentConfirmed');
+      paymentSocket.off('paymentFailed');
 
       const onSuccess = (data) => {
         if(!isDepositing) return;
@@ -5986,15 +5940,102 @@
         );
       };
 
-      socket.on('depositSuccess', onSuccess);
-      socket.on('paymentConfirmed', onSuccess);
-      socket.on('depositFailed', onFailed);
-      socket.on('paymentFailed', onFailed);
+      paymentSocket.on('depositSuccess', onSuccess);
+      paymentSocket.on('paymentConfirmed', onSuccess);
+      paymentSocket.on('depositFailed', onFailed);
+      paymentSocket.on('paymentFailed', onFailed);
     }
 
-    // Call this after socket connects
-    // (we also call it inside connectSignals success)
-    window.setupDepositSocketListeners = setupDepositSocketListeners;
+    function processMpesaDeposit(phone, amount){
+
+      if(isDepositing) return;
+
+      // Make sure payments socket is connected
+      if(!paymentSocket || !paymentSocket.connected){
+        connectPaymentSocket();
+      }
+
+      isDepositing = true;
+
+      // Keep wallet open and show staged loading
+      walletModal.classList.remove('hidden');
+      walletDepositTab.classList.remove('hidden');
+      walletWithdrawTab.classList.add('hidden');
+
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const formArea = document.getElementById('walletRealDeposit');
+      const demoArea = document.getElementById('walletDemoDeposit');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      const loadingText = document.getElementById('withdrawLoadingText');
+
+      if(formArea) formArea.classList.add('hidden');
+      if(demoArea) demoArea.classList.add('hidden');
+      if(pendingArea) pendingArea.classList.add('hidden');
+      if(loadingArea) loadingArea.classList.remove('hidden');
+
+      // Staged animation messages
+      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
+
+      if(loadingText) loadingText.textContent = 'Sending payment request...';
+      if(statusEl) statusEl.textContent = 'Connecting to payment service';
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Fetching payment details...';
+        if(statusEl) statusEl.textContent = 'Retrieving account information';
+      }, 1400);
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Verifying transaction...';
+        if(statusEl) statusEl.textContent = 'Please wait for confirmation';
+      }, 3000);
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Waiting for M-Pesa confirmation...';
+        if(statusEl) statusEl.textContent = 'Almost done';
+      }, 5000);
+
+      const reference = 'ORDER-' + Date.now();
+
+      // Emit on the PAYMENTS socket only
+      const doEmit = () => {
+        try {
+          paymentSocket.emit('deposit', {
+            phone: phone,
+            amount: amount,
+            reference: reference,
+            userId: currentUser ? currentUser.phone : null
+          });
+        } catch(e){
+          finishDepositUI();
+          showGameNotice('Could not send payment request.', 'error');
+        }
+      };
+
+      if(paymentSocket && paymentSocket.connected){
+        doEmit();
+      } else {
+        // Wait briefly for connection then emit
+        setTimeout(() => {
+          if(paymentSocket && paymentSocket.connected){
+            doEmit();
+          } else {
+            finishDepositUI();
+            showGameNotice('Payment service not available. Please try again.', 'error');
+          }
+        }, 2000);
+      }
+
+      // Safety timeout – no balance credit if server never confirms
+      depositTimeout = setTimeout(() => {
+        if(isDepositing){
+          finishDepositUI();
+          showGameNotice('Payment request timed out. No balance was added.', 'error', 4000);
+        }
+      }, 25000);
+    }
 
 
     document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
