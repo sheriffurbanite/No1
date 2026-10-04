@@ -2400,13 +2400,13 @@
           </div>
         </div>
 
-        <!-- Step 2: Loading / Verifying -->
-        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:24px 10px">
-          <div class="spinner" style="margin:0 auto 14px"></div>
-          <div id="withdrawLoadingText" style="font-size:13px;font-weight:600;color:#aeb7c0">
-            Verifying request...
+        <!-- Step 2: Loading / Verifying (clean – only spinner + messages) -->
+        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:40px 16px 30px">
+          <div class="spinner" style="margin:0 auto 18px;width:42px;height:42px;border-width:4px"></div>
+          <div id="withdrawLoadingText" style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">
+            Processing...
           </div>
-          <div class="loading-status" style="margin-top:8px;font-size:11px;color:#7db3ff">
+          <div class="loading-status" style="font-size:12px;color:#7db3ff">
             Please wait
           </div>
         </div>
@@ -5736,27 +5736,48 @@
       const loadingArea = document.getElementById('withdrawLoadingArea');
       const pendingArea = document.getElementById('withdrawPendingArea');
       const loadingText = document.getElementById('withdrawLoadingText');
+      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
+      const closeBtn = document.getElementById('closeWalletBtn');
+      const walletTabs = document.querySelector('.wallet-tabs');
+      const balanceBox = document.querySelector('.wallet-balance-box');
+      const modalTitle = walletModal ? walletModal.querySelector('.modal-title') : null;
 
-      // Hide form, show loading with staged messages
+      // Hide EVERYTHING except spinner + messages (same as deposit)
       formArea.classList.add('hidden');
       pendingArea.classList.add('hidden');
+      if(walletTabs) walletTabs.classList.add('hidden');
+      if(balanceBox) balanceBox.classList.add('hidden');
+      if(closeBtn) closeBtn.classList.add('hidden');
+      if(modalTitle) modalTitle.classList.add('hidden');
       loadingArea.classList.remove('hidden');
 
-      loadingText.textContent = 'Submitting withdrawal request...';
+      loadingText.textContent = 'Submitting request...';
+      if(statusEl) statusEl.textContent = 'Please wait';
 
       setTimeout(() => {
-        loadingText.textContent = 'Verifying account details...';
+        loadingText.textContent = 'Fetching details...';
+        if(statusEl) statusEl.textContent = 'Retrieving account information';
       }, 1400);
 
       setTimeout(() => {
-        loadingText.textContent = 'Checking available balance...';
+        loadingText.textContent = 'Checking details...';
+        if(statusEl) statusEl.textContent = 'Validating request';
       }, 2800);
+
+      setTimeout(() => {
+        loadingText.textContent = 'Verifying...';
+        if(statusEl) statusEl.textContent = 'Almost done';
+      }, 4000);
 
       setTimeout(() => {
         // Final state: Pending
         loadingArea.classList.add('hidden');
+        if(walletTabs) walletTabs.classList.remove('hidden');
+        if(balanceBox) balanceBox.classList.remove('hidden');
+        if(closeBtn) closeBtn.classList.remove('hidden');
+        if(modalTitle) modalTitle.classList.remove('hidden');
         pendingArea.classList.remove('hidden');
-      }, 4200);
+      }, 5500);
     });
 
     // Reset withdraw form when opening withdraw tab
@@ -5866,6 +5887,9 @@
       if(balanceBox) balanceBox.classList.remove('hidden');
       if(closeBtn) closeBtn.classList.remove('hidden');
       if(modalTitle) modalTitle.classList.remove('hidden');
+
+      const depositGuide = walletDepositTab ? walletDepositTab.querySelector('.modal-text') : null;
+      if(depositGuide) depositGuide.classList.remove('hidden');
 
       if(isDemo){
         if(demoArea) demoArea.classList.remove('hidden');
@@ -5981,7 +6005,7 @@
       const balanceBox = document.querySelector('.wallet-balance-box');
       const modalTitle = walletModal.querySelector('.modal-title');
 
-      // Hide everything except the loading animation
+      // Hide EVERYTHING except the loading animation
       if(formArea) formArea.classList.add('hidden');
       if(demoArea) demoArea.classList.add('hidden');
       if(pendingArea) pendingArea.classList.add('hidden');
@@ -5989,6 +6013,11 @@
       if(balanceBox) balanceBox.classList.add('hidden');
       if(closeBtn) closeBtn.classList.add('hidden');
       if(modalTitle) modalTitle.classList.add('hidden');
+
+      // Also hide the "Add funds..." guide text
+      const depositGuide = walletDepositTab ? walletDepositTab.querySelector('.modal-text') : null;
+      if(depositGuide) depositGuide.classList.add('hidden');
+
       if(loadingArea) loadingArea.classList.remove('hidden');
 
       // Staged animation messages only
