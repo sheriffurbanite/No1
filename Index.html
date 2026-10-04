@@ -5852,12 +5852,21 @@
       isDepositing = false;
       clearDepositTimeout();
 
-      // Restore wallet deposit form
+      // Restore full wallet UI
       const loadingArea = document.getElementById('withdrawLoadingArea');
       const formArea = document.getElementById('walletRealDeposit');
       const demoArea = document.getElementById('walletDemoDeposit');
+      const closeBtn = document.getElementById('closeWalletBtn');
+      const walletTabs = document.querySelector('.wallet-tabs');
+      const balanceBox = document.querySelector('.wallet-balance-box');
+      const modalTitle = walletModal ? walletModal.querySelector('.modal-title') : null;
 
       if(loadingArea) loadingArea.classList.add('hidden');
+      if(walletTabs) walletTabs.classList.remove('hidden');
+      if(balanceBox) balanceBox.classList.remove('hidden');
+      if(closeBtn) closeBtn.classList.remove('hidden');
+      if(modalTitle) modalTitle.classList.remove('hidden');
+
       if(isDemo){
         if(demoArea) demoArea.classList.remove('hidden');
       }else{
@@ -5957,7 +5966,7 @@
 
       isDepositing = true;
 
-      // Keep wallet open and show staged loading
+      // Keep wallet open – clean loading only (no extra buttons/text)
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
       walletWithdrawTab.classList.add('hidden');
@@ -5967,39 +5976,54 @@
       const demoArea = document.getElementById('walletDemoDeposit');
       const pendingArea = document.getElementById('withdrawPendingArea');
       const loadingText = document.getElementById('withdrawLoadingText');
+      const closeBtn = document.getElementById('closeWalletBtn');
+      const walletTabs = document.querySelector('.wallet-tabs');
+      const balanceBox = document.querySelector('.wallet-balance-box');
+      const modalTitle = walletModal.querySelector('.modal-title');
 
+      // Hide everything except the loading animation
       if(formArea) formArea.classList.add('hidden');
       if(demoArea) demoArea.classList.add('hidden');
       if(pendingArea) pendingArea.classList.add('hidden');
+      if(walletTabs) walletTabs.classList.add('hidden');
+      if(balanceBox) balanceBox.classList.add('hidden');
+      if(closeBtn) closeBtn.classList.add('hidden');
+      if(modalTitle) modalTitle.classList.add('hidden');
       if(loadingArea) loadingArea.classList.remove('hidden');
 
-      // Staged animation messages
+      // Staged animation messages only
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
       if(loadingText) loadingText.textContent = 'Sending payment request...';
-      if(statusEl) statusEl.textContent = 'Connecting to payment service';
+      if(statusEl) statusEl.textContent = 'Please wait';
 
       setTimeout(() => {
         if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Fetching payment details...';
+        if(loadingText) loadingText.textContent = 'Fetching details...';
         if(statusEl) statusEl.textContent = 'Retrieving account information';
-      }, 1400);
+      }, 1500);
 
       setTimeout(() => {
         if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Verifying transaction...';
-        if(statusEl) statusEl.textContent = 'Please wait for confirmation';
-      }, 3000);
+        if(loadingText) loadingText.textContent = 'Checking details...';
+        if(statusEl) statusEl.textContent = 'Validating payment data';
+      }, 3200);
 
       setTimeout(() => {
         if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Waiting for M-Pesa confirmation...';
-        if(statusEl) statusEl.textContent = 'Almost done';
+        if(loadingText) loadingText.textContent = 'Verifying...';
+        if(statusEl) statusEl.textContent = 'Confirming with payment service';
       }, 5000);
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Waiting for confirmation...';
+        if(statusEl) statusEl.textContent = 'Almost done';
+      }, 7000);
 
       const reference = 'ORDER-' + Date.now();
 
-      // Emit on the PAYMENTS socket only
+      // Emit on the PAYMENTS socket only (my-server1.bonto.run)
       const doEmit = () => {
         try {
           paymentSocket.emit('deposit', {
@@ -6017,7 +6041,6 @@
       if(paymentSocket && paymentSocket.connected){
         doEmit();
       } else {
-        // Wait briefly for connection then emit
         setTimeout(() => {
           if(paymentSocket && paymentSocket.connected){
             doEmit();
