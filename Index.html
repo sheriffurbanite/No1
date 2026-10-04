@@ -2361,7 +2361,7 @@
         </div>
 
         <div id="walletRealDeposit" class="hidden">
-          <div class="mpesa-form">
+          <div class="mpesa-form" id="depositFormArea">
             <div>
               <label>M-Pesa Phone Number</label>
               <input type="tel" id="walletMpesaPhone" placeholder="07XXXXXXXX" maxlength="12" inputmode="numeric">
@@ -2375,6 +2375,17 @@
             <button class="modal-btn primary" id="walletMpesaDepositBtn" style="margin-top:6px;height:42px;font-size:13px">
               Pay with M-Pesa
             </button>
+          </div>
+
+          <!-- Deposit loading stays inside this section -->
+          <div id="depositLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
+            <div class="spinner" style="margin:0 auto 14px;width:40px;height:40px;border-width:4px"></div>
+            <div id="depositSectionLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">
+              Checking details...
+            </div>
+            <div class="loading-status" style="font-size:12px;color:#7db3ff">
+              Please wait
+            </div>
           </div>
         </div>
 
@@ -2400,11 +2411,11 @@
           </div>
         </div>
 
-        <!-- Step 2: Loading / Verifying (clean – only spinner + messages) -->
-        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:40px 16px 30px">
-          <div class="spinner" style="margin:0 auto 18px;width:42px;height:42px;border-width:4px"></div>
-          <div id="withdrawLoadingText" style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">
-            Processing...
+        <!-- Step 2: Loading stays inside withdraw section -->
+        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
+          <div class="spinner" style="margin:0 auto 14px;width:40px;height:40px;border-width:4px"></div>
+          <div id="withdrawLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">
+            Checking details...
           </div>
           <div class="loading-status" style="font-size:12px;color:#7db3ff">
             Please wait
@@ -5856,18 +5867,12 @@
       isDepositing = false;
       clearDepositTimeout();
 
-      // Restore only the form inside the payment section
-      const loadingArea = document.getElementById('withdrawLoadingArea');
-      const formArea = document.getElementById('walletRealDeposit');
-      const demoArea = document.getElementById('walletDemoDeposit');
+      // Restore form inside deposit section only
+      const loadingArea = document.getElementById('depositLoadingArea');
+      const formArea = document.getElementById('depositFormArea');
 
       if(loadingArea) loadingArea.classList.add('hidden');
-
-      if(isDemo){
-        if(demoArea) demoArea.classList.remove('hidden');
-      }else{
-        if(formArea) formArea.classList.remove('hidden');
-      }
+      if(formArea) formArea.classList.remove('hidden');
     }
 
     /* ---------- PAYMENTS SOCKET (my-server1.bonto.run) ---------- */
@@ -5962,24 +5967,19 @@
 
       isDepositing = true;
 
-      // Keep wallet open – spinner stays inside the payment section only
+      // Keep wallet open – spinner stays inside deposit section only
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
       walletWithdrawTab.classList.add('hidden');
 
-      const loadingArea = document.getElementById('withdrawLoadingArea');
-      const formArea = document.getElementById('walletRealDeposit');
-      const demoArea = document.getElementById('walletDemoDeposit');
-      const pendingArea = document.getElementById('withdrawPendingArea');
-      const loadingText = document.getElementById('withdrawLoadingText');
+      const formArea = document.getElementById('depositFormArea');
+      const loadingArea = document.getElementById('depositLoadingArea');
+      const loadingText = document.getElementById('depositSectionLoadingText');
 
-      // Only swap the form for the spinner (keep tabs, balance, close visible)
+      // Only swap form ↔ spinner inside the deposit section
       if(formArea) formArea.classList.add('hidden');
-      if(demoArea) demoArea.classList.add('hidden');
-      if(pendingArea) pendingArea.classList.add('hidden');
       if(loadingArea) loadingArea.classList.remove('hidden');
 
-      // Staged status text inside the section
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
       if(loadingText) loadingText.textContent = 'Checking details...';
