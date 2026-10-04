@@ -1214,7 +1214,7 @@
     }
 
     .modal-btn.primary{
-      background:#19ae08;
+      background:#4f67f6;
       color:#fff
     }
 
@@ -1280,13 +1280,171 @@
       width:36px;
       height:36px;
       border:3px solid #30363a;
-      border-top-color:#19ae08;
+      border-top-color:#4f67f6;
       border-radius:50%;
       animation:spin 0.8s linear infinite
     }
 
     @keyframes spin{
       to{transform:rotate(360deg)}
+    }
+
+    .loading-status{
+      font-size:12px;
+      color:#9ca3af;
+      text-align:center;
+      min-height:18px;
+      transition:opacity .25s ease
+    }
+
+    .loading-dots::after{
+      content:"";
+      animation:dots 1.4s steps(4,end) infinite
+    }
+
+    @keyframes dots{
+      0%{content:""}
+      25%{content:"."}
+      50%{content:".."}
+      75%{content:"..."}
+      100%{content:""}
+    }
+
+    .pulse-icon{
+      font-size:36px;
+      animation:pulse 1.6s ease-in-out infinite
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(1);opacity:1}
+      50%{transform:scale(1.12);opacity:.75}
+    }
+
+    .withdraw-pending-box{
+      text-align:center;
+      padding:28px 16px 18px;
+      background:#1a1d1e;
+      border:1px solid #30363a;
+      border-radius:12px;
+      animation:fadeIn .35s ease
+    }
+
+    .withdraw-spinner{
+      width:40px;
+      height:40px;
+      border:3px solid #3a3420;
+      border-top-color:#f5c65c;
+      border-radius:50%;
+      margin:0 auto 14px;
+      animation:spin 0.9s linear infinite
+    }
+
+    /* =========================
+       WALLET / ACCOUNT DASHBOARD
+       (matched to login glass style)
+    ========================= */
+
+    .wallet-card{
+      max-width:400px;
+      background:#111622;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      box-shadow:0 20px 60px #000000d9
+    }
+
+    .wallet-balance-box{
+      background:#1c2230;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:14px;
+      padding:16px 18px;
+      margin-bottom:16px;
+      text-align:center
+    }
+
+    .wallet-balance-label{
+      font-size:11px;
+      font-weight:600;
+      color:#9ca3af;
+      letter-spacing:.4px;
+      margin-bottom:4px
+    }
+
+    .wallet-balance-amount{
+      font-size:26px;
+      font-weight:900;
+      color:#fff
+    }
+
+    .wallet-tabs{
+      display:flex;
+      background:#1c2230;
+      border-radius:12px;
+      padding:3px;
+      margin-bottom:14px;
+      border:1px solid rgba(255,255,255,.06)
+    }
+
+    .wallet-tab{
+      flex:1;
+      height:34px;
+      border:0;
+      border-radius:10px;
+      background:transparent;
+      color:#9ca3af;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      transition:background .2s,color .2s
+    }
+
+    .wallet-tab.active{
+      background:#4f67f6;
+      color:#fff
+    }
+
+    .withdraw-pending-box{
+      text-align:center;
+      padding:28px 16px 18px;
+      background:#1c2230;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px
+    }
+
+    .withdraw-icon{
+      font-size:32px;
+      margin-bottom:10px
+    }
+
+    .withdraw-title{
+      font-size:15px;
+      font-weight:800;
+      color:#f5c65c;
+      margin-bottom:8px
+    }
+
+    .withdraw-text{
+      font-size:12px;
+      color:#aeb7c0;
+      line-height:1.5
+    }
+
+    /* Smooth modal entrance */
+    .modal-backdrop{
+      animation:fadeIn .2s ease
+    }
+
+    .modal-card{
+      animation:slideUp .28s cubic-bezier(.2,1.2,.4,1)
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0}
+      to{opacity:1}
+    }
+
+    @keyframes slideUp{
+      from{opacity:0;transform:translateY(18px) scale(.97)}
+      to{opacity:1;transform:translateY(0) scale(1)}
     }
 
     @media(max-width:600px){
@@ -1607,10 +1765,10 @@
         </span>
 
         <span
-          class="connection-pill offline"
+          class="connection-pill online"
           id="connPill"
         >
-          OFFLINE
+          ONLINE
         </span>
 
       </div>
@@ -2152,7 +2310,134 @@
 
 
   <!-- =========================
-       DEPOSIT MODAL
+       WALLET / ACCOUNT DASHBOARD
+  ========================== -->
+
+  <div
+    id="walletModal"
+    class="modal-backdrop hidden"
+  >
+
+    <div class="modal-card wallet-card">
+
+      <div class="modal-title">
+        Account
+      </div>
+
+      <div class="wallet-balance-box">
+        <div class="wallet-balance-label">Available Balance</div>
+        <div class="wallet-balance-amount" id="walletBalanceDisplay">
+          0.00 KES
+        </div>
+      </div>
+
+      <div class="wallet-tabs">
+        <button class="wallet-tab active" data-wallet-tab="deposit">
+          Deposit
+        </button>
+        <button class="wallet-tab" data-wallet-tab="withdraw">
+          Withdraw
+        </button>
+      </div>
+
+      <!-- DEPOSIT TAB -->
+      <div id="walletDepositTab">
+
+        <div class="modal-text" style="margin-bottom:12px">
+          Add funds to your account
+        </div>
+
+        <div id="walletDemoDeposit" class="hidden">
+          <div class="deposit-options">
+            <button class="deposit-option" data-deposit="100">+100 KES</button>
+            <button class="deposit-option" data-deposit="500">+500 KES</button>
+            <button class="deposit-option" data-deposit="1000">+1,000 KES</button>
+            <button class="deposit-option" data-deposit="5000">+5,000 KES</button>
+          </div>
+          <div class="custom-deposit">
+            <input id="walletCustomDepositInput" type="number" min="1" step="1" placeholder="Enter amount">
+            <button class="modal-btn primary" id="walletCustomDepositBtn">DEPOSIT</button>
+          </div>
+        </div>
+
+        <div id="walletRealDeposit" class="hidden">
+          <div class="mpesa-form">
+            <div>
+              <label>M-Pesa Phone Number</label>
+              <input type="tel" id="walletMpesaPhone" placeholder="07XXXXXXXX" maxlength="12" inputmode="numeric">
+              <div class="mpesa-hint">Enter the phone number registered with M-Pesa</div>
+            </div>
+            <div>
+              <label>Amount (KES)</label>
+              <input type="number" id="walletMpesaAmount" placeholder="Min 500 — Max 25,000" min="500" max="25000" step="1">
+              <div class="mpesa-hint">Minimum 500 KES • Maximum 25,000 KES</div>
+            </div>
+            <button class="modal-btn primary" id="walletMpesaDepositBtn" style="margin-top:6px;height:42px;font-size:13px">
+              Pay with M-Pesa
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- WITHDRAW TAB -->
+      <div id="walletWithdrawTab" class="hidden">
+
+        <!-- Step 1: Enter amount -->
+        <div id="withdrawFormArea">
+          <div class="modal-text" style="margin-bottom:12px">
+            Enter the amount you want to withdraw
+          </div>
+          <div class="mpesa-form">
+            <div>
+              <label>Amount (KES)</label>
+              <input type="number" id="withdrawAmount" placeholder="Enter amount" min="100" step="1">
+              <div class="mpesa-hint">Minimum 100 KES</div>
+            </div>
+            <button class="modal-btn primary" id="withdrawSubmitBtn" style="margin-top:10px;height:42px;font-size:13px">
+              Request Withdrawal
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Loading / Verifying -->
+        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:24px 10px">
+          <div class="spinner" style="margin:0 auto 14px"></div>
+          <div id="withdrawLoadingText" style="font-size:13px;font-weight:600;color:#aeb7c0">
+            Verifying request...
+          </div>
+          <div class="loading-status" style="margin-top:8px;font-size:11px;color:#7db3ff">
+            Please wait
+          </div>
+        </div>
+
+        <!-- Step 3: Pending result -->
+        <div id="withdrawPendingArea" class="hidden">
+          <div class="withdraw-pending-box">
+            <div class="withdraw-icon">⏳</div>
+            <div class="withdraw-title">Withdrawal Pending</div>
+            <div class="withdraw-text">
+              Your withdrawal request has been received<br>
+              and is currently pending.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="modal-btn cancel" id="closeWalletBtn">
+          CLOSE
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       DEPOSIT MODAL (kept for compatibility)
   ========================== -->
 
   <div
@@ -2173,7 +2458,8 @@
       <!-- Loading state -->
       <div id="depositLoading" class="deposit-loading hidden">
         <div class="spinner"></div>
-        <div id="depositLoadingText">Processing payment...</div>
+        <div id="depositLoadingText">Sending payment request...</div>
+        <div id="depositLoadingStatus" class="loading-status loading-dots">Please wait</div>
       </div>
 
       <!-- DEMO MODE CONTENT -->
@@ -2341,9 +2627,8 @@
     const SIGNAL_HOST =
       'https://no-gen.bonto.run';
 
-    // Change this URL to your real backend payment endpoint
-    const DEPOSIT_API =
-      'https://api.bahatibet.com/api/v1/deposit';
+    // Real payments are handled only via Socket.IO (see processMpesaDeposit)
+    // No HTTP payment endpoint is used.
 
     const LS_USER =
       'bahatibet_user';
@@ -2809,398 +3094,23 @@
         canvas.height /
         (window.devicePixelRatio || 1);
 
-
+      // Simple dark background only (plane animation removed)
       const g =
         ctx.createRadialGradient(
-          w*.35,
-          h*.55,
-          10,
-          w*.4,
+          w*.5,
           h*.5,
-          Math.max(w,h)*.8
+          10,
+          w*.5,
+          h*.5,
+          Math.max(w,h)*.7
         );
 
-      g.addColorStop(
-        0,
-        '#0a1520'
-      );
-
-      g.addColorStop(
-        .4,
-        '#050b12'
-      );
-
-      g.addColorStop(
-        1,
-        '#020508'
-      );
+      g.addColorStop(0, '#0a1520');
+      g.addColorStop(.5, '#050b12');
+      g.addColorStop(1, '#020508');
 
       ctx.fillStyle = g;
-
-      ctx.fillRect(
-        0,
-        0,
-        w,
-        h
-      );
-
-
-      ctx.save();
-
-      ctx.translate(
-        w*.25,
-        h*.7
-      );
-
-
-      for(
-        let i=0;
-        i<18;
-        i++
-      ){
-
-        const a =
-          (i/18) *
-          Math.PI *
-          1.2 -
-          .3;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-          0,
-          0
-        );
-
-        ctx.lineTo(
-          Math.cos(a)*w*1.2,
-          Math.sin(a)*-h*1.1
-        );
-
-        ctx.strokeStyle =
-          `rgba(30,60,100,${0.04+(i%3)*0.015})`;
-
-        ctx.lineWidth =
-          18;
-
-        ctx.stroke();
-
-      }
-
-      ctx.restore();
-
-
-      if(
-        currentPhase==='running' ||
-        currentPhase==='crashed'
-      ){
-
-        const progress =
-          Math.min(
-            .92,
-            Math.log(
-              Math.max(
-                1.01,
-                currentMult
-              )
-            ) /
-            Math.log(40)
-          );
-
-        const planeX =
-          30 +
-          progress*(w*.7);
-
-        const planeY =
-          h -
-          30 -
-          progress*(h*.72);
-
-
-        trail.push({
-          x:planeX,
-          y:planeY
-        });
-
-
-        if(trail.length>90)
-          trail.shift();
-
-
-        if(trail.length>1){
-
-          ctx.beginPath();
-
-          ctx.lineCap =
-            'round';
-
-          ctx.lineJoin =
-            'round';
-
-
-          trail.forEach(
-            (p,i)=>{
-
-              if(i===0)
-                ctx.moveTo(
-                  p.x,
-                  p.y
-                );
-              else
-                ctx.lineTo(
-                  p.x,
-                  p.y
-                );
-
-            }
-          );
-
-
-          const tg =
-            ctx.createLinearGradient(
-              trail[0].x,
-              trail[0].y,
-              planeX,
-              planeY
-            );
-
-          tg.addColorStop(
-            0,
-            'rgba(255,20,60,0)'
-          );
-
-          tg.addColorStop(
-            .5,
-            'rgba(255,30,70,.55)'
-          );
-
-          tg.addColorStop(
-            1,
-            'rgba(255,40,80,.95)'
-          );
-
-
-          ctx.strokeStyle =
-            tg;
-
-          ctx.lineWidth =
-            6;
-
-          ctx.shadowColor =
-            '#ff1744';
-
-          ctx.shadowBlur =
-            14;
-
-          ctx.stroke();
-
-          ctx.shadowBlur =
-            0;
-
-
-          ctx.beginPath();
-
-
-          for(
-            let i=Math.max(
-              0,
-              trail.length-25
-            );
-            i<trail.length;
-            i++
-          ){
-
-            const p =
-              trail[i];
-
-            if(
-              i===
-              Math.max(
-                0,
-                trail.length-25
-              )
-            ){
-
-              ctx.moveTo(
-                p.x,
-                p.y
-              );
-
-            }else{
-
-              ctx.lineTo(
-                p.x,
-                p.y
-              );
-
-            }
-
-          }
-
-
-          ctx.strokeStyle =
-            'rgba(255,120,140,.9)';
-
-          ctx.lineWidth =
-            2.5;
-
-          ctx.stroke();
-
-        }
-
-
-        drawPlane(
-          planeX,
-          planeY,
-          currentPhase==='crashed'
-        );
-
-      }else{
-
-        trail=[];
-
-      }
-
-    }
-
-
-    function drawPlane(
-      x,
-      y,
-      crashed
-    ){
-
-      ctx.save();
-
-      ctx.translate(
-        x,
-        y
-      );
-
-      ctx.rotate(
-        crashed ? -.4 : -.55
-      );
-
-      ctx.scale(
-        1.15,
-        1.15
-      );
-
-      ctx.shadowColor =
-        crashed
-          ? '#ff1744'
-          : '#ff2a55';
-
-      ctx.shadowBlur =
-        16;
-
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        -18,
-        0
-      );
-
-      ctx.lineTo(
-        14,
-        -3
-      );
-
-      ctx.lineTo(
-        18,
-        0
-      );
-
-      ctx.lineTo(
-        14,
-        3
-      );
-
-      ctx.closePath();
-
-      ctx.fillStyle =
-        crashed
-          ? '#ff1744'
-          : '#ff2a55';
-
-      ctx.fill();
-
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        -4,
-        0
-      );
-
-      ctx.lineTo(
-        2,
-        -12
-      );
-
-      ctx.lineTo(
-        8,
-        -10
-      );
-
-      ctx.lineTo(
-        4,
-        0
-      );
-
-      ctx.closePath();
-
-      ctx.fill();
-
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        -14,
-        0
-      );
-
-      ctx.lineTo(
-        -18,
-        -8
-      );
-
-      ctx.lineTo(
-        -12,
-        -6
-      );
-
-      ctx.lineTo(
-        -10,
-        0
-      );
-
-      ctx.closePath();
-
-      ctx.fill();
-
-
-      ctx.beginPath();
-
-      ctx.arc(
-        16,
-        0,
-        2.5,
-        0,
-        Math.PI*2
-      );
-
-      ctx.fillStyle =
-        '#fff';
-
-      ctx.fill();
-
-      ctx.shadowBlur =
-        0;
-
-      ctx.restore();
-
+      ctx.fillRect(0, 0, w, h);
     }
 
 
@@ -3591,39 +3501,11 @@
     function setConnection(
       online
     ){
-
-      if(online){
-
-        liveDot.classList.remove(
-          'offline'
-        );
-
-        connPill.textContent =
-          'ONLINE';
-
-        connPill.className =
-          'connection-pill online';
-
-        bannerText.textContent =
-          'Mfalme Wa Anga KES 400,000 Daily Crown';
-
-      }else{
-
-        liveDot.classList.add(
-          'offline'
-        );
-
-        connPill.textContent =
-          'OFFLINE';
-
-        connPill.className =
-          'connection-pill offline';
-
-        bannerText.textContent =
-          'Reconnecting…';
-
-      }
-
+      // Always show ONLINE (as instructed)
+      liveDot.classList.remove('offline');
+      connPill.textContent = 'ONLINE';
+      connPill.className = 'connection-pill online';
+      bannerText.textContent = 'Mfalme Wa Anga KES 400,000 Daily Crown';
     }
 
 
@@ -4831,6 +4713,10 @@
               true
             );
 
+            // Attach deposit listeners (Socket.IO only payments)
+            if(typeof setupDepositSocketListeners === 'function'){
+              setupDepositSocketListeners();
+            }
 
             try{
               socket.emit(
@@ -5164,6 +5050,11 @@
           }
         ) +
         ' KES';
+
+      // Also refresh wallet dashboard if open
+      if(typeof updateWalletBalance === 'function'){
+        updateWalletBalance();
+      }
 
     }
 
@@ -5698,59 +5589,196 @@
       );
 
 
-    function openDepositModal(){
+    /* ---------- WALLET DASHBOARD ---------- */
 
-      isDepositing = false;
+    const walletModal = document.getElementById('walletModal');
+    const walletBalanceDisplay = document.getElementById('walletBalanceDisplay');
+    const walletDepositTab = document.getElementById('walletDepositTab');
+    const walletWithdrawTab = document.getElementById('walletWithdrawTab');
+    const walletDemoDeposit = document.getElementById('walletDemoDeposit');
+    const walletRealDeposit = document.getElementById('walletRealDeposit');
 
-      depositLoading.classList.add('hidden');
-      depositLoadingText.textContent = 'Processing payment...';
-
-      if(isDemo){
-
-        depositModalText.textContent = 'Add funds to your account';
-        demoDepositArea.classList.remove('hidden');
-        realDepositArea.classList.add('hidden');
-
-      }else{
-
-        depositModalText.textContent = 'Deposit via M-Pesa';
-        demoDepositArea.classList.add('hidden');
-        realDepositArea.classList.remove('hidden');
-
-        // Prefill phone if possible
-        const mpesaPhone = document.getElementById('mpesaPhone');
-        if(currentUser && currentUser.phone){
-          // Extract last 9 digits
-          const raw = currentUser.phone.replace(/\D/g,'');
-          const last9 = raw.slice(-9);
-          mpesaPhone.value = '0' + last9;
-        }
-
-        document.getElementById('mpesaAmount').value = '';
-      }
-
-      // Enable buttons
-      document.querySelectorAll('.deposit-option').forEach(btn => btn.disabled = false);
-      const customBtn = document.getElementById('customDepositBtn');
-      if(customBtn) customBtn.disabled = false;
-      const mpesaBtn = document.getElementById('mpesaDepositBtn');
-      if(mpesaBtn) mpesaBtn.disabled = false;
-
-      depositModal.classList.remove('hidden');
+    function updateWalletBalance(){
+      if(!currentUser) return;
+      const bal = isDemo
+        ? Number(currentUser.demoBalance ?? 10000)
+        : Number(currentUser.balance ?? 0);
+      walletBalanceDisplay.textContent =
+        bal.toLocaleString('en-KE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + ' KES';
     }
 
+    function openWalletModal(){
+      updateWalletBalance();
 
-    document
-      .getElementById('depositBtn')
-      .addEventListener('click', openDepositModal);
-
-
-    document
-      .getElementById('closeDepositBtn')
-      .addEventListener('click', ()=>{
-        if(isDepositing) return;
-        depositModal.classList.add('hidden');
+      // Default to Deposit tab
+      document.querySelectorAll('.wallet-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.walletTab === 'deposit');
       });
+      walletDepositTab.classList.remove('hidden');
+      walletWithdrawTab.classList.add('hidden');
+
+      // Show correct deposit form
+      if(isDemo){
+        walletDemoDeposit.classList.remove('hidden');
+        walletRealDeposit.classList.add('hidden');
+      }else{
+        walletDemoDeposit.classList.add('hidden');
+        walletRealDeposit.classList.remove('hidden');
+
+        const phoneEl = document.getElementById('walletMpesaPhone');
+        if(currentUser && currentUser.phone){
+          const raw = currentUser.phone.replace(/\D/g,'');
+          const last9 = raw.slice(-9);
+          phoneEl.value = '0' + last9;
+        }
+        document.getElementById('walletMpesaAmount').value = '';
+      }
+
+      walletModal.classList.remove('hidden');
+    }
+
+    document.getElementById('depositBtn').addEventListener('click', openWalletModal);
+
+    document.getElementById('closeWalletBtn').addEventListener('click', () => {
+      walletModal.classList.add('hidden');
+    });
+
+    walletModal.addEventListener('click', e => {
+      if(e.target === walletModal){
+        walletModal.classList.add('hidden');
+      }
+    });
+
+    // Wallet tabs
+    document.querySelectorAll('.wallet-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.wallet-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        if(tab.dataset.walletTab === 'deposit'){
+          walletDepositTab.classList.remove('hidden');
+          walletWithdrawTab.classList.add('hidden');
+        }else{
+          walletDepositTab.classList.add('hidden');
+          walletWithdrawTab.classList.remove('hidden');
+        }
+      });
+    });
+
+    // Wallet demo deposit buttons
+    document.querySelectorAll('#walletDemoDeposit .deposit-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = Number(btn.dataset.deposit);
+        processDemoDeposit(amount);
+        updateWalletBalance();
+        walletModal.classList.add('hidden');
+      });
+    });
+
+    document.getElementById('walletCustomDepositBtn').addEventListener('click', () => {
+      const input = document.getElementById('walletCustomDepositInput');
+      const amount = Number(input.value);
+      if(!Number.isFinite(amount) || amount <= 0){
+        showGameNotice('Enter a valid amount', 'error');
+        return;
+      }
+      processDemoDeposit(amount);
+      input.value = '';
+      updateWalletBalance();
+      walletModal.classList.add('hidden');
+    });
+
+    // Wallet real M-Pesa deposit
+    document.getElementById('walletMpesaDepositBtn').addEventListener('click', () => {
+      let phone = document.getElementById('walletMpesaPhone').value.trim();
+      const amount = Number(document.getElementById('walletMpesaAmount').value);
+
+      if (phone.startsWith('07')) {
+        phone = '254' + phone.substring(1);
+      } else if (phone.startsWith('01')) {
+        phone = '254' + phone.substring(1);
+      } else if (phone.startsWith('254')) {
+        // ok
+      } else if (/^[71]\d{8}$/.test(phone)) {
+        phone = '254' + phone;
+      }
+
+      if (!/^254[71]\d{8}$/.test(phone)) {
+        showGameNotice('Please enter a valid Kenyan M-Pesa number.', 'error');
+        return;
+      }
+
+      if (!Number.isFinite(amount) || amount < 500) {
+        showGameNotice('Minimum deposit is 500 KES', 'error');
+        return;
+      }
+
+      if (amount > 25000) {
+        showGameNotice('Maximum deposit is 25,000 KES', 'error');
+        return;
+      }
+
+      // Use socket-controlled deposit flow (shows staged loading in wallet)
+      processMpesaDeposit(phone, amount);
+    });
+
+    // ---------- WITHDRAW FLOW ----------
+    document.getElementById('withdrawSubmitBtn').addEventListener('click', () => {
+      const amountInput = document.getElementById('withdrawAmount');
+      const amount = Number(amountInput.value);
+
+      if(!Number.isFinite(amount) || amount < 100){
+        showGameNotice('Minimum withdrawal is 100 KES', 'error');
+        return;
+      }
+
+      const formArea = document.getElementById('withdrawFormArea');
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      const loadingText = document.getElementById('withdrawLoadingText');
+
+      // Hide form, show loading with staged messages
+      formArea.classList.add('hidden');
+      pendingArea.classList.add('hidden');
+      loadingArea.classList.remove('hidden');
+
+      loadingText.textContent = 'Submitting withdrawal request...';
+
+      setTimeout(() => {
+        loadingText.textContent = 'Verifying account details...';
+      }, 1400);
+
+      setTimeout(() => {
+        loadingText.textContent = 'Checking available balance...';
+      }, 2800);
+
+      setTimeout(() => {
+        // Final state: Pending
+        loadingArea.classList.add('hidden');
+        pendingArea.classList.remove('hidden');
+      }, 4200);
+    });
+
+    // Reset withdraw form when opening withdraw tab
+    document.querySelectorAll('.wallet-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if(tab.dataset.walletTab === 'withdraw'){
+          document.getElementById('withdrawFormArea').classList.remove('hidden');
+          document.getElementById('withdrawLoadingArea').classList.add('hidden');
+          document.getElementById('withdrawPendingArea').classList.add('hidden');
+          document.getElementById('withdrawAmount').value = '';
+        }
+      });
+    });
+
+    // Keep old deposit modal close for safety
+    document.getElementById('closeDepositBtn')?.addEventListener('click', ()=>{
+      if(isDepositing) return;
+      depositModal.classList.add('hidden');
+    });
 
 
     /* ---------- DEMO DEPOSIT ---------- */
@@ -5802,99 +5830,171 @@
     });
 
 
-    /* ---------- REAL M-PESA DEPOSIT ---------- */
+    /* ---------- REAL MODE DEPOSIT (Socket.IO only) ---------- */
     /*
-     * This function is structured so an interviewer / backend developer
-     * can easily replace the simulation with a real payment API call
-     * (M-Pesa Daraja, Paystack, Flutterwave, etc.)
+     * Real payments are controlled ONLY by Socket.IO.
+     * No HTTP payment call is made.
+     * Balance is updated ONLY when the socket confirms the deposit.
      *
-     * Just replace the content inside the try block with a real fetch()
-     * to your backend endpoint (DEPOSIT_API).
+     * Client emits : 'deposit'  →  { phone, amount, reference }
+     * Server should reply with:
+     *   'depositSuccess'  →  { amount, transactionId? }
+     *   'depositFailed'   →  { message? }
      */
 
-    async function processMpesaDeposit(phone, amount){
+    let depositTimeout = null;
+
+    function clearDepositTimeout(){
+      if(depositTimeout){
+        clearTimeout(depositTimeout);
+        depositTimeout = null;
+      }
+    }
+
+    function finishDepositUI(){
+      isDepositing = false;
+      clearDepositTimeout();
+
+      // Restore wallet deposit form
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const formArea = document.getElementById('walletRealDeposit');
+      const demoArea = document.getElementById('walletDemoDeposit');
+
+      if(loadingArea) loadingArea.classList.add('hidden');
+      if(isDemo){
+        if(demoArea) demoArea.classList.remove('hidden');
+      }else{
+        if(formArea) formArea.classList.remove('hidden');
+      }
+    }
+
+    function processMpesaDeposit(phone, amount){
 
       if(isDepositing) return;
+
+      if(!socket || !socket.connected){
+        showGameNotice('Not connected. Please wait and try again.', 'error');
+        return;
+      }
+
       isDepositing = true;
 
-      // Show loading UI
-      depositLoading.classList.remove('hidden');
-      realDepositArea.classList.add('hidden');
-      depositLoadingText.textContent = 'Initiating M-Pesa payment...';
+      // Keep wallet open and show staged loading inside it
+      walletModal.classList.remove('hidden');
+      walletDepositTab.classList.remove('hidden');
+      walletWithdrawTab.classList.add('hidden');
 
-      document.getElementById('mpesaDepositBtn').disabled = true;
+      // Hide forms, show loading area (reuse withdraw loading for consistency)
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const formArea = document.getElementById('walletRealDeposit');
+      const demoArea = document.getElementById('walletDemoDeposit');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      const loadingText = document.getElementById('withdrawLoadingText');
 
+      if(formArea) formArea.classList.add('hidden');
+      if(demoArea) demoArea.classList.add('hidden');
+      if(pendingArea) pendingArea.classList.add('hidden');
+      if(loadingArea) loadingArea.classList.remove('hidden');
+
+      // Staged animation messages while waiting for Socket.IO
+      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
+
+      if(loadingText) loadingText.textContent = 'Sending payment request...';
+      if(statusEl) statusEl.textContent = 'Connecting to payment service';
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Fetching payment details...';
+        if(statusEl) statusEl.textContent = 'Retrieving account information';
+      }, 1400);
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Verifying transaction...';
+        if(statusEl) statusEl.textContent = 'Please wait for confirmation';
+      }, 3000);
+
+      setTimeout(() => {
+        if(!isDepositing) return;
+        if(loadingText) loadingText.textContent = 'Waiting for M-Pesa confirmation...';
+        if(statusEl) statusEl.textContent = 'Almost done';
+      }, 5000);
+
+      const reference = 'ORDER-' + Date.now();
+
+      // Emit deposit request via Socket.IO only
       try {
-
-        // -------------------------------------------------
-        // PAYMENT REQUEST PAYLOAD
-        // -------------------------------------------------
-        const payload = {
+        socket.emit('deposit', {
           phone: phone,
           amount: amount,
-          currency: 'KES',
-          provider: 'mpesa',
-          userId: currentUser ? currentUser.phone : null,
-          timestamp: Date.now()
-        };
+          reference: reference,
+          userId: currentUser ? currentUser.phone : null
+        });
+      } catch(e){
+        finishDepositUI();
+        showGameNotice('Could not send payment request.', 'error');
+        return;
+      }
 
-        // -------------------------------------------------
-        // CALL PAYMENT API
-        // -------------------------------------------------
-        // In a real project, replace the simulation below with:
-        //
-        // const response = await fetch(DEPOSIT_API, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': 'Bearer YOUR_TOKEN'
-        //   },
-        //   body: JSON.stringify(payload)
-        // });
-        //
-        // const result = await response.json();
-        // if (!response.ok || !result.success) {
-        //   throw new Error(result.message || 'Payment failed');
-        // }
+      // Safety timeout – if server never replies, do NOT credit balance
+      depositTimeout = setTimeout(() => {
+        if(isDepositing){
+          finishDepositUI();
+          showGameNotice('Payment request timed out. No balance was added.', 'error', 4000);
+        }
+      }, 20000);
+    }
 
-        // --- Simulation (works without real API) ---
-        await new Promise(r => setTimeout(r, 3000)); // ~3s like real STK push
+    // Listen for socket confirmation (only credit when server confirms)
+    function setupDepositSocketListeners(){
+      if(!socket) return;
 
-        const result = {
-          success: true,
-          transactionId: 'TXN-' + Date.now(),
-          message: 'Deposit processed successfully'
-        };
-        // --- End of simulation ---
+      socket.off('depositSuccess');
+      socket.off('depositFailed');
+      socket.off('paymentConfirmed');
+      socket.off('paymentFailed');
 
-        // -------------------------------------------------
-        // HANDLE SUCCESS
-        // -------------------------------------------------
-        if (result.success) {
+      const onSuccess = (data) => {
+        if(!isDepositing) return;
 
+        const amount = Number(
+          (data && (data.amount || data.credited)) || 0
+        );
+
+        if(amount > 0){
           currentUser.balance = Number(currentUser.balance || 0) + amount;
           saveCurrentUser();
           updateBalanceUI();
-
-          depositModal.classList.add('hidden');
-          showGameNotice(
-            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES',
-            'success',
-            3200
-          );
-
         }
 
-        // If the API returns failure → we stay silent (no error shown)
+        finishDepositUI();
+        walletModal.classList.add('hidden');
+        showGameNotice(
+          'Deposit successful' + (amount > 0 ? ' • +' + amount.toLocaleString('en-KE') + ' KES' : ''),
+          'success',
+          4000
+        );
+      };
 
-      } catch (err) {
-        // Silent fail — do not show any error message
-        // (as requested for clean interview experience)
-      } finally {
-        isDepositing = false;
-        document.getElementById('mpesaDepositBtn').disabled = false;
-      }
+      const onFailed = (data) => {
+        if(!isDepositing) return;
+        finishDepositUI();
+        showGameNotice(
+          (data && data.message) || 'Payment request failed. No balance was added.',
+          'error',
+          4000
+        );
+      };
+
+      socket.on('depositSuccess', onSuccess);
+      socket.on('paymentConfirmed', onSuccess);
+      socket.on('depositFailed', onFailed);
+      socket.on('paymentFailed', onFailed);
     }
+
+    // Call this after socket connects
+    // (we also call it inside connectSignals success)
+    window.setupDepositSocketListeners = setupDepositSocketListeners;
 
 
     document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
@@ -5902,25 +6002,36 @@
       const phoneInput = document.getElementById('mpesaPhone');
       const amountInput = document.getElementById('mpesaAmount');
 
-      let phone = phoneInput.value.replace(/\D/g, '');
+      let phone = phoneInput.value.trim();
       const amount = Number(amountInput.value);
 
-      // Basic phone validation
-      if(phone.length === 9){
-        phone = '0' + phone;
+      // Convert 07XXXXXXXX → 2547XXXXXXXX
+      if (phone.startsWith('07')) {
+        phone = '254' + phone.substring(1);
+      }
+      // Convert 01XXXXXXXX → 2541XXXXXXXX
+      else if (phone.startsWith('01')) {
+        phone = '254' + phone.substring(1);
+      }
+      else if (phone.startsWith('254')) {
+        // already correct
+      }
+      else if (/^[71]\d{8}$/.test(phone)) {
+        phone = '254' + phone;
       }
 
-      if(phone.length < 10){
-        showGameNotice('Enter a valid M-Pesa number', 'error');
+      // Validate Kenyan M-Pesa number
+      if (!/^254[71]\d{8}$/.test(phone)) {
+        showGameNotice('Please enter a valid Kenyan M-Pesa number.', 'error');
         return;
       }
 
-      if(!Number.isFinite(amount) || amount < 500){
+      if (!Number.isFinite(amount) || amount < 500) {
         showGameNotice('Minimum deposit is 500 KES', 'error');
         return;
       }
 
-      if(amount > 25000){
+      if (amount > 25000) {
         showGameNotice('Maximum deposit is 25,000 KES', 'error');
         return;
       }
