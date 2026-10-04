@@ -5737,47 +5737,30 @@
       const pendingArea = document.getElementById('withdrawPendingArea');
       const loadingText = document.getElementById('withdrawLoadingText');
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
-      const closeBtn = document.getElementById('closeWalletBtn');
-      const walletTabs = document.querySelector('.wallet-tabs');
-      const balanceBox = document.querySelector('.wallet-balance-box');
-      const modalTitle = walletModal ? walletModal.querySelector('.modal-title') : null;
 
-      // Hide EVERYTHING except spinner + messages (same as deposit)
+      // Spinner stays inside the payment section only
       formArea.classList.add('hidden');
       pendingArea.classList.add('hidden');
-      if(walletTabs) walletTabs.classList.add('hidden');
-      if(balanceBox) balanceBox.classList.add('hidden');
-      if(closeBtn) closeBtn.classList.add('hidden');
-      if(modalTitle) modalTitle.classList.add('hidden');
       loadingArea.classList.remove('hidden');
 
-      loadingText.textContent = 'Submitting request...';
+      loadingText.textContent = 'Checking details...';
       if(statusEl) statusEl.textContent = 'Please wait';
 
       setTimeout(() => {
-        loadingText.textContent = 'Fetching details...';
-        if(statusEl) statusEl.textContent = 'Retrieving account information';
-      }, 1400);
-
-      setTimeout(() => {
-        loadingText.textContent = 'Checking details...';
+        loadingText.textContent = 'Validating...';
         if(statusEl) statusEl.textContent = 'Validating request';
-      }, 2800);
+      }, 1600);
 
       setTimeout(() => {
         loadingText.textContent = 'Verifying...';
         if(statusEl) statusEl.textContent = 'Almost done';
-      }, 4000);
+      }, 3200);
 
       setTimeout(() => {
         // Final state: Pending
         loadingArea.classList.add('hidden');
-        if(walletTabs) walletTabs.classList.remove('hidden');
-        if(balanceBox) balanceBox.classList.remove('hidden');
-        if(closeBtn) closeBtn.classList.remove('hidden');
-        if(modalTitle) modalTitle.classList.remove('hidden');
         pendingArea.classList.remove('hidden');
-      }, 5500);
+      }, 4800);
     });
 
     // Reset withdraw form when opening withdraw tab
@@ -5873,23 +5856,12 @@
       isDepositing = false;
       clearDepositTimeout();
 
-      // Restore full wallet UI
+      // Restore only the form inside the payment section
       const loadingArea = document.getElementById('withdrawLoadingArea');
       const formArea = document.getElementById('walletRealDeposit');
       const demoArea = document.getElementById('walletDemoDeposit');
-      const closeBtn = document.getElementById('closeWalletBtn');
-      const walletTabs = document.querySelector('.wallet-tabs');
-      const balanceBox = document.querySelector('.wallet-balance-box');
-      const modalTitle = walletModal ? walletModal.querySelector('.modal-title') : null;
 
       if(loadingArea) loadingArea.classList.add('hidden');
-      if(walletTabs) walletTabs.classList.remove('hidden');
-      if(balanceBox) balanceBox.classList.remove('hidden');
-      if(closeBtn) closeBtn.classList.remove('hidden');
-      if(modalTitle) modalTitle.classList.remove('hidden');
-
-      const depositGuide = walletDepositTab ? walletDepositTab.querySelector('.modal-text') : null;
-      if(depositGuide) depositGuide.classList.remove('hidden');
 
       if(isDemo){
         if(demoArea) demoArea.classList.remove('hidden');
@@ -5990,7 +5962,7 @@
 
       isDepositing = true;
 
-      // Keep wallet open – clean loading only (no extra buttons/text)
+      // Keep wallet open – spinner stays inside the payment section only
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
       walletWithdrawTab.classList.add('hidden');
@@ -6000,55 +5972,36 @@
       const demoArea = document.getElementById('walletDemoDeposit');
       const pendingArea = document.getElementById('withdrawPendingArea');
       const loadingText = document.getElementById('withdrawLoadingText');
-      const closeBtn = document.getElementById('closeWalletBtn');
-      const walletTabs = document.querySelector('.wallet-tabs');
-      const balanceBox = document.querySelector('.wallet-balance-box');
-      const modalTitle = walletModal.querySelector('.modal-title');
 
-      // Hide EVERYTHING except the loading animation
+      // Only swap the form for the spinner (keep tabs, balance, close visible)
       if(formArea) formArea.classList.add('hidden');
       if(demoArea) demoArea.classList.add('hidden');
       if(pendingArea) pendingArea.classList.add('hidden');
-      if(walletTabs) walletTabs.classList.add('hidden');
-      if(balanceBox) balanceBox.classList.add('hidden');
-      if(closeBtn) closeBtn.classList.add('hidden');
-      if(modalTitle) modalTitle.classList.add('hidden');
-
-      // Also hide the "Add funds..." guide text
-      const depositGuide = walletDepositTab ? walletDepositTab.querySelector('.modal-text') : null;
-      if(depositGuide) depositGuide.classList.add('hidden');
-
       if(loadingArea) loadingArea.classList.remove('hidden');
 
-      // Staged animation messages only
+      // Staged status text inside the section
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
-      if(loadingText) loadingText.textContent = 'Sending payment request...';
+      if(loadingText) loadingText.textContent = 'Checking details...';
       if(statusEl) statusEl.textContent = 'Please wait';
 
       setTimeout(() => {
         if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Fetching details...';
-        if(statusEl) statusEl.textContent = 'Retrieving account information';
-      }, 1500);
-
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Checking details...';
+        if(loadingText) loadingText.textContent = 'Validating...';
         if(statusEl) statusEl.textContent = 'Validating payment data';
-      }, 3200);
+      }, 1800);
 
       setTimeout(() => {
         if(!isDepositing) return;
         if(loadingText) loadingText.textContent = 'Verifying...';
         if(statusEl) statusEl.textContent = 'Confirming with payment service';
-      }, 5000);
+      }, 3600);
 
       setTimeout(() => {
         if(!isDepositing) return;
         if(loadingText) loadingText.textContent = 'Waiting for confirmation...';
         if(statusEl) statusEl.textContent = 'Almost done';
-      }, 7000);
+      }, 5500);
 
       const reference = 'ORDER-' + Date.now();
 
