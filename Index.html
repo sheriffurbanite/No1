@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2819,6 +2818,21 @@
     <source src="https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/Aviator_-_Music_1080p.mp3" type="audio/mpeg">
   </audio>
 
+  <!-- Loss / crash SFX — plays after round ends, before next round music -->
+  <audio
+    id="lossSound"
+    preload="auto"
+    playsinline
+    webkit-playsinline
+    controls="false"
+    controlslist="nodownload nofullscreen noremoteplayback"
+    disablepictureinpicture
+    style="display:none!important;visibility:hidden!important;opacity:0;width:0;height:0;position:fixed;left:-9999px;top:-9999px;pointer-events:none;z-index:-1"
+  >
+    <source src="https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/VID-20261006-WA0001.mp3" type="audio/mpeg">
+    <source src="https://res.cloudinary.com/qegjv5mo/video/upload/VID-20261006-WA0001.mp4" type="video/mp4">
+  </audio>
+
   <script>
 
     /* ==========================================
@@ -3681,6 +3695,10 @@
           mult.toFixed(2) +
           'x';
 
+        // Loss SFX before next round music
+        if (typeof playLossSound === 'function') {
+          playLossSound();
+        }
 
         pushHistory(
           mult
@@ -4231,14 +4249,21 @@
       return list;
     }
 
-    /* Rank: first cashout on top, then later cashouts, then active by stake */
+    /*
+     * Live board hierarchy (blends as cashouts happen):
+     * 1) Cashed on top — ranked by WIN (stake × mult) high → low
+     * 2) Still-in below — ranked by stake high → low
+     * First cashout appears on top; bigger later wins float above smaller ones.
+     */
     function rankLiveBoard(){
       liveBoardPlayers.sort((a, b) => {
         if (a.cashed && b.cashed) {
-          return (a.cashoutOrder || 0) - (b.cashoutOrder || 0); // first cashout first
+          const winDiff = Number(b.win || 0) - Number(a.win || 0);
+          if (winDiff !== 0) return winDiff;
+          return (a.cashoutOrder || 0) - (b.cashoutOrder || 0);
         }
-        if (a.cashed !== b.cashed) return a.cashed ? -1 : 1; // cashed above still-in
-        return b.stake - a.stake; // highest stake among active
+        if (a.cashed !== b.cashed) return a.cashed ? -1 : 1;
+        return b.stake - a.stake;
       });
     }
 
@@ -6155,6 +6180,11 @@
         'hidden'
       );
 
+      // Mute all game audio when leaving the game
+      if (typeof muteAllGameAudio === 'function') {
+        muteAllGameAudio();
+      }
+
 
       if(socket){
 
@@ -6221,7 +6251,8 @@
           connectSignals();       // Game signals (no-gen.bonto.run)
           connectPaymentSocket(); // Payments (my-server1.bonto.run)
 
-          // Sound on login / enter game — continuous, restarts each round
+          // Sound when entering game — continuous, restarts each round
+          inGameAudio = true;
           if (typeof tryPlayMusic === 'function') {
             tryPlayMusic();
           }
@@ -7104,22 +7135,28 @@
     ========================================== */
 
     const bgMusic = document.getElementById('bgMusic');
+    const lossSound = document.getElementById('lossSound');
     const speakerBtn = document.getElementById('speakerBtn');
     let musicOn = true;
+    let inGameAudio = false; // only play when game view is active
 
-    // Hide audio from browser UI / media session as much as possible
-    function lockAudioToGameOnly(){
-      if(!bgMusic) return;
-      bgMusic.controls = false;
-      bgMusic.removeAttribute('controls');
-      bgMusic.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
-      bgMusic.setAttribute('disablepictureinpicture', '');
-      bgMusic.style.cssText =
+    function hideAudioEl(el){
+      if(!el) return;
+      el.controls = false;
+      el.removeAttribute('controls');
+      el.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
+      el.setAttribute('disablepictureinpicture', '');
+      el.style.cssText =
         'display:none!important;visibility:hidden!important;opacity:0;' +
         'width:0;height:0;position:fixed;left:-9999px;top:-9999px;' +
         'pointer-events:none;z-index:-1';
+    }
 
-      // Clear Media Session so OS/browser shows minimal external controls
+    // Hide audio from browser UI / media session as much as possible
+    function lockAudioToGameOnly(){
+      hideAudioEl(bgMusic);
+      hideAudioEl(lossSound);
+
       try {
         if (navigator.mediaSession) {
           navigator.mediaSession.metadata = new MediaMetadata({
@@ -7136,8 +7173,30 @@
       } catch(e){}
     }
 
+    function muteAllGameAudio(){
+      inGameAudio = false;
+      try {
+        if (bgMusic) {
+          bgMusic.pause();
+          bgMusic.currentTime = 0;
+        }
+        if (lossSound) {
+          lossSound.pause();
+          lossSound.currentTime = 0;
+        }
+      } catch(e){}
+      lockAudioToGameOnly();
+    }
+
     function tryPlayMusic(){
-      if(!bgMusic || !musicOn) return;
+      if(!bgMusic || !musicOn || !inGameAudio) return;
+      // Stop loss SFX if still playing
+      try {
+        if (lossSound) {
+          lossSound.pause();
+          lossSound.currentTime = 0;
+        }
+      } catch(e){}
       lockAudioToGameOnly();
       bgMusic.volume = 0.45;
       const p = bgMusic.play();
@@ -7147,11 +7206,15 @@
       setTimeout(lockAudioToGameOnly, 100);
     }
 
-    // Restart track from the start after every round (in-game only)
+    // Main track restarts when the next round begins
     function restartMusicForRound(){
-      if(!bgMusic || !musicOn) return;
+      if(!bgMusic || !musicOn || !inGameAudio) return;
       lockAudioToGameOnly();
       try {
+        if (lossSound) {
+          lossSound.pause();
+          lossSound.currentTime = 0;
+        }
         bgMusic.pause();
         bgMusic.currentTime = 0;
       } catch(e){}
@@ -7159,6 +7222,26 @@
       if(p && typeof p.catch === 'function'){
         p.catch(() => {});
       }
+      setTimeout(lockAudioToGameOnly, 100);
+    }
+
+    // After loss/crash — pause BGM, play loss sound until next round
+    function playLossSound(){
+      if(!inGameAudio || !musicOn) return;
+      lockAudioToGameOnly();
+      try {
+        if (bgMusic) {
+          bgMusic.pause();
+        }
+        if (lossSound) {
+          lossSound.currentTime = 0;
+          lossSound.volume = 0.7;
+          const p = lossSound.play();
+          if(p && typeof p.catch === 'function'){
+            p.catch(() => {});
+          }
+        }
+      } catch(e){}
       setTimeout(lockAudioToGameOnly, 100);
     }
 
@@ -7179,10 +7262,13 @@
       speakerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         musicOn = !musicOn;
-        if(musicOn){
+        if(musicOn && inGameAudio){
           tryPlayMusic();
-        }else if(bgMusic){
-          bgMusic.pause();
+        }else{
+          try {
+            if (bgMusic) bgMusic.pause();
+            if (lossSound) lossSound.pause();
+          } catch(err){}
           lockAudioToGameOnly();
         }
         updateSpeakerUI();
@@ -7191,7 +7277,7 @@
 
     // Start only after user interaction (required by browsers)
     function unlockMusic(){
-      tryPlayMusic();
+      if (inGameAudio) tryPlayMusic();
       document.removeEventListener('click', unlockMusic);
       document.removeEventListener('touchstart', unlockMusic);
     }
