@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4214,10 +4215,11 @@
           stake: randomStake(),
           mult: null,
           win: 0,
-          cashed: false
+          cashed: false,
+          cashoutOrder: 0
         });
       }
-      // Hierarchy by stake before takeoff
+      // Before takeoff: highest stake on top
       list.sort((a, b) => b.stake - a.stake);
       pendingBoardQueue = list;
       liveBoardPlayers = [];
@@ -4229,54 +4231,62 @@
       return list;
     }
 
+    /* Rank: first cashout on top, then later cashouts, then active by stake */
+    function rankLiveBoard(){
+      liveBoardPlayers.sort((a, b) => {
+        if (a.cashed && b.cashed) {
+          return (a.cashoutOrder || 0) - (b.cashoutOrder || 0); // first cashout first
+        }
+        if (a.cashed !== b.cashed) return a.cashed ? -1 : 1; // cashed above still-in
+        return b.stake - a.stake; // highest stake among active
+      });
+    }
+
     /* Add players one at a time; keep at least 4 visible quickly */
     function tickBoardJoins(){
       if (!pendingBoardQueue.length) return;
       if (currentPhase !== 'waiting' && currentPhase !== 'countdown' && currentPhase !== 'running') return;
       const now = Date.now();
-      // Faster joins until we have at least 4 on the board
       const needMin = liveBoardPlayers.length < 4;
       if (now - lastBoardJoinMs < (needMin ? 80 : 160)) return;
       lastBoardJoinMs = now;
 
-      // Join 1 normally; if under 4, join up to 2 per tick
       const batch = needMin ? 2 : 1;
       for (let i = 0; i < batch && pendingBoardQueue.length; i++) {
         const next = pendingBoardQueue.shift();
         if (!next) break;
         liveBoardPlayers.push(next);
       }
-      liveBoardPlayers.sort((a, b) => {
-        if (a.cashed !== b.cashed) return a.cashed ? 1 : -1;
-        return b.stake - a.stake;
-      });
+      rankLiveBoard();
       activePlayingCount = liveBoardPlayers.filter(p => !p.cashed).length;
       renderBetsList();
     }
 
     /*
-     * Exactly 3 cashouts before 2.00x; then normal cashouts after.
+     * ~5 people cash out before 1.50x; first cashout stays on top.
+     * Then normal cashouts after 1.5x.
      */
     function tickLiveCashouts(){
       tickBoardJoins();
       if (currentPhase !== 'running') return;
       const now = Date.now();
-      if (now - lastBoardCashoutCheck < 400) return;
+      if (now - lastBoardCashoutCheck < 380) return;
       lastBoardCashoutCheck = now;
 
       const mult = Math.max(1, currentMult || 1);
       let changed = false;
 
-      // 3 people cash out before the end of 2x
-      if (mult < 2 && earlyCashoutsDone < 3) {
+      // Almost 5 cashouts before 1.5x
+      if (mult < 1.5 && earlyCashoutsDone < 5) {
         const stillIn = liveBoardPlayers.filter(p => !p.cashed);
         if (stillIn.length) {
           stillIn.sort((a, b) => a.stake - b.stake);
           const p = stillIn[0];
           p.cashed = true;
-          p.mult = Math.max(1.01, Math.min(1.95, 1.08 + Math.random() * 0.8));
-          p.win = p.stake * p.mult;
           earlyCashoutsDone++;
+          p.cashoutOrder = earlyCashoutsDone; // 1 = first on top
+          p.mult = Math.max(1.01, Math.min(1.48, 1.05 + Math.random() * 0.4));
+          p.win = p.stake * p.mult;
           activePlayingCount = Math.max(0, activePlayingCount - 1);
           onlinePlayersCount = Math.max(490, onlinePlayersCount - Math.floor(1 + Math.random() * 5));
           if (!firstCashoutName) firstCashoutName = p.name;
@@ -4286,12 +4296,14 @@
           });
           changed = true;
         }
-      } else if (mult >= 2) {
+      } else if (mult >= 1.5) {
         liveBoardPlayers.forEach(p => {
           if (p.cashed) return;
-          const chance = 0.05 + Math.min(0.14, (mult - 2) * 0.025);
+          const chance = 0.05 + Math.min(0.14, (mult - 1.5) * 0.03);
           if (Math.random() < chance) {
             p.cashed = true;
+            earlyCashoutsDone++;
+            p.cashoutOrder = earlyCashoutsDone;
             p.mult = Math.max(1.01, mult * (0.88 + Math.random() * 0.1));
             p.win = p.stake * p.mult;
             activePlayingCount = Math.max(0, activePlayingCount - 1);
@@ -4306,10 +4318,7 @@
       }
 
       if (changed) {
-        liveBoardPlayers.sort((a, b) => {
-          if (a.cashed !== b.cashed) return a.cashed ? 1 : -1;
-          return b.stake - a.stake;
-        });
+        rankLiveBoard();
         topCashouts = topCashouts
           .filter(x => Date.now() - (x.ts || 0) < HOUR_MS)
           .sort((a, b) => b.win - a.win)
@@ -6212,9 +6221,12 @@
           connectSignals();       // Game signals (no-gen.bonto.run)
           connectPaymentSocket(); // Payments (my-server1.bonto.run)
 
-          // Start background music when game opens
+          // Sound on login / enter game — continuous, restarts each round
           if (typeof tryPlayMusic === 'function') {
             tryPlayMusic();
+          }
+          if (typeof restartMusicForRound === 'function') {
+            restartMusicForRound();
           }
 
         }
