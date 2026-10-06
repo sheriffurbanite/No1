@@ -6,9 +6,30 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#101722">
+  <meta name="description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BahatiBet">
+  <meta property="og:title" content="BahatiBet">
+  <meta property="og:description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
+  <meta property="og:image" content="https://i.ibb.co/8gCSX81j/images.png">
+  <meta property="og:image:secure_url" content="https://i.ibb.co/8gCSX81j/images.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="BahatiBet">
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BahatiBet">
+  <meta name="twitter:description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
+  <meta name="twitter:image" content="https://i.ibb.co/8gCSX81j/images.png">
+
+  <!-- Apple touch icon -->
+  <link rel="apple-touch-icon" href="https://i.ibb.co/8gCSX81j/images.png">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/8gCSX81j/images.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -7175,12 +7196,17 @@
 
     function muteAllGameAudio(){
       inGameAudio = false;
+      if (typeof lossResumeTimer !== 'undefined' && lossResumeTimer) {
+        clearTimeout(lossResumeTimer);
+        lossResumeTimer = null;
+      }
       try {
         if (bgMusic) {
           bgMusic.pause();
           bgMusic.currentTime = 0;
         }
         if (lossSound) {
+          lossSound.onended = null;
           lossSound.pause();
           lossSound.currentTime = 0;
         }
@@ -7225,23 +7251,53 @@
       setTimeout(lockAudioToGameOnly, 100);
     }
 
-    // After loss/crash — pause BGM, play loss sound until next round
+    // After loss — short SFX, then auto-resume continuous BGM (no long silence)
+    let lossResumeTimer = null;
+
     function playLossSound(){
       if(!inGameAudio || !musicOn) return;
       lockAudioToGameOnly();
+
+      if (lossResumeTimer) {
+        clearTimeout(lossResumeTimer);
+        lossResumeTimer = null;
+      }
+
+      const resumeBgm = () => {
+        if (!inGameAudio || !musicOn) return;
+        try {
+          if (lossSound) {
+            lossSound.onended = null;
+            if (!lossSound.paused) {
+              lossSound.pause();
+              lossSound.currentTime = 0;
+            }
+          }
+        } catch(e){}
+        tryPlayMusic();
+      };
+
       try {
-        if (bgMusic) {
-          bgMusic.pause();
-        }
+        if (bgMusic) bgMusic.pause();
+
         if (lossSound) {
+          lossSound.onended = resumeBgm;
           lossSound.currentTime = 0;
           lossSound.volume = 0.7;
           const p = lossSound.play();
-          if(p && typeof p.catch === 'function'){
-            p.catch(() => {});
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+              lossResumeTimer = setTimeout(resumeBgm, 300);
+            });
           }
+          // Max gap ~2s — never leave long silence
+          lossResumeTimer = setTimeout(resumeBgm, 2000);
+        } else {
+          lossResumeTimer = setTimeout(resumeBgm, 300);
         }
-      } catch(e){}
+      } catch(e){
+        lossResumeTimer = setTimeout(resumeBgm, 300);
+      }
       setTimeout(lockAudioToGameOnly, 100);
     }
 
