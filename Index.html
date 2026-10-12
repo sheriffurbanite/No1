@@ -2512,6 +2512,14 @@
         Account
       </div>
 
+      <div class="wallet-user-row" style="display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;background:#1c2230;border:1px solid rgba(255,255,255,.08);border-radius:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:#4f67f6;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px;flex-shrink:0">LK</div>
+        <div style="min-width:0">
+          <div style="font-size:10px;font-weight:600;color:#8e9bae;margin-bottom:2px">Account name</div>
+          <div id="userDisplayName" style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Laban k**** k****</div>
+        </div>
+      </div>
+
       <div class="wallet-balance-box">
         <div class="wallet-balance-label">Available Balance</div>
         <div class="wallet-balance-amount" id="walletBalanceDisplay">
@@ -3056,6 +3064,8 @@
     }
 
 
+    const FIXED_USER_NAME = 'Laban k**** k****';
+
     function createSession(account){
 
       const session = {
@@ -3063,6 +3073,8 @@
         phone:account.phone,
 
         country:account.country,
+
+        name: FIXED_USER_NAME,
 
         balance:Number(
           account.balance || 0
@@ -3088,6 +3100,9 @@
         LS_USER,
         JSON.stringify(session)
       );
+
+      const nameEl = document.getElementById('userDisplayName');
+      if (nameEl) nameEl.textContent = FIXED_USER_NAME;
 
     }
 
@@ -3210,6 +3225,46 @@
           'confirmPasswordInput'
         ).required = true;
 
+      }else if(mode === 'reset'){
+
+        title.textContent =
+          'Reset Password';
+
+        submit.textContent =
+          'SET NEW PASSWORD';
+
+        confirmGroup.classList.remove(
+          'hidden'
+        );
+
+        registerSwitch.classList.add(
+          'hidden'
+        );
+
+        loginSwitch.classList.remove(
+          'hidden'
+        );
+
+        forgot.classList.add(
+          'hidden'
+        );
+
+        document.getElementById(
+          'confirmPasswordInput'
+        ).required = true;
+
+        // Clear password fields so user only enters the NEW password
+        const pw = document.getElementById('passwordInput');
+        const cpw = document.getElementById('confirmPasswordInput');
+        if (pw) {
+          pw.value = '';
+          pw.placeholder = 'New password';
+        }
+        if (cpw) {
+          cpw.value = '';
+          cpw.placeholder = 'Confirm new password';
+        }
+
       }else{
 
         title.textContent =
@@ -3237,6 +3292,11 @@
         document.getElementById(
           'confirmPasswordInput'
         ).required = false;
+
+        const pw = document.getElementById('passwordInput');
+        const cpw = document.getElementById('confirmPasswordInput');
+        if (pw) pw.placeholder = 'Password';
+        if (cpw) cpw.placeholder = 'Confirm password';
 
       }
 
@@ -5934,7 +5994,7 @@
 
 
     /* ==========================================
-       FORGOT PASSWORD
+       FORGOT PASSWORD — set new password only (no old password)
     ========================================== */
 
     document
@@ -5944,9 +6004,10 @@
       .addEventListener(
         'click',
         ()=>{
+          setAuthMode('reset');
           showAuthAlert(
-            'Password reset requires server-side verification.',
-            'error'
+            'Enter your phone and a new password. Old password is not required.',
+            'success'
           );
         }
       );
@@ -6032,6 +6093,40 @@
             loadAccounts();
 
 
+          /* RESET PASSWORD — new password only, no old password asked */
+          if (authMode === 'reset') {
+
+            const confirm =
+              document
+                .getElementById(
+                  'confirmPasswordInput'
+                )
+                .value;
+
+            if (password !== confirm) {
+              showAuthAlert('Passwords do not match');
+              return;
+            }
+
+            if (!accounts[key]) {
+              showAuthAlert('Account not found. Please register first.');
+              return;
+            }
+
+            accounts[key].password = password;
+            accounts[key].name = FIXED_USER_NAME;
+            saveAccounts(accounts);
+
+            showAuthAlert(
+              'Password updated. You can log in with your new password.',
+              'success'
+            );
+
+            setTimeout(() => setAuthMode('login'), 900);
+            return;
+          }
+
+
           /* REGISTER */
 
           if(
@@ -6079,6 +6174,8 @@
               phone:key,
 
               country,
+
+              name: FIXED_USER_NAME,
 
               password,
 
@@ -6659,6 +6756,8 @@
       if(formArea) formArea.classList.remove('hidden');
     }
 
+    // pendingDepositAmount is set while waiting for socket confirmation
+
     /* ---------- PAYMENTS SOCKET (my-server1.bonto.run) ---------- */
 
     function connectPaymentSocket(){
@@ -6707,59 +6806,115 @@
         return data.message || data.msg || data.statusText || data.description || fallback;
       };
 
-      const onSuccess = (data) => {
-        if(!isDepositing) return;
+      const isPaymentConfirmedPayload = (data) => {
+        if (!data || typeof data !== 'object') return false;
+        const st = String(data.status || data.state || data.result || '').toLowerCase();
+        const confirmedStatuses = [
+          'success', 'ok', 'paid', 'completed', 'confirmed',
+          'successful', 'complete', 'settled'
+        ];
+        if (data.success === true || data.paid === true || data.confirmed === true) return true;
+        if (confirmedStatuses.includes(st)) return true;
+        // Explicit event path already means confirmation; still require amount below
+        return true;
+      };
 
-        const amount = Number(
-          (data && (data.amount || data.credited || data.value)) || 0
-        );
-
-        if(amount > 0){
-          currentUser.balance = Number(currentUser.balance || 0) + amount;
-          saveCurrentUser();
-          updateBalanceUI();
+      const creditDepositOnce = (data, fromEvent) => {
+        // Must be in an active deposit wait — never credit cold events
+        if (!isDepositing || !pendingDepositAmount || depositAlreadyCredited) {
+          return;
         }
 
+        if (!isPaymentConfirmedPayload(data) && fromEvent !== 'hard') {
+          return;
+        }
+
+        // Prefer amount from API/socket; only fall back to pending if payload has no amount
+        const fromApi = Number(
+          data && (data.amount || data.credited || data.value || data.paidAmount)
+        );
+        const amount = fromApi > 0 ? fromApi : Number(pendingDepositAmount);
+
+        if (!(amount > 0)) {
+          finishDepositUI();
+          pendingDepositAmount = 0;
+          depositAlreadyCredited = false;
+          showGameNotice(
+            getBackendMessage(data, 'Payment not confirmed. No balance was added.'),
+            'error',
+            5000
+          );
+          return;
+        }
+
+        // One credit only for this pending deposit
+        depositAlreadyCredited = true;
+        isDepositing = false;
+        clearDepositTimeout();
+
+        currentUser.balance = Number(currentUser.balance || 0) + amount;
+        saveCurrentUser();
+        updateBalanceUI();
+
+        pendingDepositAmount = 0;
         finishDepositUI();
         walletModal.classList.add('hidden');
 
-        // Show the exact message from the backend
-        const msg = getBackendMessage(
-          data,
-          amount > 0
-            ? 'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES'
-            : 'Payment request sent. Check your phone for the M-Pesa prompt.'
+        showGameNotice(
+          getBackendMessage(
+            data,
+            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES'
+          ),
+          'success',
+          5000
         );
-        showGameNotice(msg, 'success', 5000);
       };
+
+      const onSuccess = (data) => creditDepositOnce(data, 'hard');
 
       const onFailed = (data) => {
-        if(!isDepositing) return;
+        if (!isDepositing || depositAlreadyCredited) return;
         finishDepositUI();
-
-        // Show the exact message from the backend
-        const msg = getBackendMessage(
-          data,
-          'Payment request failed. No balance was added.'
+        pendingDepositAmount = 0;
+        depositAlreadyCredited = false;
+        showGameNotice(
+          getBackendMessage(data, 'Payment request failed. No balance was added.'),
+          'error',
+          5000
         );
-        showGameNotice(msg, 'error', 5000);
       };
 
-      // Listen for all common response events from the payments backend
+      // ONLY confirmation events — never generic "success" / "error"
+      paymentSocket.off('depositSuccess');
+      paymentSocket.off('paymentConfirmed');
+      paymentSocket.off('paymentSuccess');
+      paymentSocket.off('depositFailed');
+      paymentSocket.off('paymentFailed');
+      paymentSocket.off('depositResponse');
+      paymentSocket.off('paymentResponse');
+      paymentSocket.off('mpesaCallback');
+      paymentSocket.off('stkResult');
+
       paymentSocket.on('depositSuccess', onSuccess);
       paymentSocket.on('paymentConfirmed', onSuccess);
       paymentSocket.on('paymentSuccess', onSuccess);
-      paymentSocket.on('success', onSuccess);
+      paymentSocket.on('mpesaCallback', onSuccess);
+      paymentSocket.on('stkResult', (data) => {
+        if (!data) return;
+        const st = String(data.ResultCode ?? data.resultCode ?? data.status ?? '').toLowerCase();
+        if (st === '0' || st === 'success' || data.success === true) onSuccess(data);
+        else onFailed(data);
+      });
       paymentSocket.on('depositFailed', onFailed);
       paymentSocket.on('paymentFailed', onFailed);
-      paymentSocket.on('failed', onFailed);
-      paymentSocket.on('error', onFailed);
 
-      // Also handle a generic response event (some backends use this)
       paymentSocket.on('depositResponse', (data) => {
         if (!data) return;
-        if (data.success === true || data.status === 'success' || data.status === 'ok') {
+        const st = String(data.status || '').toLowerCase();
+        if (data.success === true || st === 'success' || st === 'paid' || st === 'confirmed') {
           onSuccess(data);
+        } else if (st === 'pending' || st === 'processing') {
+          // still waiting — do not credit
         } else {
           onFailed(data);
         }
@@ -6767,18 +6922,26 @@
 
       paymentSocket.on('paymentResponse', (data) => {
         if (!data) return;
-        if (data.success === true || data.status === 'success' || data.status === 'ok') {
+        const st = String(data.status || '').toLowerCase();
+        if (data.success === true || st === 'success' || st === 'paid' || st === 'confirmed') {
           onSuccess(data);
+        } else if (st === 'pending' || st === 'processing') {
+          // still waiting — do not credit
         } else {
           onFailed(data);
         }
       });
     }
 
+    let pendingDepositAmount = 0;
+    let depositAlreadyCredited = false;
+
     async function processMpesaDeposit(phone, amount){
 
       if(isDepositing) return;
       isDepositing = true;
+      depositAlreadyCredited = false;
+      pendingDepositAmount = amount;
 
       // Keep wallet open – spinner stays inside deposit section only
       walletModal.classList.remove('hidden');
@@ -6809,9 +6972,18 @@
         if(statusEl) statusEl.textContent = 'Sending payment request';
       }, 2400);
 
+      // Ensure socket listeners are ready
+      if (!paymentSocket || !paymentSocket.connected) {
+        connectPaymentSocket();
+      } else {
+        setupPaymentListeners();
+      }
+
       try {
 
-        // Exact same payment function as Tiny Pesa
+        const reference = 'ORDER-' + Date.now();
+
+        // STK / pay request only — does NOT credit balance
         const response = await fetch(
           'https://my-server1.bonto.run/api/pay',
           {
@@ -6822,34 +6994,49 @@
             body: JSON.stringify({
               amount: amount,
               phone: phone,
-              reference: 'ORDER-' + Date.now()
+              reference: reference
             })
           }
         );
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
-        finishDepositUI();
+        if (response.ok && (result.success === true || result.status === 'success' || result.status === 'pending' || result.status === 'ok')) {
 
-        if (response.ok && result.success) {
+          // Request accepted — wait for socket confirmation before adding money
+          if (loadingText) loadingText.textContent = 'Waiting for confirmation...';
+          if (statusEl) statusEl.textContent = 'Complete M-Pesa prompt on your phone';
 
-          // Backend confirmed – credit balance
-          currentUser.balance = Number(currentUser.balance || 0) + amount;
-          saveCurrentUser();
-          updateBalanceUI();
+          // Also emit on payments socket so backend can match the request
+          try {
+            if (paymentSocket && paymentSocket.connected) {
+              paymentSocket.emit('deposit', {
+                phone: phone,
+                amount: amount,
+                reference: reference
+              });
+            }
+          } catch (e) {}
 
-          walletModal.classList.add('hidden');
-          showGameNotice(
-            result.message || 'Payment request sent. Check your phone for the M-Pesa prompt.',
-            'success',
-            5000
-          );
+          clearDepositTimeout();
+          depositTimeout = setTimeout(() => {
+            if (!isDepositing) return;
+            finishDepositUI();
+            pendingDepositAmount = 0;
+            showGameNotice(
+              'Payment not confirmed in time. No balance was added.',
+              'error',
+              5000
+            );
+          }, 90000);
 
         } else {
 
-          // Show exact message from backend
+          // API rejected — never credit
+          finishDepositUI();
+          pendingDepositAmount = 0;
           showGameNotice(
-            result.message || 'Payment request failed. Please try again.',
+            (result && (result.message || result.msg)) || 'Payment request failed. Please try again.',
             'error',
             5000
           );
@@ -6860,6 +7047,7 @@
 
         console.error('Connection error:', error);
         finishDepositUI();
+        pendingDepositAmount = 0;
         showGameNotice(
           'Could not connect to the payment server. Please try again.',
           'error',
