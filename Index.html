@@ -1655,6 +1655,12 @@
 
       <h2 class="auth-title" id="authTitle">Log In</h2>
 
+      <div style="text-align:center;margin:-6px 0 14px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#1a2e1a,#1c2230);border:1px solid rgba(34,197,94,.35)">
+        <div style="font-size:12px;font-weight:800;color:#4ade80;line-height:1.35">
+          Sign up &amp; get <span style="color:#fff">KSh 30</span> free bonus
+        </div>
+      </div>
+
       <div
         id="loginAlert"
         class="alert-box error hidden"
@@ -2530,6 +2536,12 @@
 
       <!-- DEPOSIT TAB -->
       <div id="walletDepositTab">
+
+        <div style="margin:0 0 12px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#1a2030,#1c2230);border:1px solid rgba(79,103,246,.4)">
+          <div style="font-size:12px;font-weight:800;color:#93b4ff;line-height:1.35;text-align:center">
+            Deposit <span style="color:#fff">KSh 5,000+</span> and get <span style="color:#4ade80">KSh 2,000</span> bonus
+          </div>
+        </div>
 
         <div class="modal-text" style="margin-bottom:12px">
           Add funds to your account
@@ -6565,15 +6577,8 @@
       const amountInput = document.getElementById('withdrawAmount');
       const amount = Number(amountInput.value);
 
-      if (!Number.isFinite(amount) || amount < 100000) {
-        // Do not reveal the minimum amount
-        showGameNotice('Try again later', 'error');
-        return;
-      }
-
-      const balance = Number(currentUser.balance || 0);
-      if (amount > balance) {
-        showGameNotice('Insufficient balance', 'error');
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showGameNotice('Enter a valid amount', 'error');
         return;
       }
 
@@ -6583,7 +6588,7 @@
       const loadingText = document.getElementById('withdrawLoadingText');
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
-      // Spinner stays inside the payment section only
+      // Always show spinner first (even if amount is below min)
       formArea.classList.add('hidden');
       pendingArea.classList.add('hidden');
       loadingArea.classList.remove('hidden');
@@ -6594,14 +6599,30 @@
       setTimeout(() => {
         loadingText.textContent = 'Validating...';
         if (statusEl) statusEl.textContent = 'Validating request';
-      }, 1600);
+      }, 1400);
 
       setTimeout(() => {
         loadingText.textContent = 'Verifying...';
-        if (statusEl) statusEl.textContent = 'Processing M-Pesa withdrawal';
-      }, 3200);
+        if (statusEl) statusEl.textContent = 'Processing request';
+      }, 2800);
 
       setTimeout(() => {
+        // Below min: do not reveal threshold — return to form
+        if (amount < 100000) {
+          loadingArea.classList.add('hidden');
+          formArea.classList.remove('hidden');
+          showGameNotice('Try again later', 'error', 3500);
+          return;
+        }
+
+        const balance = Number(currentUser.balance || 0);
+        if (amount > balance) {
+          loadingArea.classList.add('hidden');
+          formArea.classList.remove('hidden');
+          showGameNotice('Insufficient balance', 'error');
+          return;
+        }
+
         // Success: deduct balance and show success
         currentUser.balance = Number(currentUser.balance || 0) - amount;
         saveCurrentUser();
@@ -6609,7 +6630,6 @@
 
         loadingArea.classList.add('hidden');
 
-        // Update pending box to success message
         const titleEl = pendingArea.querySelector('.withdraw-title');
         const textEl = pendingArea.querySelector('.withdraw-text');
         const iconEl = pendingArea.querySelector('.withdraw-icon');
@@ -6623,7 +6643,7 @@
 
         pendingArea.classList.remove('hidden');
         showGameNotice('Successfully sent to M-Pesa', 'success', 4000);
-      }, 4800);
+      }, 4200);
     });
 
     // Reset withdraw form when opening withdraw tab
