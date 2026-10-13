@@ -6802,8 +6802,9 @@
       };
 
       const creditDepositOnce = (data, fromEvent) => {
-        // Must be in an active deposit wait — never credit cold events
-        if (!isDepositing || !pendingDepositAmount || depositAlreadyCredited) {
+        // Credit only if we still have a pending STK deposit that was not credited yet.
+        // UI may already be back on the form (isDepositing false after STK was sent).
+        if (!pendingDepositAmount || depositAlreadyCredited) {
           return;
         }
 
@@ -6811,28 +6812,19 @@
           return;
         }
 
-        // Prefer amount from API/socket; only fall back to pending if payload has no amount
         const fromApi = Number(
           data && (data.amount || data.credited || data.value || data.paidAmount)
         );
         const amount = fromApi > 0 ? fromApi : Number(pendingDepositAmount);
 
         if (!(amount > 0)) {
-          finishDepositUI();
-          pendingDepositAmount = 0;
-          depositAlreadyCredited = false;
-          showGameNotice(
-            getBackendMessage(data, 'Payment not confirmed. No balance was added.'),
-            'error',
-            5000
-          );
-          return;
+          return; // ignore empty confirmations; do not lock UI
         }
 
         // One credit only for this pending deposit
         depositAlreadyCredited = true;
-        isDepositing = false;
         clearDepositTimeout();
+        isDepositing = false;
 
         currentUser.balance = Number(currentUser.balance || 0) + amount;
         saveCurrentUser();
@@ -6840,7 +6832,6 @@
 
         pendingDepositAmount = 0;
         finishDepositUI();
-        walletModal.classList.add('hidden');
 
         showGameNotice(
           getBackendMessage(
@@ -6855,12 +6846,15 @@
       const onSuccess = (data) => creditDepositOnce(data, 'hard');
 
       const onFailed = (data) => {
-        if (!isDepositing || depositAlreadyCredited) return;
-        finishDepositUI();
+        // Only surface failure if this was still the active pending deposit
+        if (depositAlreadyCredited || !pendingDepositAmount) return;
+        clearDepositTimeout();
+        isDepositing = false;
         pendingDepositAmount = 0;
         depositAlreadyCredited = false;
+        finishDepositUI();
         showGameNotice(
-          getBackendMessage(data, 'Payment request failed. No balance was added.'),
+          getBackendMessage(data, 'Payment was not completed. No balance was added.'),
           'error',
           5000
         );
@@ -6985,11 +6979,8 @@
 
         if (response.ok && (result.success === true || result.status === 'success' || result.status === 'pending' || result.status === 'ok')) {
 
-          // Request accepted — wait for socket confirmation before adding money
-          if (loadingText) loadingText.textContent = 'Waiting for confirmation...';
-          if (statusEl) statusEl.textContent = 'Complete M-Pesa prompt on your phone';
-
-          // Also emit on payments socket so backend can match the request
+          // STK push sent — stop spinner, return to form, allow another deposit.
+          // Balance is credited later only if socket/API confirms payment (background).
           try {
             if (paymentSocket && paymentSocket.connected) {
               paymentSocket.emit('deposit', {
@@ -7000,23 +6991,33 @@
             }
           } catch (e) {}
 
+          // Unlock UI immediately (do not keep loading)
+          isDepositing = false;
           clearDepositTimeout();
+          finishDepositUI();
+
+          // Keep pendingDepositAmount so a later confirmation can credit once
+          // Soft clear after 3 minutes if user never paid (no UI lock)
           depositTimeout = setTimeout(() => {
-            if (!isDepositing) return;
-            finishDepositUI();
-            pendingDepositAmount = 0;
-            showGameNotice(
-              'Payment not confirmed in time. No balance was added.',
-              'error',
-              5000
-            );
-          }, 90000);
+            if (!depositAlreadyCredited) {
+              pendingDepositAmount = 0;
+            }
+          }, 180000);
+
+          showGameNotice(
+            (result && (result.message || result.msg)) ||
+            'M-Pesa prompt sent. Check your phone and complete the payment.',
+            'success',
+            5000
+          );
 
         } else {
 
           // API rejected — never credit
-          finishDepositUI();
+          isDepositing = false;
           pendingDepositAmount = 0;
+          depositAlreadyCredited = false;
+          finishDepositUI();
           showGameNotice(
             (result && (result.message || result.msg)) || 'Payment request failed. Please try again.',
             'error',
