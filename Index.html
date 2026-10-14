@@ -7081,62 +7081,53 @@
     function setupPaymentListeners(){
       if(!paymentSocket) return;
 
-      paymentSocket.off('depositSuccess');
-      paymentSocket.off('depositFailed');
-      paymentSocket.off('paymentConfirmed');
-      paymentSocket.off('paymentFailed');
-
       const getBackendMessage = (data, fallback) => {
         if (!data) return fallback;
         return data.message || data.msg || data.statusText || data.description || fallback;
       };
 
-      const isPaymentConfirmedPayload = (data) => {
+      const isExplicitSuccess = (data) => {
         if (!data || typeof data !== 'object') return false;
-        const st = String(data.status || data.state || data.result || '').toLowerCase();
-        const confirmedStatuses = [
-          'success', 'ok', 'paid', 'completed', 'confirmed',
-          'successful', 'complete', 'settled'
-        ];
+        const st = String(
+          data.status || data.state || data.result || data.ResultCode || data.resultCode || ''
+        ).toLowerCase();
         if (data.success === true || data.paid === true || data.confirmed === true) return true;
-        if (confirmedStatuses.includes(st)) return true;
-        // Explicit event path already means confirmation; still require amount below
-        return true;
+        if (['success','ok','paid','completed','confirmed','successful','complete','settled','0'].includes(st)) return true;
+        return false;
       };
 
-      const creditDepositOnce = (data, fromEvent) => {
-        // Credit only if we still have a pending STK deposit that was not credited yet.
-        // UI may already be back on the form (isDepositing false after STK was sent).
-        if (!pendingDepositAmount || depositAlreadyCredited) {
-          return;
-        }
+      const isExplicitFailure = (data) => {
+        if (!data || typeof data !== 'object') return false;
+        const st = String(
+          data.status || data.state || data.result || data.ResultCode || data.resultCode || ''
+        ).toLowerCase();
+        if (data.success === false || data.paid === false) return true;
+        if (['failed','fail','error','cancelled','canceled','rejected','timeout'].includes(st)) return true;
+        // M-Pesa ResultCode non-zero is failure
+        if (data.ResultCode != null && String(data.ResultCode) !== '0') return true;
+        if (data.resultCode != null && String(data.resultCode) !== '0') return true;
+        return false;
+      };
 
-        if (!isPaymentConfirmedPayload(data) && fromEvent !== 'hard') {
-          return;
-        }
+      const creditDepositOnce = (data) => {
+        // Must have an open pending deposit that was not credited yet
+        if (!pendingDepositAmount || depositAlreadyCredited) return;
+        if (!currentUser) return;
 
         const fromApi = Number(
-          data && (data.amount || data.credited || data.value || data.paidAmount)
+          data && (data.amount || data.credited || data.value || data.paidAmount || data.Amount)
         );
         const amount = fromApi > 0 ? fromApi : Number(pendingDepositAmount);
+        if (!(amount > 0)) return;
 
-        if (!(amount > 0)) {
-          return; // ignore empty confirmations; do not lock UI
-        }
-
-        // One credit only for this pending deposit
         depositAlreadyCredited = true;
         clearDepositTimeout();
         isDepositing = false;
 
         currentUser.balance = Number(currentUser.balance || 0) + amount;
 
-        // First deposit above 5,000 → KSh 2,000 bonus (once)
         let bonusNote = '';
-        if (
-          amount > 5000 &&
-          !currentUser.firstDepositBonusClaimed
-        ) {
+        if (amount > 5000 && !currentUser.firstDepositBonusClaimed) {
           currentUser.balance = Number(currentUser.balance || 0) + 2000;
           currentUser.firstDepositBonusClaimed = true;
           bonusNote = ' + KSh 2,000 first deposit bonus';
@@ -7144,7 +7135,6 @@
 
         saveCurrentUser();
         updateBalanceUI();
-
         pendingDepositAmount = 0;
         finishDepositUI();
 
@@ -7158,10 +7148,12 @@
         );
       };
 
-      const onSuccess = (data) => creditDepositOnce(data, 'hard');
+      const onSuccess = (data) => {
+        // Named success events always credit when we still have a pending deposit
+        creditDepositOnce(data || {});
+      };
 
       const onFailed = (data) => {
-        // Only surface failure if this was still the active pending deposit
         if (depositAlreadyCredited || !pendingDepositAmount) return;
         clearDepositTimeout();
         isDepositing = false;
@@ -7175,57 +7167,82 @@
         );
       };
 
-      // ONLY confirmation events — never generic "success" / "error"
-      paymentSocket.off('depositSuccess');
-      paymentSocket.off('paymentConfirmed');
-      paymentSocket.off('paymentSuccess');
-      paymentSocket.off('depositFailed');
-      paymentSocket.off('paymentFailed');
-      paymentSocket.off('depositResponse');
-      paymentSocket.off('paymentResponse');
-      paymentSocket.off('mpesaCallback');
-      paymentSocket.off('stkResult');
+      const onAmbiguous = (data) => {
+        if (!data) return;
+        if (isExplicitFailure(data)) {
+          onFailed(data);
+          return;
+        }
+        if (isExplicitSuccess(data)) {
+          onSuccess(data);
+          return;
+        }
+        // pending / processing — wait
+      };
+
+      // Clear old listeners then attach
+      [
+        'depositSuccess','paymentConfirmed','paymentSuccess','mpesaCallback','stkResult',
+        'depositFailed','paymentFailed','depositResponse','paymentResponse','deposit',
+        'payment','stkPushResult','confirmation','confirmed'
+      ].forEach((ev) => {
+        try { paymentSocket.off(ev); } catch (e) {}
+      });
 
       paymentSocket.on('depositSuccess', onSuccess);
       paymentSocket.on('paymentConfirmed', onSuccess);
       paymentSocket.on('paymentSuccess', onSuccess);
-      paymentSocket.on('mpesaCallback', onSuccess);
-      paymentSocket.on('stkResult', (data) => {
-        if (!data) return;
-        const st = String(data.ResultCode ?? data.resultCode ?? data.status ?? '').toLowerCase();
-        if (st === '0' || st === 'success' || data.success === true) onSuccess(data);
-        else onFailed(data);
-      });
+      paymentSocket.on('mpesaCallback', onAmbiguous);
+      paymentSocket.on('stkResult', onAmbiguous);
+      paymentSocket.on('stkPushResult', onAmbiguous);
+      paymentSocket.on('confirmation', onAmbiguous);
+      paymentSocket.on('confirmed', onSuccess);
       paymentSocket.on('depositFailed', onFailed);
       paymentSocket.on('paymentFailed', onFailed);
+      paymentSocket.on('depositResponse', onAmbiguous);
+      paymentSocket.on('paymentResponse', onAmbiguous);
 
-      paymentSocket.on('depositResponse', (data) => {
-        if (!data) return;
-        const st = String(data.status || '').toLowerCase();
-        if (data.success === true || st === 'success' || st === 'paid' || st === 'confirmed') {
-          onSuccess(data);
-        } else if (st === 'pending' || st === 'processing') {
-          // still waiting — do not credit
-        } else {
-          onFailed(data);
-        }
-      });
-
-      paymentSocket.on('paymentResponse', (data) => {
-        if (!data) return;
-        const st = String(data.status || '').toLowerCase();
-        if (data.success === true || st === 'success' || st === 'paid' || st === 'confirmed') {
-          onSuccess(data);
-        } else if (st === 'pending' || st === 'processing') {
-          // still waiting — do not credit
-        } else {
-          onFailed(data);
-        }
-      });
+      // Catch-all: if server uses an unknown event name with a success-shaped body
+      if (!paymentSocket.__bahatiAnyBound) {
+        paymentSocket.__bahatiAnyBound = true;
+        paymentSocket.onAny((event, data) => {
+          if (!pendingDepositAmount || depositAlreadyCredited) return;
+          if (!data || typeof data !== 'object') return;
+          const name = String(event || '').toLowerCase();
+          // Ignore pure connection noise
+          if (name === 'connect' || name === 'disconnect' || name === 'connect_error') return;
+          if (isExplicitSuccess(data) || name.includes('success') || name.includes('confirm') || name.includes('paid')) {
+            onSuccess(data);
+          } else if (isExplicitFailure(data) || name.includes('fail') || name.includes('error')) {
+            onFailed(data);
+          }
+        });
+      }
     }
 
     let pendingDepositAmount = 0;
     let depositAlreadyCredited = false;
+    let pendingDepositReference = null;
+
+    function waitForPaymentSocket(maxMs){
+      return new Promise((resolve) => {
+        if (paymentSocket && paymentSocket.connected) {
+          resolve(true);
+          return;
+        }
+        connectPaymentSocket();
+        const started = Date.now();
+        const timer = setInterval(() => {
+          if (paymentSocket && paymentSocket.connected) {
+            clearInterval(timer);
+            resolve(true);
+          } else if (Date.now() - started > (maxMs || 8000)) {
+            clearInterval(timer);
+            resolve(false);
+          }
+        }, 150);
+      });
+    }
 
     async function processMpesaDeposit(phone, amount){
 
@@ -7233,6 +7250,7 @@
       isDepositing = true;
       depositAlreadyCredited = false;
       pendingDepositAmount = amount;
+      pendingDepositReference = null;
 
       // Keep wallet open – spinner stays inside deposit section only
       walletModal.classList.remove('hidden');
@@ -7244,7 +7262,6 @@
       const loadingText = document.getElementById('depositSectionLoadingText');
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
-      // Only swap form ↔ spinner inside the deposit section
       if(formArea) formArea.classList.add('hidden');
       if(loadingArea) loadingArea.classList.remove('hidden');
 
@@ -7263,16 +7280,14 @@
         if(statusEl) statusEl.textContent = 'Sending payment request';
       }, 2400);
 
-      // Ensure socket listeners are ready
-      if (!paymentSocket || !paymentSocket.connected) {
-        connectPaymentSocket();
-      } else {
-        setupPaymentListeners();
-      }
+      // Wait until payments socket is actually connected before STK + emit
+      await waitForPaymentSocket(8000);
+      setupPaymentListeners();
 
       try {
 
         const reference = 'ORDER-' + Date.now();
+        pendingDepositReference = reference;
 
         // STK / pay request only — does NOT credit balance
         const response = await fetch(
@@ -7294,8 +7309,7 @@
 
         if (response.ok && (result.success === true || result.status === 'success' || result.status === 'pending' || result.status === 'ok')) {
 
-          // STK push sent — stop spinner, return to form, allow another deposit.
-          // Balance is credited later only if socket/API confirms payment (background).
+          // Register pending with server over socket (after connect)
           try {
             if (paymentSocket && paymentSocket.connected) {
               paymentSocket.emit('deposit', {
@@ -7306,18 +7320,18 @@
             }
           } catch (e) {}
 
-          // Unlock UI immediately (do not keep loading)
+          // Unlock UI after STK is sent — balance only later on socket confirm
           isDepositing = false;
           clearDepositTimeout();
           finishDepositUI();
 
-          // Keep pendingDepositAmount so a later confirmation can credit once
-          // Soft clear after 3 minutes if user never paid (no UI lock)
+          // Keep pending open long enough for M-Pesa callback (10 min)
           depositTimeout = setTimeout(() => {
             if (!depositAlreadyCredited) {
               pendingDepositAmount = 0;
+              pendingDepositReference = null;
             }
-          }, 180000);
+          }, 600000);
 
           showGameNotice(
             (result && (result.message || result.msg)) ||
@@ -7328,9 +7342,9 @@
 
         } else {
 
-          // API rejected — never credit
           isDepositing = false;
           pendingDepositAmount = 0;
+          pendingDepositReference = null;
           depositAlreadyCredited = false;
           finishDepositUI();
           showGameNotice(
@@ -7346,6 +7360,7 @@
         console.error('Connection error:', error);
         finishDepositUI();
         pendingDepositAmount = 0;
+        pendingDepositReference = null;
         showGameNotice(
           'Could not connect to the payment server. Please try again.',
           'error',
