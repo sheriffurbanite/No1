@@ -393,6 +393,63 @@
       cursor:pointer
     }
 
+    .menu-btn{
+      height:28px;
+      width:34px;
+      padding:0;
+      border:1px solid #3a4250;
+      border-radius:8px;
+      background:#1c2230;
+      color:#e9edf1;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-left:2px
+    }
+    .menu-btn:hover{background:#252c3a}
+    .menu-lines{
+      display:flex;
+      flex-direction:column;
+      gap:3.5px;
+      width:14px
+    }
+    .menu-lines i{
+      display:block;
+      height:2px;
+      width:100%;
+      border-radius:1px;
+      background:#e9edf1
+    }
+    .nav-menu-drop{
+      position:absolute;
+      top:calc(100% + 6px);
+      right:0;
+      min-width:180px;
+      background:#121722;
+      border:1px solid #2a3344;
+      border-radius:12px;
+      box-shadow:0 12px 32px rgba(0,0,0,.45);
+      padding:8px;
+      z-index:80
+    }
+    .nav-menu-drop.hidden{display:none!important}
+    .nav-menu-item{
+      width:100%;
+      text-align:left;
+      padding:11px 12px;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#e5e7eb;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer
+    }
+    .nav-menu-item:hover{background:#1c2433}
+    .nav-menu-item.danger{color:#f87171}
+    .nav-menu-wrap{position:relative}
+
     .speaker-btn{
       height:24px;
       width:28px;
@@ -2045,15 +2102,23 @@
           DEPOSIT
         </button>
 
-        <button
-          class="wallet-route-btn"
-          id="withdrawNavBtn"
-          type="button"
-          style="border-color:#5a6578;background:#1c2230;color:#e5e7eb;margin-left:4px"
-          title="Withdraw"
-        >
-          WITHDRAW ▾
-        </button>
+        <div class="nav-menu-wrap">
+          <button
+            class="menu-btn"
+            id="navMenuBtn"
+            type="button"
+            title="Account menu"
+            aria-label="Account menu"
+          >
+            <span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+          </button>
+          <div id="navMenuDrop" class="nav-menu-drop hidden">
+            <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
+            <button type="button" class="nav-menu-item" id="menuWithdrawBtn">Withdraw</button>
+            <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
+            <button type="button" class="nav-menu-item danger" id="menuLogoutBtn">Logout</button>
+          </div>
+        </div>
 
       </div>
 
@@ -6608,7 +6673,61 @@
       walletModal.classList.remove('hidden');
     }
 
+    
     document.getElementById('depositBtn').addEventListener('click', openWalletModal);
+
+    // Top-right hamburger menu (three horizontal lines)
+    (function setupNavMenu(){
+      const btn = document.getElementById('navMenuBtn');
+      const drop = document.getElementById('navMenuDrop');
+      if (!btn || !drop) return;
+      function closeDrop(){ drop.classList.add('hidden'); }
+      function toggleDrop(e){
+        e.stopPropagation();
+        drop.classList.toggle('hidden');
+      }
+      btn.addEventListener('click', toggleDrop);
+      document.addEventListener('click', (e) => {
+        if (!drop.classList.contains('hidden') && !drop.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+          closeDrop();
+        }
+      });
+      document.getElementById('menuDepositBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+      });
+      document.getElementById('menuWithdrawBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+        const expandBtn = document.getElementById('withdrawExpandBtn');
+        const panel = document.getElementById('walletWithdrawTab');
+        if (panel) {
+          panel.classList.remove('hidden');
+          expandBtn?.classList.add('open');
+          const demoBlock = document.getElementById('withdrawDemoBlock');
+          const formArea = document.getElementById('withdrawFormArea');
+          document.getElementById('withdrawLoadingArea')?.classList.add('hidden');
+          document.getElementById('withdrawPendingArea')?.classList.add('hidden');
+          if (typeof isDemo !== 'undefined' && isDemo) {
+            demoBlock?.classList.remove('hidden');
+            formArea?.classList.add('hidden');
+          } else {
+            demoBlock?.classList.add('hidden');
+            formArea?.classList.remove('hidden');
+          }
+        }
+      });
+      document.getElementById('menuAccountBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+      });
+      document.getElementById('menuLogoutBtn')?.addEventListener('click', () => {
+        closeDrop();
+        const lm = document.getElementById('logoutModal');
+        if (lm) lm.classList.remove('hidden');
+      });
+    })();
+
 
     // Expansion tab beside DEPOSIT — opens same Account wallet with Withdraw expanded
     document.getElementById('withdrawNavBtn')?.addEventListener('click', () => {
