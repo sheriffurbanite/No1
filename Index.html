@@ -1632,10 +1632,131 @@
         min-width:78px
       }
     }
+
+    /* =========================
+       POST-LOGIN SPLASH (Spribe style)
+    ========================= */
+    .splash{
+      position:fixed;
+      inset:0;
+      z-index:500;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background:#07080c;
+      transition:opacity .35s ease
+    }
+    .splash.hidden{display:none!important}
+    .splash.fade-out{opacity:0;pointer-events:none}
+    .spribe-load{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:22px
+    }
+    .splash-brand{
+      font-family:Georgia,serif;
+      font-style:italic;
+      font-weight:800;
+      font-size:42px;
+      color:#ed0a45;
+      letter-spacing:.5px
+    }
+    .spribe-dots{
+      display:flex;
+      gap:7px;
+      align-items:center;
+      height:14px
+    }
+    .spribe-dots i{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#ed0a45;
+      opacity:.25;
+      animation:spribeDot 1.1s ease-in-out infinite
+    }
+    .spribe-dots i:nth-child(1){animation-delay:0s}
+    .spribe-dots i:nth-child(2){animation-delay:.08s}
+    .spribe-dots i:nth-child(3){animation-delay:.16s}
+    .spribe-dots i:nth-child(4){animation-delay:.24s}
+    .spribe-dots i:nth-child(5){animation-delay:.32s}
+    .spribe-dots i:nth-child(6){animation-delay:.40s}
+    .spribe-dots i:nth-child(7){animation-delay:.48s}
+    .spribe-dots i:nth-child(8){animation-delay:.56s}
+    @keyframes spribeDot{
+      0%,100%{opacity:.2;transform:scale(.85)}
+      50%{opacity:1;transform:scale(1.15)}
+    }
+    .splash-connection-block{
+      margin-top:28px;
+      text-align:center
+    }
+    .splash-site-title{
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:2px;
+      color:#e5e7eb;
+      margin-bottom:6px
+    }
+    .splash-connection{
+      font-size:12px;
+      color:#9ca3af;
+      font-weight:600
+    }
+
+    /* Withdraw expand accordion */
+    .withdraw-expand-btn{
+      width:100%;
+      margin-top:14px;
+      height:40px;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;
+      background:#1c2230;
+      color:#e5e7eb;
+      font-size:13px;
+      font-weight:800;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 14px
+    }
+    .withdraw-expand-btn .chev{
+      transition:transform .2s ease;
+      color:#9ca3af
+    }
+    .withdraw-expand-btn.open .chev{
+      transform:rotate(180deg)
+    }
+    .withdraw-expand-panel{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      background:#0f141c;
+      padding:12px;
+      overflow:hidden
+    }
+    .withdraw-expand-panel.hidden{display:none!important}
   </style>
 </head>
 
 <body>
+
+  <!-- POST-LOGIN SPLASH -->
+  <div id="splash" class="splash hidden">
+    <div class="spribe-load">
+      <div class="splash-brand">Aviator</div>
+      <div class="spribe-dots" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+    <div class="splash-connection-block">
+      <div class="splash-site-title">BAHATIBET</div>
+      <div class="splash-connection" id="splashConnection">Connection...</div>
+    </div>
+  </div>
 
   <!-- =========================
        LOGIN / REGISTER
@@ -2525,16 +2646,7 @@
         </div>
       </div>
 
-      <div class="wallet-tabs">
-        <button class="wallet-tab active" data-wallet-tab="deposit">
-          Deposit
-        </button>
-        <button class="wallet-tab" data-wallet-tab="withdraw">
-          Withdraw
-        </button>
-      </div>
-
-      <!-- DEPOSIT TAB -->
+      <!-- DEPOSIT (always visible — original deposit area) -->
       <div id="walletDepositTab">
 
         <div style="margin:0 0 12px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#1a2030,#1c2230);border:1px solid rgba(79,103,246,.4)">
@@ -2591,18 +2703,21 @@
 
       </div>
 
-      <!-- WITHDRAW TAB -->
-      <div id="walletWithdrawTab" class="hidden">
+      <!-- WITHDRAW — expandable section (not inside deposit tabs) -->
+      <button type="button" class="withdraw-expand-btn" id="withdrawExpandBtn">
+        <span>Withdraw</span>
+        <span class="chev">▾</span>
+      </button>
 
-        <!-- Demo mode block -->
+      <div id="walletWithdrawTab" class="withdraw-expand-panel hidden">
+
         <div id="withdrawDemoBlock" class="hidden">
-          <div class="modal-text" style="text-align:center;padding:24px 10px">
+          <div class="modal-text" style="text-align:center;padding:16px 10px">
             Withdrawals are not available in Demo Mode.<br>
             Switch to Real Mode to withdraw.
           </div>
         </div>
 
-        <!-- Step 1: Enter amount (Real mode only) -->
         <div id="withdrawFormArea">
           <div class="modal-text" style="margin-bottom:12px">
             Enter the amount you want to withdraw
@@ -2618,7 +2733,6 @@
           </div>
         </div>
 
-        <!-- Step 2: Loading stays inside withdraw section -->
         <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
           <div class="spinner" style="margin:0 auto 14px;width:40px;height:40px;border-width:4px"></div>
           <div id="withdrawLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">
@@ -2629,7 +2743,6 @@
           </div>
         </div>
 
-        <!-- Step 3: Pending result -->
         <div id="withdrawPendingArea" class="hidden">
           <div class="withdraw-pending-box">
             <div class="withdraw-icon">⏳</div>
@@ -6346,47 +6459,47 @@
 
     function showGame(){
 
-      loginView.classList.add(
-        'hidden'
-      );
+      loginView.classList.add('hidden');
 
-      gameView.classList.remove(
-        'hidden'
-      );
+      // Spribe-style splash loading after login
+      const splash = document.getElementById('splash');
+      const splashConn = document.getElementById('splashConnection');
+      if (splash) {
+        splash.classList.remove('hidden', 'fade-out');
+        if (splashConn) splashConn.textContent = 'Connection...';
+      }
 
-
-      updateBalanceUI();
-
-
-      demoIndicator.classList.toggle(
-        'hidden',
-        !isDemo
-      );
-
-      generateLiveBoard();
-      seedPreviousMults();
-      renderBetsList();
-
-
-      requestAnimationFrame(
-        ()=>{
-
-          resizeCanvas();
-
-          connectSignals();       // Game signals (no-gen.bonto.run)
-          connectPaymentSocket(); // Payments (my-server1.bonto.run)
-
-          // Sound when entering game — continuous, restarts each round
-          inGameAudio = true;
-          if (typeof tryPlayMusic === 'function') {
-            tryPlayMusic();
-          }
-          if (typeof restartMusicForRound === 'function') {
-            restartMusicForRound();
-          }
-
+      const finishEnterGame = () => {
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(() => splash.classList.add('hidden'), 350);
         }
-      );
+
+        gameView.classList.remove('hidden');
+        updateBalanceUI();
+        demoIndicator.classList.toggle('hidden', !isDemo);
+        generateLiveBoard();
+        seedPreviousMults();
+        renderBetsList();
+
+        requestAnimationFrame(() => {
+          resizeCanvas();
+          connectSignals();
+          connectPaymentSocket();
+          inGameAudio = true;
+          if (typeof tryPlayMusic === 'function') tryPlayMusic();
+          if (typeof restartMusicForRound === 'function') restartMusicForRound();
+        });
+      };
+
+      // Brief loading sequence then enter game
+      setTimeout(() => {
+        if (splashConn) splashConn.textContent = 'Connecting...';
+      }, 600);
+      setTimeout(() => {
+        if (splashConn) splashConn.textContent = 'Almost ready...';
+      }, 1400);
+      setTimeout(finishEnterGame, 2200);
 
     }
 
@@ -6450,12 +6563,26 @@
     function openWalletModal(){
       updateWalletBalance();
 
-      // Default to Deposit tab
-      document.querySelectorAll('.wallet-tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.walletTab === 'deposit');
-      });
+      // Deposit always visible; withdraw panel collapsed by default
       walletDepositTab.classList.remove('hidden');
       walletWithdrawTab.classList.add('hidden');
+      const expandBtn = document.getElementById('withdrawExpandBtn');
+      if (expandBtn) expandBtn.classList.remove('open');
+
+      // Prepare withdraw demo/real visibility
+      const demoBlock = document.getElementById('withdrawDemoBlock');
+      const formArea = document.getElementById('withdrawFormArea');
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      if (loadingArea) loadingArea.classList.add('hidden');
+      if (pendingArea) pendingArea.classList.add('hidden');
+      if (isDemo) {
+        if (demoBlock) demoBlock.classList.remove('hidden');
+        if (formArea) formArea.classList.add('hidden');
+      } else {
+        if (demoBlock) demoBlock.classList.add('hidden');
+        if (formArea) formArea.classList.remove('hidden');
+      }
 
       // Show correct deposit form
       if(isDemo){
@@ -6489,20 +6616,28 @@
       }
     });
 
-    // Wallet tabs
-    document.querySelectorAll('.wallet-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.wallet-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        if(tab.dataset.walletTab === 'deposit'){
-          walletDepositTab.classList.remove('hidden');
-          walletWithdrawTab.classList.add('hidden');
-        }else{
-          walletDepositTab.classList.add('hidden');
-          walletWithdrawTab.classList.remove('hidden');
+    // Expand / collapse Withdraw section (separate from deposit)
+    document.getElementById('withdrawExpandBtn')?.addEventListener('click', () => {
+      const btn = document.getElementById('withdrawExpandBtn');
+      const panel = document.getElementById('walletWithdrawTab');
+      const open = panel && !panel.classList.contains('hidden');
+      if (open) {
+        panel.classList.add('hidden');
+        btn?.classList.remove('open');
+      } else {
+        panel?.classList.remove('hidden');
+        btn?.classList.add('open');
+        // Sync demo/real blocks when expanding
+        const demoBlock = document.getElementById('withdrawDemoBlock');
+        const formArea = document.getElementById('withdrawFormArea');
+        if (isDemo) {
+          demoBlock?.classList.remove('hidden');
+          formArea?.classList.add('hidden');
+        } else {
+          demoBlock?.classList.add('hidden');
+          formArea?.classList.remove('hidden');
         }
-      });
+      }
     });
 
     // Wallet demo deposit buttons
@@ -6646,42 +6781,7 @@
       }, 4200);
     });
 
-    // Reset withdraw form when opening withdraw tab
-    document.querySelectorAll('.wallet-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        if (tab.dataset.walletTab === 'withdraw') {
-          const formArea = document.getElementById('withdrawFormArea');
-          const loadingArea = document.getElementById('withdrawLoadingArea');
-          const pendingArea = document.getElementById('withdrawPendingArea');
-          const demoBlock = document.getElementById('withdrawDemoBlock');
-
-          loadingArea.classList.add('hidden');
-          pendingArea.classList.add('hidden');
-
-          // Reset success UI text
-          const titleEl = pendingArea.querySelector('.withdraw-title');
-          const textEl = pendingArea.querySelector('.withdraw-text');
-          const iconEl = pendingArea.querySelector('.withdraw-icon');
-          if (iconEl) iconEl.textContent = '⏳';
-          if (titleEl) titleEl.textContent = 'Withdrawal Pending';
-          if (textEl) {
-            textEl.innerHTML =
-              'Your withdrawal request has been received<br>and is currently pending.';
-          }
-
-          if (isDemo) {
-            // Demo mode: no withdrawals
-            formArea.classList.add('hidden');
-            if (demoBlock) demoBlock.classList.remove('hidden');
-          } else {
-            if (demoBlock) demoBlock.classList.add('hidden');
-            formArea.classList.remove('hidden');
-            const amountInput = document.getElementById('withdrawAmount');
-            if (amountInput) amountInput.value = '';
-          }
-        }
-      });
-    });
+    // (Withdraw expand handled by #withdrawExpandBtn above)
 
     // Keep old deposit modal close for safety
     document.getElementById('closeDepositBtn')?.addEventListener('click', ()=>{
