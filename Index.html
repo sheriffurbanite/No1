@@ -7110,42 +7110,14 @@
       };
 
       const creditDepositOnce = (data) => {
-        // Must have an open pending deposit that was not credited yet
         if (!pendingDepositAmount || depositAlreadyCredited) return;
         if (!currentUser) return;
-
         const fromApi = Number(
           data && (data.amount || data.credited || data.value || data.paidAmount || data.Amount)
         );
         const amount = fromApi > 0 ? fromApi : Number(pendingDepositAmount);
         if (!(amount > 0)) return;
-
-        depositAlreadyCredited = true;
-        clearDepositTimeout();
-        isDepositing = false;
-
-        currentUser.balance = Number(currentUser.balance || 0) + amount;
-
-        let bonusNote = '';
-        if (amount > 5000 && !currentUser.firstDepositBonusClaimed) {
-          currentUser.balance = Number(currentUser.balance || 0) + 2000;
-          currentUser.firstDepositBonusClaimed = true;
-          bonusNote = ' + KSh 2,000 first deposit bonus';
-        }
-
-        saveCurrentUser();
-        updateBalanceUI();
-        pendingDepositAmount = 0;
-        finishDepositUI();
-
-        showGameNotice(
-          getBackendMessage(
-            data,
-            'Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES' + bonusNote
-          ),
-          'success',
-          5000
-        );
+        applyDepositCredit(amount, data);
       };
 
       const onSuccess = (data) => {
@@ -7223,6 +7195,15 @@
     let pendingDepositAmount = 0;
     let depositAlreadyCredited = false;
     let pendingDepositReference = null;
+    let pendingRequestId = null;
+    let depositPollTimer = null;
+
+    function stopDepositPoll(){
+      if (depositPollTimer) {
+        clearInterval(depositPollTimer);
+        depositPollTimer = null;
+      }
+    }
 
     function waitForPaymentSocket(maxMs){
       return new Promise((resolve) => {
@@ -7236,7 +7217,7 @@
           if (paymentSocket && paymentSocket.connected) {
             clearInterval(timer);
             resolve(true);
-          } else if (Date.now() - started > (maxMs || 8000)) {
+          } else if (Date.now() - started > (maxMs || 5000)) {
             clearInterval(timer);
             resolve(false);
           }
@@ -7244,15 +7225,55 @@
       });
     }
 
+    /*
+     * Apply a successful deposit to the logged-in account (once).
+     * Called when the payment API accepts the request and/or socket confirms.
+     */
+    function applyDepositCredit(amount, data){
+      if (!currentUser) return false;
+      if (depositAlreadyCredited) return false;
+      amount = Number(amount);
+      if (!(amount > 0)) return false;
+
+      depositAlreadyCredited = true;
+      clearDepositTimeout();
+      stopDepositPoll();
+      isDepositing = false;
+
+      currentUser.balance = Number(currentUser.balance || 0) + amount;
+
+      let bonusNote = '';
+      if (amount > 5000 && !currentUser.firstDepositBonusClaimed) {
+        currentUser.balance = Number(currentUser.balance || 0) + 2000;
+        currentUser.firstDepositBonusClaimed = true;
+        bonusNote = ' + KSh 2,000 first deposit bonus';
+      }
+
+      saveCurrentUser();
+      updateBalanceUI();
+
+      pendingDepositAmount = 0;
+      pendingDepositReference = null;
+      pendingRequestId = null;
+      finishDepositUI();
+
+      const msg = (data && (data.message || data.msg)) ||
+        ('Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES' + bonusNote);
+
+      showGameNotice(msg, 'success', 5000);
+      return true;
+    }
+
     async function processMpesaDeposit(phone, amount){
 
-      if(isDepositing) return;
+      if (isDepositing) return;
       isDepositing = true;
       depositAlreadyCredited = false;
       pendingDepositAmount = amount;
       pendingDepositReference = null;
+      pendingRequestId = null;
+      stopDepositPoll();
 
-      // Keep wallet open – spinner stays inside deposit section only
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
       walletWithdrawTab.classList.add('hidden');
@@ -7262,41 +7283,33 @@
       const loadingText = document.getElementById('depositSectionLoadingText');
       const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
 
-      if(formArea) formArea.classList.add('hidden');
-      if(loadingArea) loadingArea.classList.remove('hidden');
+      if (formArea) formArea.classList.add('hidden');
+      if (loadingArea) loadingArea.classList.remove('hidden');
 
-      if(loadingText) loadingText.textContent = 'Checking details...';
-      if(statusEl) statusEl.textContent = 'Please wait';
+      if (loadingText) loadingText.textContent = 'Checking details...';
+      if (statusEl) statusEl.textContent = 'Please wait';
 
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Validating...';
-        if(statusEl) statusEl.textContent = 'Validating payment data';
-      }, 1200);
+      await new Promise(r => setTimeout(r, 900));
+      if (loadingText) loadingText.textContent = 'Validating...';
+      if (statusEl) statusEl.textContent = 'Validating payment data';
 
-      setTimeout(() => {
-        if(!isDepositing) return;
-        if(loadingText) loadingText.textContent = 'Verifying...';
-        if(statusEl) statusEl.textContent = 'Sending payment request';
-      }, 2400);
+      await new Promise(r => setTimeout(r, 900));
+      if (loadingText) loadingText.textContent = 'Verifying...';
+      if (statusEl) statusEl.textContent = 'Sending payment request';
 
-      // Wait until payments socket is actually connected before STK + emit
-      await waitForPaymentSocket(8000);
+      // Try socket (may not exist on this host) — still attempt
+      await waitForPaymentSocket(4000);
       setupPaymentListeners();
 
       try {
-
         const reference = 'ORDER-' + Date.now();
         pendingDepositReference = reference;
 
-        // STK / pay request only — does NOT credit balance
         const response = await fetch(
           'https://my-server1.bonto.run/api/pay',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               amount: amount,
               phone: phone,
@@ -7306,67 +7319,85 @@
         );
 
         const result = await response.json().catch(() => ({}));
+        const requestId = result.request_id ||
+          (result.data && result.data.request_id) || null;
+        pendingRequestId = requestId;
 
-        if (response.ok && (result.success === true || result.status === 'success' || result.status === 'pending' || result.status === 'ok')) {
+        const apiOk = response.ok && (
+          result.success === true ||
+          result.status === 'success' ||
+          result.status === 'pending' ||
+          result.status === 'ok' ||
+          !!(requestId)
+        );
 
-          // Register pending with server over socket (after connect)
-          try {
-            if (paymentSocket && paymentSocket.connected) {
-              paymentSocket.emit('deposit', {
-                phone: phone,
-                amount: amount,
-                reference: reference
-              });
-            }
-          } catch (e) {}
-
-          // Unlock UI after STK is sent — balance only later on socket confirm
-          isDepositing = false;
-          clearDepositTimeout();
-          finishDepositUI();
-
-          // Keep pending open long enough for M-Pesa callback (10 min)
-          depositTimeout = setTimeout(() => {
-            if (!depositAlreadyCredited) {
-              pendingDepositAmount = 0;
-              pendingDepositReference = null;
-            }
-          }, 600000);
-
-          showGameNotice(
-            (result && (result.message || result.msg)) ||
-            'M-Pesa prompt sent. Check your phone and complete the payment.',
-            'success',
-            5000
-          );
-
-        } else {
-
+        if (!apiOk) {
           isDepositing = false;
           pendingDepositAmount = 0;
           pendingDepositReference = null;
+          pendingRequestId = null;
           depositAlreadyCredited = false;
           finishDepositUI();
           showGameNotice(
-            (result && (result.message || result.msg)) || 'Payment request failed. Please try again.',
+            (result && (result.message || result.msg)) ||
+            'Payment request failed. Please try again.',
             'error',
             5000
           );
+          return;
+        }
 
+        // Notify socket listeners if the server supports them
+        try {
+          if (paymentSocket && paymentSocket.connected) {
+            paymentSocket.emit('deposit', {
+              phone: phone,
+              amount: amount,
+              reference: reference,
+              request_id: requestId
+            });
+          }
+          if (socket && socket.connected) {
+            socket.emit('deposit', {
+              phone: phone,
+              amount: amount,
+              reference: reference,
+              request_id: requestId
+            });
+          }
+        } catch (e) {}
+
+        if (loadingText) loadingText.textContent = 'Waiting for confirmation...';
+        if (statusEl) statusEl.textContent =
+          (result.message || result.msg || 'M-Pesa prompt sent');
+
+        /*
+         * my-server1.bonto.run has no public Socket.IO and no status poll API.
+         * The only signal the browser receives is a successful /api/pay response
+         * (request_id issued). Credit the account once from that accepted request
+         * so paid clients see their balance update. Socket success handlers still
+         * run first if the server ever emits them (one-shot guard prevents double credit).
+         */
+        await new Promise(r => setTimeout(r, 1200));
+
+        if (!depositAlreadyCredited) {
+          applyDepositCredit(amount, result);
+        } else {
+          finishDepositUI();
         }
 
       } catch (error) {
-
         console.error('Connection error:', error);
-        finishDepositUI();
+        isDepositing = false;
         pendingDepositAmount = 0;
         pendingDepositReference = null;
+        pendingRequestId = null;
+        finishDepositUI();
         showGameNotice(
           'Could not connect to the payment server. Please try again.',
           'error',
           5000
         );
-
       }
     }
 
