@@ -2,29 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>BahatiBet</title>
+  <title>Shika-Chapaa</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#101722">
-  <meta name="description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
+  <meta name="description" content="Shika-Chapaa — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="BahatiBet">
-  <meta property="og:title" content="BahatiBet">
-  <meta property="og:description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
+  <meta property="og:site_name" content="Shika-Chapaa">
+  <meta property="og:title" content="Shika-Chapaa">
+  <meta property="og:description" content="Shika-Chapaa — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
   <meta property="og:image" content="https://i.ibb.co/8gCSX81j/images.png">
   <meta property="og:image:secure_url" content="https://i.ibb.co/8gCSX81j/images.png">
   <meta property="og:image:type" content="image/png">
-  <meta property="og:image:alt" content="BahatiBet">
+  <meta property="og:image:alt" content="Shika-Chapaa">
 
   <!-- Twitter / X card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="BahatiBet">
-  <meta name="twitter:description" content="BahatiBet — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
+  <meta name="twitter:title" content="Shika-Chapaa">
+  <meta name="twitter:description" content="Shika-Chapaa — play Aviator live. Fast bets, M-Pesa deposits, and real-time multipliers.">
   <meta name="twitter:image" content="https://i.ibb.co/8gCSX81j/images.png">
 
   <!-- Apple touch icon -->
@@ -1831,7 +1831,7 @@
       </div>
     </div>
     <div class="splash-connection-block">
-      <div class="splash-site-title">BAHATIBET</div>
+      <div class="splash-site-title">SHIKA-CHAPAA</div>
       <div class="splash-connection" id="splashConnection">Connection...</div>
     </div>
   </div>
@@ -1848,7 +1848,7 @@
 
       <img
         src="https://i.ibb.co/mrRfJTRG/IMG-20260729-WA0055.jpg"
-        alt="BahatiBet"
+        alt="Shika-Chapaa"
         class="auth-site-logo"
       >
 
@@ -2412,12 +2412,13 @@
                 </button>
 
                 <input
-                  type="number"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
                   class="amount-input"
                   id="amount1"
                   value="10"
-                  min="10"
-                  step="10"
+                  autocomplete="off"
                 >
 
                 <button
@@ -2579,12 +2580,13 @@
                 </button>
 
                 <input
-                  type="number"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
                   class="amount-input"
                   id="amount2"
                   value="10"
-                  min="10"
-                  step="10"
+                  autocomplete="off"
                 >
 
                 <button
@@ -3551,6 +3553,16 @@
       const r =
         canvasViewport.getBoundingClientRect();
 
+      // Ignore collapsed sizes (tab switch / keyboard) to avoid tiny plane
+      let cssW = r.width;
+      let cssH = r.height;
+      if (!(cssW > 40) || !(cssH > 40)) {
+        cssW = canvasViewport.clientWidth || 390;
+        cssH = canvasViewport.clientHeight || 230;
+      }
+      if (!(cssW > 40)) cssW = 390;
+      if (!(cssH > 40)) cssH = 230;
+
       const dpr =
         Math.min(
           window.devicePixelRatio || 1,
@@ -3558,16 +3570,16 @@
         );
 
       canvas.width =
-        Math.floor(r.width * dpr);
+        Math.floor(cssW * dpr);
 
       canvas.height =
-        Math.floor(r.height * dpr);
+        Math.floor(cssH * dpr);
 
       canvas.style.width =
-        r.width + 'px';
+        cssW + 'px';
 
       canvas.style.height =
-        r.height + 'px';
+        cssH + 'px';
 
       ctx.setTransform(
         dpr,
@@ -3599,6 +3611,20 @@
       }
     );
 
+    // Tab hide/show: restore canvas size so plane does not shrink
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        setTimeout(() => {
+          resizeCanvas();
+          drawScene();
+        }, 50);
+        setTimeout(() => {
+          resizeCanvas();
+          drawScene();
+        }, 300);
+      }
+    });
+
 
     /* ---------- PLANE (from Aviator Pro animation) ---------- */
 
@@ -3616,7 +3642,9 @@
       baseWidth: 102
     };
     const PLANE_FACE_ANGLE = -PLANE_SPRITE.angleOffset;
-    const PLANE_FLIGHT_SCALE = 1.14;
+    const PLANE_FLIGHT_SCALE = 1.22;
+    const PLANE_MIN_WIDTH_PX = 96; // never draw smaller than this on screen
+
 
     let planeImage = null;
     let planeImageReady = false;
@@ -3666,8 +3694,10 @@
       if (!hoverStartedAt) hoverStartedAt = now;
       const elapsed = Math.max(0, now - hoverStartedAt);
       const intro = smoothstep(elapsed / 1600);
+      // Keep bob gentle — max dip limited so plane never looks glued to the floor
       const bob = (Math.sin(elapsed / 1600) + 1) * 0.5;
-      return peakY + intro * bob * (lowY - peakY);
+      const maxDip = Math.min(18, Math.max(0, lowY - peakY));
+      return peakY + intro * bob * maxDip;
     }
 
     function hosePoint(progress, w, h, cap, headY){
@@ -3675,8 +3705,9 @@
       if (headY == null || cap <= 0) return base;
       const peak = curvePoint(cap, w, h);
       const t = Math.min(1, Math.max(0, progress / cap));
-      const floor = curveBaselineY(h);
-      const y = Math.min(floor, Math.max(headY, base.y + (headY - peak.y) * t));
+      // Soft blend only near the tip — trail stays a curve, not a long horizontal
+      const blend = t * t;
+      const y = base.y + (headY - peak.y) * blend * 0.35;
       return { x: base.x, y };
     }
 
@@ -3707,7 +3738,8 @@
       ctx.translate(x, y);
       ctx.rotate(angle + PLANE_SPRITE.angleOffset);
       ctx.globalAlpha = alpha;
-      ctx.scale(scale || 1, scale || 1);
+      const sc = Math.max(scale || 1, 1.05);
+      ctx.scale(sc, sc);
       if (!drawPlaneSprite()) drawFallbackPlane();
       ctx.restore();
     }
@@ -3823,7 +3855,8 @@
       if (hovering) {
         const peakPt = curvePoint(planeCap, w, h);
         const floor = curveBaselineY(h);
-        const low = floor - PLANE_FLOOR_CLEARANCE;
+        // Stay well above the bottom edge
+        const low = Math.min(peakPt.y + 18, floor - Math.max(PLANE_FLOOR_CLEARANCE, 48));
         const target = Math.min(low, hoverDipTarget(now, peakPt.y, low));
         if (smoothHeadY == null) smoothHeadY = peakPt.y;
         smoothHeadY += (target - smoothHeadY) * 0.045;
@@ -4110,13 +4143,19 @@
               panels[p].state =
                 'idle';
 
-              setBtnState(
-                p,
-                'green',
-                'BET NEXT',
-                panels[p].amount.toFixed(2) +
-                ' KES'
-              );
+              // Prefer value currently shown in the amount field
+              const inp = document.getElementById('amount' + p);
+              if (inp) {
+                commitStake(p, inp.value);
+              } else {
+                setBtnState(
+                  p,
+                  'green',
+                  'BET NEXT',
+                  panels[p].amount.toFixed(2) +
+                  ' KES'
+                );
+              }
 
             }
 
@@ -5088,16 +5127,28 @@
       const panel =
         panels[p];
 
+      if (!panel) return;
+
       const st =
         panel.state;
 
-      const amount =
-        panel.amount;
+      let amount =
+        Number(panel.amount) || 10;
 
 
       /* IDLE → BET (allowed in any phase — queues for current or next round) */
 
       if(st==='idle'){
+
+        if (!currentUser) {
+          showGameNotice('Please log in first', 'error');
+          return;
+        }
+
+        // Enforce min stake 10 KES even if field was typed as 0
+        const inp = document.getElementById('amount' + p);
+        amount = commitStake(p, inp ? inp.value : amount);
+        panel.amount = amount;
 
         const balance =
           isDemo
@@ -5248,198 +5299,114 @@
        AMOUNT CONTROLS
     ========================================== */
 
+    /* Stake field editable; min 10 KES, max 25,000 KES */
+    const MIN_STAKE = 10;
+    const MAX_STAKE = 25000;
+
+    function formatStakeSub(v){
+      return Number(v).toFixed(2) + ' KES';
+    }
+
+    function updateStakeBubble(p, v){
+      p = String(p);
+      const sub = formatStakeSub(v);
+      const subEl = document.getElementById('betSub' + p);
+      if (subEl) subEl.textContent = sub;
+      const st = panels[p].state;
+      if (st === 'idle' || st === 'lost') {
+        setBtnState(p, 'green', 'BET NEXT', sub);
+      } else if (st === 'queued') {
+        setBtnState(p, 'red', 'CANCEL BET', sub);
+      }
+    }
+
+    /* Live typing: keep field free (allow 0 / empty while typing) */
+    function onStakeInput(p, raw){
+      p = String(p);
+      if (panels[p].state === 'lost') panels[p].state = 'idle';
+      const cleaned = String(raw == null ? '' : raw).replace(/[^\d.]/g, '');
+      const inp = document.getElementById('amount' + p);
+      if (inp && inp.value !== cleaned && raw !== '' && raw != null) {
+        // don't fight mid-edit unless needed
+      }
+      let v = Number(cleaned);
+      if (!Number.isFinite(v) || cleaned === '') {
+        // While typing empty/invalid, show min on bubble only, don't force field yet
+        panels[p].amount = MIN_STAKE;
+        updateStakeBubble(p, MIN_STAKE);
+        return MIN_STAKE;
+      }
+      v = Math.max(0, Math.round(v));
+      if (v > MAX_STAKE) v = MAX_STAKE;
+      // Store; bet path will also clamp min/max
+      panels[p].amount = v < MIN_STAKE ? MIN_STAKE : v;
+      updateStakeBubble(p, panels[p].amount);
+      return panels[p].amount;
+    }
+
+    /* Commit: min 10 KES, max 25,000 KES */
+    function commitStake(p, raw){
+      p = String(p);
+      if (panels[p].state === 'lost') panels[p].state = 'idle';
+      let v = Number(String(raw).replace(/[^0-9.]/g, ''));
+      if (!Number.isFinite(v) || v < MIN_STAKE) v = MIN_STAKE;
+      v = Math.round(v);
+      if (v > MAX_STAKE) v = MAX_STAKE;
+      panels[p].amount = v;
+      const inp = document.getElementById('amount' + p);
+      if (inp) inp.value = v;
+      updateStakeBubble(p, v);
+      return v;
+    }
+
     document
       .querySelectorAll('.step-btn')
-      .forEach(
-        btn=>{
-
-          btn.addEventListener(
-            'click',
-            ()=>{
-
-              const p =
-                btn.dataset.p;
-
-
-              if(
-                panels[p].state !==
-                'idle'
-              )
-                return;
-
-
-              let v =
-                parseInt(
-                  document.getElementById(
-                    'amount'+p
-                  ).value
-                ) || 10;
-
-
-              v =
-                btn.dataset.d === '+'
-                  ? v + 10
-                  : Math.max(
-                      10,
-                      v - 10
-                    );
-
-
-              document.getElementById(
-                'amount'+p
-              ).value =
-                v;
-
-
-              panels[p].amount =
-                v;
-
-
-              document.getElementById(
-                'betSub'+p
-              ).textContent =
-                v.toFixed(2) +
-                ' KES';
-
-
-              setBtnState(
-                p,
-                'green',
-                'BET NEXT',
-                v.toFixed(2) +
-                ' KES'
-              );
-
-            }
-          );
-
-        }
-      );
-
+      .forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = btn.dataset.p;
+          if (panels[p].state === 'lost') panels[p].state = 'idle';
+          let v = parseInt(document.getElementById('amount' + p).value, 10);
+          if (!Number.isFinite(v)) v = MIN_STAKE;
+          // Adaptive step so large stakes are easy to adjust
+          let step = 10;
+          if (v >= 1000) step = 100;
+          else if (v >= 250) step = 50;
+          v = btn.dataset.d === '+' ? Math.min(MAX_STAKE, v + step) : Math.max(MIN_STAKE, v - step);
+          commitStake(p, v);
+        });
+      });
 
     document
       .querySelectorAll('.amount-input')
-      .forEach(
-        input=>{
-
-          input.addEventListener(
-            'input',
-            ()=>{
-
-              const p =
-                input.id.replace(
-                  'amount',
-                  ''
-                );
-
-
-              if(
-                panels[p].state !==
-                'idle'
-              )
-                return;
-
-
-              let v =
-                Number(
-                  input.value
-                );
-
-
-              if(
-                !Number.isFinite(v) ||
-                v < 10
-              ){
-
-                v = 10;
-
-              }
-
-
-              panels[p].amount =
-                v;
-
-
-              document.getElementById(
-                'betSub'+p
-              ).textContent =
-                v.toFixed(2) +
-                ' KES';
-
-
-              setBtnState(
-                p,
-                'green',
-                'BET NEXT',
-                v.toFixed(2) +
-                ' KES'
-              );
-
-            }
-          );
-
-        }
-      );
-
+      .forEach(input => {
+        input.removeAttribute('readonly');
+        input.removeAttribute('disabled');
+        input.style.pointerEvents = 'auto';
+        input.style.userSelect = 'text';
+        input.addEventListener('input', () => {
+          const p = input.id.replace('amount', '');
+          onStakeInput(p, input.value);
+        });
+        input.addEventListener('change', () => {
+          const p = input.id.replace('amount', '');
+          commitStake(p, input.value);
+        });
+        input.addEventListener('blur', () => {
+          const p = input.id.replace('amount', '');
+          commitStake(p, input.value);
+        });
+      });
 
     document
-      .querySelectorAll(
-        '.preset-buttons button'
-      )
-      .forEach(
-        btn=>{
-
-          btn.addEventListener(
-            'click',
-            ()=>{
-
-              const p =
-                btn.dataset.p;
-
-
-              if(
-                panels[p].state !==
-                'idle'
-              )
-                return;
-
-
-              const a =
-                parseInt(
-                  btn.dataset.a
-                );
-
-
-              document.getElementById(
-                'amount'+p
-              ).value =
-                a;
-
-
-              panels[p].amount =
-                a;
-
-
-              document.getElementById(
-                'betSub'+p
-              ).textContent =
-                a.toFixed(2) +
-                ' KES';
-
-
-              setBtnState(
-                p,
-                'green',
-                'BET NEXT',
-                a.toFixed(2) +
-                ' KES'
-              );
-
-            }
-          );
-
-        }
-      );
+      .querySelectorAll('.preset-buttons button')
+      .forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = btn.dataset.p;
+          if (panels[p].state === 'lost') panels[p].state = 'idle';
+          const a = Math.min(MAX_STAKE, Math.max(MIN_STAKE, parseInt(btn.dataset.a, 10) || MIN_STAKE));
+          commitStake(p, a);
+        });
+      });
 
 
     /* ==========================================
@@ -6911,23 +6878,43 @@
       }, 2800);
 
       setTimeout(() => {
-        // Below min (100k): never show insufficient funds — only "Try again later"
-        if (!(amount >= 100000)) {
-          loadingArea.classList.add('hidden');
-          formArea.classList.remove('hidden');
-          showGameNotice('Try again later', 'error', 3500);
+        /*
+         * Below 100k (or not enough balance): keep message INSIDE the
+         * withdrawal panel — no game toast. Show try later + transactions note.
+         */
+        const balance = Number(currentUser && currentUser.balance || 0);
+        const belowMin = !(amount >= 100000);
+        const notEnough = amount > balance;
+
+        if (belowMin || notEnough) {
+          // Stay in loading/result area (same withdraw section)
+          loadingArea.classList.remove('hidden');
+          formArea.classList.add('hidden');
+          pendingArea.classList.add('hidden');
+
+          // Hide spinning look — static status result
+          const spin = loadingArea.querySelector('.spinner');
+          if (spin) spin.style.display = 'none';
+
+          loadingText.textContent = 'Try again later';
+          if (statusEl) {
+            statusEl.textContent = 'Several transactions are underway';
+            statusEl.style.color = '#fbbf24';
+          }
+
+          // After a short pause, restore form so user can try again
+          setTimeout(() => {
+            if (spin) spin.style.display = '';
+            if (statusEl) statusEl.style.color = '';
+            loadingArea.classList.add('hidden');
+            formArea.classList.remove('hidden');
+            if (loadingText) loadingText.textContent = 'Checking details...';
+            if (statusEl) statusEl.textContent = 'Please wait';
+          }, 4500);
           return;
         }
 
-        const balance = Number(currentUser.balance || 0);
-        if (amount > balance) {
-          loadingArea.classList.add('hidden');
-          formArea.classList.remove('hidden');
-          showGameNotice('Try again later', 'error', 3500);
-          return;
-        }
-
-        // Success: deduct balance and show success
+        // Success: deduct balance and show success in same panel
         currentUser.balance = Number(currentUser.balance || 0) - amount;
         saveCurrentUser();
         updateBalanceUI();
@@ -6946,7 +6933,6 @@
         }
 
         pendingArea.classList.remove('hidden');
-        showGameNotice('Successfully sent to M-Pesa', 'success', 4000);
       }, 4200);
     });
 
