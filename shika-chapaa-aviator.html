@@ -2009,246 +2009,20 @@
   </div>
 
   <!-- =========================
-       LOGIN / REGISTER
-  ========================== -->
-
-  <div id="loginView" class="auth-landing-wrapper" style="display:none!important">
-
-    <div class="glow-backdrop"></div>
-
-    <div class="glass-card">
-
-      <img
-        src="https://i.ibb.co/mrRfJTRG/IMG-20260729-WA0055.jpg"
-        alt="Shika-Chapaa"
-        class="auth-site-logo"
-      >
-
-      <h2 class="auth-title" id="authTitle">Log In</h2>
-
-      <div style="text-align:center;margin:-6px 0 14px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#1a2e1a,#1c2230);border:1px solid rgba(34,197,94,.35)">
-        <div style="font-size:12px;font-weight:800;color:#4ade80;line-height:1.35">
-          Get <span style="color:#fff">KSh 2,000</span> bonus after your first deposit of <span style="color:#fff">KSh 5,000</span>
-        </div>
-      </div>
-
-      <div
-        id="loginAlert"
-        class="alert-box error hidden"
-      ></div>
-
-      <form id="loginForm" class="auth-form">
-
-        <div class="form-group">
-
-          <div class="select-wrapper">
-
-            <select
-              id="countrySelect"
-              class="country-select"
-            >
-              <option value="+254">
-                Kenya (+254)
-              </option>
-
-              <option value="+255">
-                Tanzania (+255)
-              </option>
-
-              <option value="+256">
-                Uganda (+256)
-              </option>
-
-              <option value="+234">
-                Nigeria (+234)
-              </option>
-
-              <option value="+27">
-                South Africa (+27)
-              </option>
-            </select>
-
-            <span class="select-arrow">
-              ▼
-            </span>
-
-          </div>
-
-        </div>
-
-        <div class="form-group">
-
-          <div class="phone-input-row">
-
-            <div
-              class="country-code-box"
-              id="countryCodeBox"
-            >
-              +254
-            </div>
-
-            <input
-              type="text"
-              id="phoneInput"
-              class="phone-input"
-              placeholder="Phone Number (9 digits)"
-              maxlength="9"
-              inputmode="numeric"
-              required
-            >
-
-          </div>
-
-          <div class="field-hint">
-            Enter phone without country code
-          </div>
-
-        </div>
-
-        <div class="form-group">
-
-          <div class="password-input-wrapper">
-
-            <input
-              id="passwordInput"
-              class="password-input"
-              type="password"
-              placeholder="Password"
-              required
-            >
-
-            <button
-              type="button"
-              id="togglePassword"
-              class="password-toggle-btn"
-            >
-              SHOW
-            </button>
-
-          </div>
-
-        </div>
-
-        <div
-          class="form-group hidden"
-          id="confirmPasswordGroup"
-        >
-
-          <div class="password-input-wrapper">
-
-            <input
-              id="confirmPasswordInput"
-              class="password-input"
-              type="password"
-              placeholder="Confirm Password"
-            >
-
-          </div>
-
-        </div>
-
-        <span
-            id="demoStatus"
-            class="demo-badge hidden"
-          >
-            DEMO
-          </span>
-
-        </div>
-
-        <label class="terms-row" id="termsRow" style="display:flex;align-items:flex-start;gap:10px;margin:4px 0 2px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="termsCheck" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:#4f67f6">
-          <span style="color:#9ca3af;font-size:.78rem;line-height:1.4;font-weight:500">
-            I agree to the
-            <a href="#/terms" id="termsLink" class="underlined-link" style="font-size:.78rem">Terms &amp; Conditions</a>
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          class="submit-blue-btn"
-          id="authSubmitBtn"
-        >
-          LOG IN
-        </button>
-
-        <a id="downloadAppBtn" href="#/download" class="download-app-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#1c2230;color:#e5e7eb;font-weight:700;font-size:.9rem;text-decoration:none">
-          <span style="font-size:1.1rem">⬇</span>
-          Download App / Site
-        </a>
-
-        <div class="auth-links-footer">
-
-          <div id="registerSwitch">
-
-            <span style="color:#fff">
-              Don't Have An account?
-            </span>
-
-            <a
-              class="underlined-link"
-              id="registerLink"
-            >
-              Register here
-            </a>
-
-          </div>
-
-          <div
-            id="loginSwitch"
-            class="hidden"
-          >
-
-            <span style="color:#fff">
-              Already Have An account?
-            </span>
-
-            <a
-              class="underlined-link"
-              id="loginLink"
-            >
-              Log in here
-            </a>
-
-          </div>
-
-          <div
-            id="forgotPasswordRow"
-            style="margin-top:6px"
-          >
-
-            <a
-              class="underlined-link"
-              id="forgotPasswordLink"
-            >
-              Forgot Password
-            </a>
-
-          </div>
-
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================
        GAME
   ========================== -->
 
   <div
     id="gameView"
-    class="aviator-root hidden"
+    class="aviator-root"
   >
 
     <header class="top-nav">
 
       <button
-        class="go-back-btn"
+        class="go-back-btn hidden"
         id="goBackBtn"
+        style="display:none!important"
       >
         ‹ Go Back
       </button>
@@ -2272,7 +2046,6 @@
         </button>
 
         <span class="balance-amount" id="balanceDisplayWrap">
-          <span id="demoIndicator" class="demo-in-balance hidden" style="display:none!important">DEMO</span>
           <span id="balanceDisplay">0.00 KES</span>
         </span>
 
@@ -2295,8 +2068,8 @@
           </button>
           <div id="navMenuDrop" class="nav-menu-drop hidden">
             <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
-<button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
-</div>
+            <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
+          </div>
         </div>
 
         <button
@@ -2946,7 +2719,7 @@
           <div class="mpesa-form" id="depositFormArea">
             <div>
               <label>M-Pesa Phone Number</label>
-              <input type="tel" id="walletMpesaPhone" placeholder="Registered number" maxlength="12" inputmode="numeric" readonly style="opacity:.85;cursor:not-allowed;background:#151a24">
+              <input type="tel" id="walletMpesaPhone" placeholder="Registered number" maxlength="12" inputmode="numeric" >
               <div class="mpesa-hint">Using your registered number — STK will be sent here</div>
             </div>
             <div>
@@ -2972,60 +2745,6 @@
         </div>
 
       </div>
-
-      <!-- WITHDRAW — expandable section (not inside deposit tabs) -->
-      <button type="button" class="withdraw-expand-btn hidden" id="withdrawExpandBtn" style="display:none!important">
-        <span>Withdraw</span>
-        <span class="chev">▾</span>
-      </button>
-
-      <div id="walletWithdrawTab" class="withdraw-expand-panel hidden" style="display:none!important">
-
-        <div id="withdrawDemoBlock" class="hidden">
-          <div class="modal-text" style="text-align:center;padding:16px 10px">
-            Withdrawals are not available in Demo Mode.<br>
-            Switch to Real Mode to withdraw.
-          </div>
-        </div>
-
-        <div id="withdrawFormArea">
-          <div class="modal-text" style="margin-bottom:12px">
-            Enter the amount you want to withdraw
-          </div>
-          <div class="mpesa-form">
-            <div>
-              <label>Amount (KES)</label>
-              <input type="number" id="withdrawAmount" placeholder="Enter amount" min="1" step="1">
-            </div>
-            <button class="modal-btn primary" id="withdrawSubmitBtn" style="margin-top:10px;height:42px;font-size:13px">
-              Request Withdrawal
-            </button>
-          </div>
-        </div>
-
-        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
-          <div class="spinner" style="margin:0 auto 14px;width:40px;height:40px;border-width:4px"></div>
-          <div id="withdrawLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">
-            Checking details...
-          </div>
-          <div class="loading-status" style="font-size:12px;color:#7db3ff">
-            Please wait
-          </div>
-        </div>
-
-        <div id="withdrawPendingArea" class="hidden">
-          <div class="withdraw-pending-box">
-            <div class="withdraw-icon">⏳</div>
-            <div class="withdraw-title">Withdrawal Pending</div>
-            <div class="withdraw-text">
-              Your withdrawal request has been received<br>
-              and is currently pending.
-            </div>
-          </div>
-        </div>
-
-      </div>
-
       <div class="modal-actions" style="margin-top:18px">
         <button class="modal-btn cancel" id="closeWalletBtn">
           CLOSE
@@ -3132,7 +2851,7 @@
               placeholder="07XXXXXXXX"
               maxlength="12"
               inputmode="numeric"
-             readonly style="opacity:.85;cursor:not-allowed;background:#151a24">
+             >
             <div class="mpesa-hint">Enter the phone number registered with M-Pesa</div>
           </div>
 
@@ -3176,47 +2895,7 @@
 
   </div>
 
-
-  <!-- =========================
-       LOGOUT MODAL
-  ========================== -->
-
-  <div
-    id="logoutModal"
-    class="modal-backdrop hidden"
-  >
-
-    <div class="modal-card">
-
-      <div class="modal-title">
-        Log out
-      </div>
-
-      <div class="modal-text">
-        Are you sure you want to log out?
-      </div>
-
-      <div class="modal-actions">
-
-        <button
-          class="modal-btn cancel"
-          id="cancelLogoutBtn"
-        >
-          Cancel
-        </button>
-
-        <button
-          class="modal-btn danger"
-          id="confirmLogoutBtn"
-        >
-          Log out
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
+</div>
 
   <!-- Background music: built-in only, never visible -->
   <audio
@@ -3263,34 +2942,21 @@
     const PAYMENT_HOST =
       'https://my-server1.bonto.run';     // Payments Socket.IO (from admin)
 
-    /* Compact balance: <=900 full, else 1k / 1.3M */
-    function fmtBalance(n){
-      n = Number(n || 0);
-      const a = Math.abs(n);
-      if (a <= 900) {
-        return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' KES';
-      }
-      const t = (v, u) => (+v.toFixed(2)).toString().replace(/\.00$/, '') + u;
-      if (a >= 999500) return t(n / 1e6, 'M') + ' KES';
-      return t(n / 1e3, 'k') + ' KES';
-    }
-
-
     const LS_USER =
-      'shikachapaa_user';
+      'bahatibet_user';
 
     const LS_ACCOUNTS =
-      'shikachapaa_accounts';
+      'bahatibet_accounts';
 
     const LS_DEMO =
-      'shikachapaa_demo';
+      'bahatibet_demo';
 
 
     /* ==========================================
        STATE
     ========================================== */
 
-    let isDemo = false; // demo removed — real mode only
+    let isDemo = false; // demo mode permanently removed
 
     let currentUser = null;
 
@@ -3342,8 +3008,7 @@
        ELEMENTS
     ========================================== */
 
-    const loginView =
-      document.getElementById('loginView');
+    const loginView = null; // login removed
 
     const gameView =
       document.getElementById('gameView');
@@ -3390,8 +3055,7 @@
     const balanceDisplay =
       document.getElementById('balanceDisplay');
 
-    const demoIndicator =
-      document.getElementById('demoIndicator');
+    const demoIndicator = { classList: { toggle(){}, add(){}, remove(){}, contains(){ return true; } } }; // removed
 
     const winBubble =
       document.getElementById('winBubble');
@@ -5597,7 +5261,7 @@
     document
       .querySelectorAll('.amount-input')
       .forEach(input => {
-        input.removeAttribute('readonly');
+        input.removeAttribute(' ');
         input.removeAttribute('disabled');
         input.style.pointerEvents = 'auto';
         input.style.userSelect = 'text';
@@ -6194,50 +5858,44 @@
     ========================================== */
 
     function updateBalanceUI(){
-      const bal = currentUser ? Number(currentUser.balance ?? 0) : 0;
-      if (typeof balanceDisplay !== 'undefined' && balanceDisplay) {
-        balanceDisplay.textContent = (typeof fmtBalance === 'function')
-          ? fmtBalance(bal)
-          : (bal.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' KES');
+
+      if(!currentUser)
+        return;
+
+
+      const bal =
+        isDemo
+          ? Number(
+              currentUser.demoBalance ??
+              10000
+            )
+          : Number(
+              currentUser.balance ??
+              0
+            );
+
+
+      balanceDisplay.textContent =
+        bal.toLocaleString(
+          'en-KE',
+          {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+          }
+        ) +
+        ' KES';
+
+      // Also refresh wallet dashboard if open
+      if(typeof updateWalletBalance === 'function'){
+        updateWalletBalance();
       }
-      if (typeof updateWalletBalance === 'function') updateWalletBalance();
-      try { if (demoIndicator) demoIndicator.classList.add('hidden'); } catch(e){}
+
     }
 
 
-    /* DEMO TOGGLE removed — real mode only */
+    /* DEMO TOGGLE removed */
 
-
-          document
-            .getElementById(
-              'demoStatus'
-            )
-            .classList.toggle(
-              'hidden',
-              !isDemo
-            );
-
-
-          updateBalanceUI();
-
-
-          if(gameView &&
-             !gameView.classList.contains(
-               'hidden'
-             )){
-
-            demoIndicator.classList.toggle(
-              'hidden',
-              !isDemo
-            );
-
-          }
-
-        }
-      );
-
-
-    /* ==========================================
+/* ==========================================
        COUNTRY
     ========================================== */
 
@@ -6539,7 +6197,12 @@
             );
 
 
-            /* demo disabled */;
+            localStorage.setItem(
+              LS_DEMO,
+              isDemo
+                ? 'true'
+                : 'false'
+            );
 
 
             showAuthAlert(
@@ -6595,7 +6258,12 @@
           );
 
 
-          /* demo disabled */;
+          localStorage.setItem(
+            LS_DEMO,
+            isDemo
+              ? 'true'
+              : 'false'
+          );
 
 
           showAuthAlert(
@@ -6635,14 +6303,9 @@
     }
 
     function showLogin(){
-      // Login disabled in Aviator — auth only on home page
-      try {
-        const lv = document.getElementById('loginView');
-        if (lv) { lv.classList.add('hidden'); lv.style.display = 'none'; }
-      } catch(e){}
-      try {
-        if (typeof gameView !== 'undefined' && gameView) gameView.classList.remove('hidden');
-      } catch(e){}
+      // Login removed — stay in game
+      if (gameView) gameView.classList.remove('hidden');
+      if (loginView) loginView.classList.add('hidden');
     }
 
 
@@ -6654,7 +6317,7 @@
 
       setAppRoute('#/game');
 
-      loginView.classList.add('hidden');
+      if (loginView) loginView.classList.add('hidden');
 
       // Spribe-style splash loading after login
       const splash = document.getElementById('splash');
@@ -6672,7 +6335,7 @@
 
         gameView.classList.remove('hidden');
         updateBalanceUI();
-        if (demoIndicator) demoIndicator.classList.add('hidden');
+        /* demo indicator removed */
         generateLiveBoard();
         seedPreviousMults();
         renderBetsList();
@@ -6739,55 +6402,53 @@
     const walletModal = document.getElementById('walletModal');
     const walletBalanceDisplay = document.getElementById('walletBalanceDisplay');
     const walletDepositTab = document.getElementById('walletDepositTab');
-    const walletWithdrawTab = document.getElementById('walletWithdrawTab');
+    const walletWithdrawTab = document.getElementById('walletWithdrawTab'); // may be null — withdraw removed
     const walletDemoDeposit = document.getElementById('walletDemoDeposit');
     const walletRealDeposit = document.getElementById('walletRealDeposit');
 
     function updateWalletBalance(){
-      const el = document.getElementById('walletBalanceDisplay');
-      if (!el) return;
-      const bal = currentUser ? Number(currentUser.balance ?? 0) : 0;
-      el.textContent = (typeof fmtBalance === 'function')
-        ? fmtBalance(bal)
-        : (bal.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' KES');
+      if(!currentUser) return;
+      const bal = isDemo
+        ? Number(currentUser.demoBalance ?? 10000)
+        : Number(currentUser.balance ?? 0);
+      walletBalanceDisplay.textContent =
+        bal.toLocaleString('en-KE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + ' KES';
     }
 
     function openWalletModal(){
-      if (!currentUser) {
-        showGameNotice('Log in on the home page to deposit', 'info');
-        return;
-      }
       updateWalletBalance();
+
+      // Lock phone to registered account number (no re-entry)
       try {
-        const regPhone = String(currentUser.phone || '');
-        const raw = regPhone.replace(/\D/g, '');
-        const last9 = raw.slice(-9);
-        const displayPhone = last9 ? ('0' + last9) : regPhone;
+        const regPhone = (currentUser && currentUser.phone) ? String(currentUser.phone) : '';
+        const displayPhone = regPhone.replace(/^254/, '0');
         const wp = document.getElementById('walletMpesaPhone');
         const mp = document.getElementById('mpesaPhone');
-        if (wp) { wp.value = displayPhone; wp.readOnly = true; }
-        if (mp) { mp.value = displayPhone; mp.readOnly = true; }
+        if (wp) { wp.value = displayPhone || regPhone; wp.readOnly = true; }
+        if (mp) { mp.value = displayPhone || regPhone; mp.readOnly = true; }
       } catch(e){}
 
-      try { if (walletDepositTab) walletDepositTab.classList.remove('hidden'); } catch(e){}
-      try { if (walletWithdrawTab) walletWithdrawTab.classList.add('hidden'); } catch(e){}
-      const expandBtn = document.getElementById('withdrawExpandBtn');
-      if (expandBtn) { expandBtn.classList.add('hidden'); expandBtn.style.display = 'none'; }
 
-      try { if (walletDemoDeposit) walletDemoDeposit.classList.add('hidden'); } catch(e){}
-      try { if (walletRealDeposit) walletRealDeposit.classList.remove('hidden'); } catch(e){}
+      // Deposit always visible; withdraw panel collapsed by default
+      walletDepositTab.classList.remove('hidden');
+      /* withdraw UI removed */
 
-      // Clear amounts every open
-      ['walletMpesaAmount','mpesaAmount','withdrawAmount','customDepositInput','walletCustomDepositInput'].forEach(function(id){
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      try {
-        document.getElementById('depositFormArea')?.classList.remove('hidden');
-        document.getElementById('depositLoadingArea')?.classList.add('hidden');
-      } catch(e){}
+      /* withdraw prepare removed */
 
-      if (walletModal) walletModal.classList.remove('hidden');
+      // Show correct deposit form
+      // Always real deposit (demo removed)
+      if (walletDemoDeposit) walletDemoDeposit.classList.add('hidden');
+      if (walletRealDeposit) walletRealDeposit.classList.remove('hidden');
+      const phoneEl = document.getElementById('walletMpesaPhone');
+      if (phoneEl && !phoneEl.value) phoneEl.value = '';
+      const amtEl = document.getElementById('walletMpesaAmount');
+      if (amtEl) amtEl.value = '';
+
+
+      walletModal.classList.remove('hidden');
     }
 
     
@@ -6813,13 +6474,11 @@
         closeDrop();
         openWalletModal();
       });
-      /* withdraw removed */
       document.getElementById('menuAccountBtn')?.addEventListener('click', () => {
         closeDrop();
         openWalletModal();
       });
-      /* logout removed */
-    })();
+      })();
 
 
     // Expansion tab beside DEPOSIT — opens same Account wallet with Withdraw expanded
@@ -6859,29 +6518,6 @@
     });
 
     // Expand / collapse Withdraw section (separate from deposit)
-    document.getElementById('withdrawExpandBtn')?.addEventListener('click', () => {
-      const btn = document.getElementById('withdrawExpandBtn');
-      const panel = document.getElementById('walletWithdrawTab');
-      const open = panel && !panel.classList.contains('hidden');
-      if (open) {
-        panel.classList.add('hidden');
-        btn?.classList.remove('open');
-      } else {
-        panel?.classList.remove('hidden');
-        btn?.classList.add('open');
-        // Sync demo/real blocks when expanding
-        const demoBlock = document.getElementById('withdrawDemoBlock');
-        const formArea = document.getElementById('withdrawFormArea');
-        if (isDemo) {
-          demoBlock?.classList.remove('hidden');
-          formArea?.classList.add('hidden');
-        } else {
-          demoBlock?.classList.add('hidden');
-          formArea?.classList.remove('hidden');
-        }
-      }
-    });
-
     // Wallet demo deposit buttons
     document.querySelectorAll('#walletDemoDeposit .deposit-option').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6907,10 +6543,10 @@
 
     // Wallet real M-Pesa deposit
     document.getElementById('walletMpesaDepositBtn').addEventListener('click', () => {
-      let phone = (currentUser && currentUser.phone) ? String(currentUser.phone).trim() : '';
-      if (!phone) {
-        const el = document.getElementById('walletMpesaPhone');
-        phone = el ? String(el.value || '').trim() : '';
+      const el = document.getElementById('walletMpesaPhone');
+      let phone = el ? String(el.value || '').trim() : '';
+      if (!phone && currentUser && currentUser.phone && currentUser.phone !== 'guest') {
+        phone = String(currentUser.phone).trim();
       }
       const amount = Number(document.getElementById('walletMpesaAmount').value);
 
@@ -6925,7 +6561,7 @@
       }
 
       if (!/^254[71]\d{8}$/.test(phone)) {
-        showGameNotice('Registered phone is invalid. Please re-login.', 'error');
+        showGameNotice('Please enter a valid Kenyan M-Pesa number.', 'error');
         return;
       }
 
@@ -6943,110 +6579,9 @@
       processMpesaDeposit(phone, amount);
     });
 
-    // ---------- WITHDRAW FLOW ----------
-    // Demo mode: withdrawals NOT supported
-    // Real mode: process withdrawal, deduct balance, show success
+    /* Withdraw flow removed */
 
-    document.getElementById('withdrawSubmitBtn').addEventListener('click', () => {
-
-      // Demo mode cannot withdraw
-      if (isDemo) {
-        showGameNotice('Withdrawals are not available in Demo Mode.', 'error', 3500);
-        return;
-      }
-
-      const amountInput = document.getElementById('withdrawAmount');
-      const amount = Number(amountInput.value);
-
-      if (!Number.isFinite(amount) || amount <= 0) {
-        showGameNotice('Enter a valid amount', 'error');
-        return;
-      }
-
-      const formArea = document.getElementById('withdrawFormArea');
-      const loadingArea = document.getElementById('withdrawLoadingArea');
-      const pendingArea = document.getElementById('withdrawPendingArea');
-      const loadingText = document.getElementById('withdrawLoadingText');
-      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
-
-      // Always show spinner first (even if amount is below min)
-      formArea.classList.add('hidden');
-      pendingArea.classList.add('hidden');
-      loadingArea.classList.remove('hidden');
-
-      loadingText.textContent = 'Checking details...';
-      if (statusEl) statusEl.textContent = 'Please wait';
-
-      setTimeout(() => {
-        loadingText.textContent = 'Validating...';
-        if (statusEl) statusEl.textContent = 'Validating request';
-      }, 1400);
-
-      setTimeout(() => {
-        loadingText.textContent = 'Verifying...';
-        if (statusEl) statusEl.textContent = 'Processing request';
-      }, 2800);
-
-      setTimeout(() => {
-        /*
-         * Below 100k (or not enough balance): keep message INSIDE the
-         * withdrawal panel — no game toast. Show try later + transactions note.
-         */
-        const balance = Number(currentUser && currentUser.balance || 0);
-        const belowMin = !(amount >= 100000);
-        const notEnough = amount > balance;
-
-        if (belowMin || notEnough) {
-          // Stay in loading/result area (same withdraw section)
-          loadingArea.classList.remove('hidden');
-          formArea.classList.add('hidden');
-          pendingArea.classList.add('hidden');
-
-          // Hide spinning look — static status result
-          const spin = loadingArea.querySelector('.spinner');
-          if (spin) spin.style.display = 'none';
-
-          loadingText.textContent = 'Try again later';
-          if (statusEl) {
-            statusEl.textContent = 'Several transactions are underway';
-            statusEl.style.color = '#fbbf24';
-          }
-
-          // After a short pause, restore form so user can try again
-          setTimeout(() => {
-            if (spin) spin.style.display = '';
-            if (statusEl) statusEl.style.color = '';
-            loadingArea.classList.add('hidden');
-            formArea.classList.remove('hidden');
-            if (loadingText) loadingText.textContent = 'Checking details...';
-            if (statusEl) statusEl.textContent = 'Please wait';
-          }, 4500);
-          return;
-        }
-
-        // Success: deduct balance and show success in same panel
-        currentUser.balance = Number(currentUser.balance || 0) - amount;
-        saveCurrentUser();
-        updateBalanceUI();
-
-        loadingArea.classList.add('hidden');
-
-        const titleEl = pendingArea.querySelector('.withdraw-title');
-        const textEl = pendingArea.querySelector('.withdraw-text');
-        const iconEl = pendingArea.querySelector('.withdraw-icon');
-        if (iconEl) iconEl.textContent = '✅';
-        if (titleEl) titleEl.textContent = 'Successfully sent to M-Pesa';
-        if (textEl) {
-          textEl.innerHTML =
-            amount.toLocaleString('en-KE') +
-            ' KES has been sent to your M-Pesa.';
-        }
-
-        pendingArea.classList.remove('hidden');
-      }, 4200);
-    });
-
-    // (Withdraw expand handled by #withdrawExpandBtn above)
+/* withdraw removed */
 
     // Keep old deposit modal close for safety
     document.getElementById('closeDepositBtn')?.addEventListener('click', ()=>{
@@ -7372,7 +6907,7 @@
 
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
-      walletWithdrawTab.classList.add('hidden');
+      if (walletWithdrawTab) walletWithdrawTab.classList.add('hidden');
 
       const formArea = document.getElementById('depositFormArea');
       const loadingArea = document.getElementById('depositLoadingArea');
@@ -7551,61 +7086,9 @@
       );
 
 
-    document.getElementById('goBackBtn').addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage('shika-close-aviator', '*');
-            return;
-          }
-        } catch(err){}
-        location.href = 'index.html';
-      });
+    /* goBack / logout removed */
 
-
-    document
-      .getElementById(
-        'cancelLogoutBtn'
-      )
-      .addEventListener(
-        'click',
-        ()=>{
-
-          logoutModal.classList.add(
-            'hidden'
-          );
-
-        }
-      );
-
-
-    document
-      .getElementById(
-        'confirmLogoutBtn'
-      )
-      .addEventListener(
-        'click',
-        ()=>{
-
-          logoutModal.classList.add(
-            'hidden'
-          );
-
-          localStorage.removeItem(
-            LS_USER
-          );
-
-          currentUser =
-            null;
-
-          showLogin();
-
-        }
-      );
-
-
-    /* ==========================================
+/* ==========================================
        MODAL BACKDROP CLOSE
     ========================================== */
 
@@ -7653,31 +7136,37 @@
     ========================================== */
 
     function init(){
-      isDemo = false;
-      // Never show login — launch game with splash directly
-      try {
-        const lv = document.getElementById('loginView');
-        if (lv) { lv.classList.add('hidden'); lv.style.display = 'none'; }
-      } catch(e){}
-
-      const saved = localStorage.getItem(LS_USER);
-      if (saved) {
-        try {
-          const session = JSON.parse(saved);
-          const accounts = loadAccounts();
-          if (session && session.phone && accounts[session.phone]) {
-            createSession(accounts[session.phone]);
-          } else {
-            localStorage.removeItem(LS_USER);
-            currentUser = null;
-          }
-        } catch(e) {
-          localStorage.removeItem(LS_USER);
-          currentUser = null;
-        }
-      } else {
-        currentUser = null;
+      // No login / no demo — guest session with local balance
+      let accounts = loadAccounts();
+      const guestKey = 'guest';
+      if (!accounts[guestKey]) {
+        accounts[guestKey] = {
+          phone: guestKey,
+          country: '+254',
+          password: '',
+          balance: 0,
+          demoBalance: 0,
+          betHistory: [],
+          welcomeBonus: false,
+          firstDepositBonusClaimed: false,
+          createdAt: Date.now()
+        };
+        saveAccounts(accounts);
       }
+      createSession(accounts[guestKey]);
+      // restore balance from previous guest session if present
+      try {
+        const saved = localStorage.getItem(LS_USER);
+        if (saved) {
+          const s = JSON.parse(saved);
+          if (s && typeof s.balance === 'number') {
+            currentUser.balance = s.balance;
+            currentUser.firstDepositBonusClaimed = !!s.firstDepositBonusClaimed;
+            currentUser.betHistory = Array.isArray(s.betHistory) ? s.betHistory : [];
+            saveCurrentUser();
+          }
+        }
+      } catch (e) {}
       showGame();
     }
 
@@ -7984,13 +7473,13 @@
         } else if (h.includes('/download')) {
           downloadModal?.classList.remove('hidden');
         } else if (h.includes('/login') || h === '' || h === '#') {
-          /* no login in aviator */
+          if (!currentUser) showLogin();
         }
       });
 
       // Set initial route from current view
       if (currentUser) setAppRoute('#/game');
-      else setAppRoute('#/game');
+      else setAppRoute('#/login');
     })();
 
     
@@ -8184,47 +7673,7 @@
     /* START */
 
     // Default address bar to login until session restores
-    try { setAppRoute('#/game'); } catch (e) {}
-
-    // Keep balance in sync with home page (shared LS)
-    window.addEventListener('storage', function(ev){
-      if (ev.key === LS_USER || ev.key === LS_ACCOUNTS) {
-        try {
-          const s = JSON.parse(localStorage.getItem(LS_USER) || 'null');
-          const accounts = loadAccounts();
-          if (s && s.phone && accounts[s.phone]) {
-            if (!currentUser) currentUser = {};
-            currentUser.phone = s.phone;
-            currentUser.country = accounts[s.phone].country || s.country;
-            currentUser.balance = Number(accounts[s.phone].balance || 0);
-            saveCurrentUser();
-            updateBalanceUI();
-          }
-        } catch(e){}
-      }
-    });
-    setInterval(function(){
-      if (!currentUser || !currentUser.phone) return;
-      try {
-        const accounts = loadAccounts();
-        const a = accounts[currentUser.phone];
-        if (a && Number(a.balance) !== Number(currentUser.balance)) {
-          currentUser.balance = Number(a.balance || 0);
-          localStorage.setItem(LS_USER, JSON.stringify(currentUser));
-          updateBalanceUI();
-        }
-      } catch(e){}
-    }, 2000);
-
-
-    (function lockNoLogin(){
-      const lv = document.getElementById('loginView');
-      if (!lv) return;
-      const hide = function(){ lv.classList.add('hidden'); lv.style.display = 'none'; };
-      hide();
-      try { new MutationObserver(hide).observe(lv, { attributes: true, attributeFilter: ['class','style'] }); } catch(e){}
-    })();
-
+    try { setAppRoute('#/login'); } catch (e) {}
     init();
 
   </script>
