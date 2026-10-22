@@ -2009,12 +2009,230 @@
   </div>
 
   <!-- =========================
+       LOGIN / REGISTER
+  ========================== -->
+
+  <div id="loginView" class="auth-landing-wrapper">
+
+    <div class="glow-backdrop"></div>
+
+    <div class="glass-card">
+
+      <img
+        src="https://i.ibb.co/mrRfJTRG/IMG-20260729-WA0055.jpg"
+        alt="Shika-Chapaa"
+        class="auth-site-logo"
+      >
+
+      <h2 class="auth-title" id="authTitle">Log In</h2>
+
+      <div style="text-align:center;margin:-6px 0 14px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#1a2e1a,#1c2230);border:1px solid rgba(34,197,94,.35)">
+        <div style="font-size:12px;font-weight:800;color:#4ade80;line-height:1.35">
+          Get <span style="color:#fff">KSh 2,000</span> bonus after your first deposit of <span style="color:#fff">KSh 5,000</span>
+        </div>
+      </div>
+
+      <div
+        id="loginAlert"
+        class="alert-box error hidden"
+      ></div>
+
+      <form id="loginForm" class="auth-form">
+
+        <div class="form-group">
+
+          <div class="select-wrapper">
+
+            <select
+              id="countrySelect"
+              class="country-select"
+            >
+              <option value="+254">
+                Kenya (+254)
+              </option>
+
+              <option value="+255">
+                Tanzania (+255)
+              </option>
+
+              <option value="+256">
+                Uganda (+256)
+              </option>
+
+              <option value="+234">
+                Nigeria (+234)
+              </option>
+
+              <option value="+27">
+                South Africa (+27)
+              </option>
+            </select>
+
+            <span class="select-arrow">
+              ▼
+            </span>
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <div class="phone-input-row">
+
+            <div
+              class="country-code-box"
+              id="countryCodeBox"
+            >
+              +254
+            </div>
+
+            <input
+              type="text"
+              id="phoneInput"
+              class="phone-input"
+              placeholder="Phone Number (9 digits)"
+              maxlength="9"
+              inputmode="numeric"
+              required
+            >
+
+          </div>
+
+          <div class="field-hint">
+            Enter phone without country code
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <div class="password-input-wrapper">
+
+            <input
+              id="passwordInput"
+              class="password-input"
+              type="password"
+              placeholder="Password"
+              required
+            >
+
+            <button
+              type="button"
+              id="togglePassword"
+              class="password-toggle-btn"
+            >
+              SHOW
+            </button>
+
+          </div>
+
+        </div>
+
+        <div
+          class="form-group hidden"
+          id="confirmPasswordGroup"
+        >
+
+          <div class="password-input-wrapper">
+
+            <input
+              id="confirmPasswordInput"
+              class="password-input"
+              type="password"
+              placeholder="Confirm Password"
+            >
+
+          </div>
+
+        </div>
+
+        <label class="terms-row" id="termsRow" style="display:flex;align-items:flex-start;gap:10px;margin:4px 0 2px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="termsCheck" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:#4f67f6">
+          <span style="color:#9ca3af;font-size:.78rem;line-height:1.4;font-weight:500">
+            I agree to the
+            <a href="#/terms" id="termsLink" class="underlined-link" style="font-size:.78rem">Terms &amp; Conditions</a>
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          class="submit-blue-btn"
+          id="authSubmitBtn"
+        >
+          LOG IN
+        </button>
+
+        <a id="downloadAppBtn" href="#/download" class="download-app-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#1c2230;color:#e5e7eb;font-weight:700;font-size:.9rem;text-decoration:none">
+          <span style="font-size:1.1rem">⬇</span>
+          Download App / Site
+        </a>
+
+        <div class="auth-links-footer">
+
+          <div id="registerSwitch">
+
+            <span style="color:#fff">
+              Don't Have An account?
+            </span>
+
+            <a
+              class="underlined-link"
+              id="registerLink"
+            >
+              Register here
+            </a>
+
+          </div>
+
+          <div
+            id="loginSwitch"
+            class="hidden"
+          >
+
+            <span style="color:#fff">
+              Already Have An account?
+            </span>
+
+            <a
+              class="underlined-link"
+              id="loginLink"
+            >
+              Log in here
+            </a>
+
+          </div>
+
+          <div
+            id="forgotPasswordRow"
+            style="margin-top:6px"
+          >
+
+            <a
+              class="underlined-link"
+              id="forgotPasswordLink"
+            >
+              Forgot Password
+            </a>
+
+          </div>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
        GAME
   ========================== -->
 
   <div
     id="gameView"
-    class="aviator-root"
+    class="aviator-root hidden"
   >
 
     <header class="top-nav">
@@ -2022,7 +2240,6 @@
       <button
         class="go-back-btn"
         id="goBackBtn"
-        type="button"
       >
         ‹ Go Back
       </button>
@@ -2046,6 +2263,7 @@
         </button>
 
         <span class="balance-amount" id="balanceDisplayWrap">
+          
           <span id="balanceDisplay">0.00 KES</span>
         </span>
 
@@ -2068,7 +2286,9 @@
           </button>
           <div id="navMenuDrop" class="nav-menu-drop hidden">
             <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
+            <button type="button" class="nav-menu-item" id="menuWithdrawBtn">Withdraw</button>
             <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
+            <button type="button" class="nav-menu-item danger" id="menuLogoutBtn">Logout</button>
           </div>
         </div>
 
@@ -2702,7 +2922,7 @@
           Add funds to your account
         </div>
 
-        <div id="walletDemoDeposit" class="hidden" style="display:none!important">
+        <div id="walletDemoDeposit" class="hidden">
           <div class="deposit-options">
             <button class="deposit-option" data-deposit="100">+100 KES</button>
             <button class="deposit-option" data-deposit="500">+500 KES</button>
@@ -2719,7 +2939,7 @@
           <div class="mpesa-form" id="depositFormArea">
             <div>
               <label>M-Pesa Phone Number</label>
-              <input type="tel" id="walletMpesaPhone" placeholder="Registered number" maxlength="12" inputmode="numeric" >
+              <input type="tel" id="walletMpesaPhone" placeholder="Registered number" maxlength="12" inputmode="numeric" readonly style="opacity:.85;cursor:not-allowed;background:#151a24">
               <div class="mpesa-hint">Using your registered number — STK will be sent here</div>
             </div>
             <div>
@@ -2745,6 +2965,60 @@
         </div>
 
       </div>
+
+      <!-- WITHDRAW — expandable section (not inside deposit tabs) -->
+      <button type="button" class="withdraw-expand-btn" id="withdrawExpandBtn">
+        <span>Withdraw</span>
+        <span class="chev">▾</span>
+      </button>
+
+      <div id="walletWithdrawTab" class="withdraw-expand-panel hidden">
+
+        <div id="withdrawDemoBlock" class="hidden">
+          <div class="modal-text" style="text-align:center;padding:16px 10px">
+            Withdrawals are not available in Demo Mode.<br>
+            Switch to Real Mode to withdraw.
+          </div>
+        </div>
+
+        <div id="withdrawFormArea">
+          <div class="modal-text" style="margin-bottom:12px">
+            Enter the amount you want to withdraw
+          </div>
+          <div class="mpesa-form">
+            <div>
+              <label>Amount (KES)</label>
+              <input type="number" id="withdrawAmount" placeholder="Enter amount" min="1" step="1">
+            </div>
+            <button class="modal-btn primary" id="withdrawSubmitBtn" style="margin-top:10px;height:42px;font-size:13px">
+              Request Withdrawal
+            </button>
+          </div>
+        </div>
+
+        <div id="withdrawLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
+          <div class="spinner" style="margin:0 auto 14px;width:40px;height:40px;border-width:4px"></div>
+          <div id="withdrawLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">
+            Checking details...
+          </div>
+          <div class="loading-status" style="font-size:12px;color:#7db3ff">
+            Please wait
+          </div>
+        </div>
+
+        <div id="withdrawPendingArea" class="hidden">
+          <div class="withdraw-pending-box">
+            <div class="withdraw-icon">⏳</div>
+            <div class="withdraw-title">Withdrawal Pending</div>
+            <div class="withdraw-text">
+              Your withdrawal request has been received<br>
+              and is currently pending.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <div class="modal-actions" style="margin-top:18px">
         <button class="modal-btn cancel" id="closeWalletBtn">
           CLOSE
@@ -2783,7 +3057,7 @@
       </div>
 
       <!-- DEMO MODE CONTENT -->
-      <div id="demoDepositArea" class="hidden" style="display:none!important">
+      <div id="demoDepositArea" class="hidden">
 
         <div class="deposit-options">
 
@@ -2851,7 +3125,7 @@
               placeholder="07XXXXXXXX"
               maxlength="12"
               inputmode="numeric"
-             >
+             readonly style="opacity:.85;cursor:not-allowed;background:#151a24">
             <div class="mpesa-hint">Enter the phone number registered with M-Pesa</div>
           </div>
 
@@ -2895,7 +3169,47 @@
 
   </div>
 
-</div>
+
+  <!-- =========================
+       LOGOUT MODAL
+  ========================== -->
+
+  <div
+    id="logoutModal"
+    class="modal-backdrop hidden"
+  >
+
+    <div class="modal-card">
+
+      <div class="modal-title">
+        Log out
+      </div>
+
+      <div class="modal-text">
+        Are you sure you want to log out?
+      </div>
+
+      <div class="modal-actions">
+
+        <button
+          class="modal-btn cancel"
+          id="cancelLogoutBtn"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="modal-btn danger"
+          id="confirmLogoutBtn"
+        >
+          Log out
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
 
   <!-- Background music: built-in only, never visible -->
   <audio
@@ -2942,18 +3256,21 @@
     const PAYMENT_HOST =
       'https://my-server1.bonto.run';     // Payments Socket.IO (from admin)
 
-    const LS_USER = 'shikachapaa_user';
+    const LS_USER =
+      'shikachapaa_user';
 
-    const LS_ACCOUNTS = 'shikachapaa_accounts';
+    const LS_ACCOUNTS =
+      'shikachapaa_accounts';
 
-    const LS_DEMO = 'shikachapaa_demo'; // unused
+    const LS_DEMO =
+      'shikachapaa_demo';
 
 
     /* ==========================================
        STATE
     ========================================== */
 
-    let isDemo = false; // demo mode permanently removed
+    let isDemo = false; // demo removed — always real balance
 
     let currentUser = null;
 
@@ -3005,7 +3322,8 @@
        ELEMENTS
     ========================================== */
 
-    const loginView = null; // login removed
+    const loginView =
+      document.getElementById('loginView');
 
     const gameView =
       document.getElementById('gameView');
@@ -3052,7 +3370,8 @@
     const balanceDisplay =
       document.getElementById('balanceDisplay');
 
-    const demoIndicator = { classList: { toggle(){}, add(){}, remove(){}, contains(){ return true; } } }; // removed
+    const demoIndicator =
+      document.getElementById('demoIndicator');
 
     const winBubble =
       document.getElementById('winBubble');
@@ -5258,7 +5577,7 @@
     document
       .querySelectorAll('.amount-input')
       .forEach(input => {
-        input.removeAttribute(' ');
+        input.removeAttribute('readonly');
         input.removeAttribute('disabled');
         input.style.pointerEvents = 'auto';
         input.style.userSelect = 'text';
@@ -6300,9 +6619,49 @@
     }
 
     function showLogin(){
-      // Login removed — stay in game
-      if (gameView) gameView.classList.remove('hidden');
-      if (loginView) loginView.classList.add('hidden');
+
+      setAppRoute('#/login');
+
+      loginView.classList.remove(
+        'hidden'
+      );
+
+      gameView.classList.add(
+        'hidden'
+      );
+
+      // Mute all game audio when leaving the game
+      if (typeof muteAllGameAudio === 'function') {
+        muteAllGameAudio();
+      }
+
+
+      if(socket){
+
+        socket.disconnect();
+
+        socket =
+          null;
+
+      }
+
+
+      if(pollTimer){
+
+        clearInterval(
+          pollTimer
+        );
+
+        pollTimer =
+          null;
+
+      }
+
+
+      setAuthMode(
+        'login'
+      );
+
     }
 
 
@@ -6314,7 +6673,7 @@
 
       setAppRoute('#/game');
 
-      if (loginView) loginView.classList.add('hidden');
+      loginView.classList.add('hidden');
 
       // Spribe-style splash loading after login
       const splash = document.getElementById('splash');
@@ -6332,7 +6691,7 @@
 
         gameView.classList.remove('hidden');
         updateBalanceUI();
-        /* demo indicator removed */
+        try{document.getElementById('demoIndicator')?.classList.add('hidden')}catch(e){}
         generateLiveBoard();
         seedPreviousMults();
         renderBetsList();
@@ -6399,7 +6758,7 @@
     const walletModal = document.getElementById('walletModal');
     const walletBalanceDisplay = document.getElementById('walletBalanceDisplay');
     const walletDepositTab = document.getElementById('walletDepositTab');
-    const walletWithdrawTab = document.getElementById('walletWithdrawTab'); // may be null — withdraw removed
+    const walletWithdrawTab = document.getElementById('walletWithdrawTab');
     const walletDemoDeposit = document.getElementById('walletDemoDeposit');
     const walletRealDeposit = document.getElementById('walletRealDeposit');
 
@@ -6431,19 +6790,41 @@
 
       // Deposit always visible; withdraw panel collapsed by default
       walletDepositTab.classList.remove('hidden');
-      /* withdraw UI removed */
+      walletWithdrawTab.classList.add('hidden');
+      const expandBtn = document.getElementById('withdrawExpandBtn');
+      if (expandBtn) expandBtn.classList.remove('open');
 
-      /* withdraw prepare removed */
+      // Prepare withdraw demo/real visibility
+      const demoBlock = document.getElementById('withdrawDemoBlock');
+      const formArea = document.getElementById('withdrawFormArea');
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      if (loadingArea) loadingArea.classList.add('hidden');
+      if (pendingArea) pendingArea.classList.add('hidden');
+      if (isDemo) {
+        if (demoBlock) demoBlock.classList.remove('hidden');
+        if (formArea) formArea.classList.add('hidden');
+      } else {
+        if (demoBlock) demoBlock.classList.add('hidden');
+        if (formArea) formArea.classList.remove('hidden');
+      }
 
       // Show correct deposit form
-      // Always real deposit (demo removed)
-      if (walletDemoDeposit) walletDemoDeposit.classList.add('hidden');
-      if (walletRealDeposit) walletRealDeposit.classList.remove('hidden');
-      const phoneEl = document.getElementById('walletMpesaPhone');
-      if (phoneEl && !phoneEl.value) phoneEl.value = '';
-      const amtEl = document.getElementById('walletMpesaAmount');
-      if (amtEl) amtEl.value = '';
+      if(isDemo){
+        walletDemoDeposit.classList.remove('hidden');
+        walletRealDeposit.classList.add('hidden');
+      }else{
+        walletDemoDeposit.classList.add('hidden');
+        walletRealDeposit.classList.remove('hidden');
 
+        const phoneEl = document.getElementById('walletMpesaPhone');
+        if(currentUser && currentUser.phone){
+          const raw = currentUser.phone.replace(/\D/g,'');
+          const last9 = raw.slice(-9);
+          phoneEl.value = '0' + last9;
+        }
+        document.getElementById('walletMpesaAmount').value = '';
+      }
 
       walletModal.classList.remove('hidden');
     }
@@ -6471,11 +6852,37 @@
         closeDrop();
         openWalletModal();
       });
+      document.getElementById('menuWithdrawBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+        const expandBtn = document.getElementById('withdrawExpandBtn');
+        const panel = document.getElementById('walletWithdrawTab');
+        if (panel) {
+          panel.classList.remove('hidden');
+          expandBtn?.classList.add('open');
+          const demoBlock = document.getElementById('withdrawDemoBlock');
+          const formArea = document.getElementById('withdrawFormArea');
+          document.getElementById('withdrawLoadingArea')?.classList.add('hidden');
+          document.getElementById('withdrawPendingArea')?.classList.add('hidden');
+          if (typeof isDemo !== 'undefined' && isDemo) {
+            demoBlock?.classList.remove('hidden');
+            formArea?.classList.add('hidden');
+          } else {
+            demoBlock?.classList.add('hidden');
+            formArea?.classList.remove('hidden');
+          }
+        }
+      });
       document.getElementById('menuAccountBtn')?.addEventListener('click', () => {
         closeDrop();
         openWalletModal();
       });
-      })();
+      document.getElementById('menuLogoutBtn')?.addEventListener('click', () => {
+        closeDrop();
+        const lm = document.getElementById('logoutModal');
+        if (lm) lm.classList.remove('hidden');
+      });
+    })();
 
 
     // Expansion tab beside DEPOSIT — opens same Account wallet with Withdraw expanded
@@ -6515,6 +6922,29 @@
     });
 
     // Expand / collapse Withdraw section (separate from deposit)
+    document.getElementById('withdrawExpandBtn')?.addEventListener('click', () => {
+      const btn = document.getElementById('withdrawExpandBtn');
+      const panel = document.getElementById('walletWithdrawTab');
+      const open = panel && !panel.classList.contains('hidden');
+      if (open) {
+        panel.classList.add('hidden');
+        btn?.classList.remove('open');
+      } else {
+        panel?.classList.remove('hidden');
+        btn?.classList.add('open');
+        // Sync demo/real blocks when expanding
+        const demoBlock = document.getElementById('withdrawDemoBlock');
+        const formArea = document.getElementById('withdrawFormArea');
+        if (isDemo) {
+          demoBlock?.classList.remove('hidden');
+          formArea?.classList.add('hidden');
+        } else {
+          demoBlock?.classList.add('hidden');
+          formArea?.classList.remove('hidden');
+        }
+      }
+    });
+
     // Wallet demo deposit buttons
     document.querySelectorAll('#walletDemoDeposit .deposit-option').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6540,10 +6970,10 @@
 
     // Wallet real M-Pesa deposit
     document.getElementById('walletMpesaDepositBtn').addEventListener('click', () => {
-      const el = document.getElementById('walletMpesaPhone');
-      let phone = el ? String(el.value || '').trim() : '';
-      if (!phone && currentUser && currentUser.phone && currentUser.phone !== 'guest') {
-        phone = String(currentUser.phone).trim();
+      let phone = (currentUser && currentUser.phone) ? String(currentUser.phone).trim() : '';
+      if (!phone) {
+        const el = document.getElementById('walletMpesaPhone');
+        phone = el ? String(el.value || '').trim() : '';
       }
       const amount = Number(document.getElementById('walletMpesaAmount').value);
 
@@ -6558,7 +6988,7 @@
       }
 
       if (!/^254[71]\d{8}$/.test(phone)) {
-        showGameNotice('Please enter a valid Kenyan M-Pesa number.', 'error');
+        showGameNotice('Registered phone is invalid. Please re-login.', 'error');
         return;
       }
 
@@ -6576,9 +7006,110 @@
       processMpesaDeposit(phone, amount);
     });
 
-    /* Withdraw flow removed */
+    // ---------- WITHDRAW FLOW ----------
+    // Demo mode: withdrawals NOT supported
+    // Real mode: process withdrawal, deduct balance, show success
 
-/* withdraw removed */
+    document.getElementById('withdrawSubmitBtn').addEventListener('click', () => {
+
+      // Demo mode cannot withdraw
+      if (isDemo) {
+        showGameNotice('Withdrawals are not available in Demo Mode.', 'error', 3500);
+        return;
+      }
+
+      const amountInput = document.getElementById('withdrawAmount');
+      const amount = Number(amountInput.value);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showGameNotice('Enter a valid amount', 'error');
+        return;
+      }
+
+      const formArea = document.getElementById('withdrawFormArea');
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      const loadingText = document.getElementById('withdrawLoadingText');
+      const statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
+
+      // Always show spinner first (even if amount is below min)
+      formArea.classList.add('hidden');
+      pendingArea.classList.add('hidden');
+      loadingArea.classList.remove('hidden');
+
+      loadingText.textContent = 'Checking details...';
+      if (statusEl) statusEl.textContent = 'Please wait';
+
+      setTimeout(() => {
+        loadingText.textContent = 'Validating...';
+        if (statusEl) statusEl.textContent = 'Validating request';
+      }, 1400);
+
+      setTimeout(() => {
+        loadingText.textContent = 'Verifying...';
+        if (statusEl) statusEl.textContent = 'Processing request';
+      }, 2800);
+
+      setTimeout(() => {
+        /*
+         * Below 100k (or not enough balance): keep message INSIDE the
+         * withdrawal panel — no game toast. Show try later + transactions note.
+         */
+        const balance = Number(currentUser && currentUser.balance || 0);
+        const belowMin = !(amount >= 100000);
+        const notEnough = amount > balance;
+
+        if (belowMin || notEnough) {
+          // Stay in loading/result area (same withdraw section)
+          loadingArea.classList.remove('hidden');
+          formArea.classList.add('hidden');
+          pendingArea.classList.add('hidden');
+
+          // Hide spinning look — static status result
+          const spin = loadingArea.querySelector('.spinner');
+          if (spin) spin.style.display = 'none';
+
+          loadingText.textContent = 'Try again later';
+          if (statusEl) {
+            statusEl.textContent = 'Several transactions are underway';
+            statusEl.style.color = '#fbbf24';
+          }
+
+          // After a short pause, restore form so user can try again
+          setTimeout(() => {
+            if (spin) spin.style.display = '';
+            if (statusEl) statusEl.style.color = '';
+            loadingArea.classList.add('hidden');
+            formArea.classList.remove('hidden');
+            if (loadingText) loadingText.textContent = 'Checking details...';
+            if (statusEl) statusEl.textContent = 'Please wait';
+          }, 4500);
+          return;
+        }
+
+        // Success: deduct balance and show success in same panel
+        currentUser.balance = Number(currentUser.balance || 0) - amount;
+        saveCurrentUser();
+        updateBalanceUI();
+
+        loadingArea.classList.add('hidden');
+
+        const titleEl = pendingArea.querySelector('.withdraw-title');
+        const textEl = pendingArea.querySelector('.withdraw-text');
+        const iconEl = pendingArea.querySelector('.withdraw-icon');
+        if (iconEl) iconEl.textContent = '✅';
+        if (titleEl) titleEl.textContent = 'Successfully sent to M-Pesa';
+        if (textEl) {
+          textEl.innerHTML =
+            amount.toLocaleString('en-KE') +
+            ' KES has been sent to your M-Pesa.';
+        }
+
+        pendingArea.classList.remove('hidden');
+      }, 4200);
+    });
+
+    // (Withdraw expand handled by #withdrawExpandBtn above)
 
     // Keep old deposit modal close for safety
     document.getElementById('closeDepositBtn')?.addEventListener('click', ()=>{
@@ -6904,7 +7435,7 @@
 
       walletModal.classList.remove('hidden');
       walletDepositTab.classList.remove('hidden');
-      if (walletWithdrawTab) walletWithdrawTab.classList.add('hidden');
+      walletWithdrawTab.classList.add('hidden');
 
       const formArea = document.getElementById('depositFormArea');
       const loadingArea = document.getElementById('depositLoadingArea');
@@ -7083,9 +7614,61 @@
       );
 
 
-    /* goBack / logout removed */
+    document.getElementById('goBackBtn').addEventListener('click', () => {
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage('shika-close-aviator', '*');
+            } else {
+              // standalone: open logout confirm still available via menu
+              const lm = document.getElementById('logoutModal');
+              if (lm) lm.classList.remove('hidden');
+            }
+          } catch (e) {}
+        });
 
-/* ==========================================
+
+    document
+      .getElementById(
+        'cancelLogoutBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        'confirmLogoutBtn'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+          localStorage.removeItem(
+            LS_USER
+          );
+
+          currentUser =
+            null;
+
+          showLogin();
+
+        }
+      );
+
+
+    /* ==========================================
        MODAL BACKDROP CLOSE
     ========================================== */
 
@@ -7132,64 +7715,57 @@
        INITIALIZATION
     ========================================== */
 
-    
     function init(){
-      // Game-only: no login UI. Prefer session created on the home screen.
-      let accounts = loadAccounts();
-      let sessionUser = null;
+
+      // Demo permanently off
       try {
-        const raw = localStorage.getItem(LS_USER);
-        if (raw) sessionUser = JSON.parse(raw);
+        document.getElementById('demoToggle') && document.getElementById('demoToggle').classList.remove('on');
+        document.getElementById('demoStatus') && document.getElementById('demoStatus').classList.add('hidden');
+        var di = document.getElementById('demoIndicator');
+        if (di) di.classList.add('hidden');
       } catch (e) {}
 
-      if (sessionUser && sessionUser.phone && accounts[sessionUser.phone]) {
-        createSession(accounts[sessionUser.phone]);
-        // keep latest balance from accounts store
-        currentUser.balance = Number(accounts[sessionUser.phone].balance || 0);
-        currentUser.firstDepositBonusClaimed = !!accounts[sessionUser.phone].firstDepositBonusClaimed;
+      // Sync login + balance with parent home page (same localStorage keys)
+      var accounts = loadAccounts();
+      var session = null;
+      try {
+        var raw = localStorage.getItem(LS_USER);
+        if (raw) session = JSON.parse(raw);
+      } catch (e) {}
+
+      if (session && session.phone && accounts[session.phone]) {
+        createSession(accounts[session.phone]);
+        currentUser.balance = Number(accounts[session.phone].balance || session.balance || 0);
+        currentUser.firstDepositBonusClaimed = !!(accounts[session.phone].firstDepositBonusClaimed || session.firstDepositBonusClaimed);
         saveCurrentUser();
-      } else if (sessionUser && sessionUser.phone) {
-        // session exists but account row missing — recreate minimal
-        const key = sessionUser.phone;
-        accounts[key] = accounts[key] || {
+        showGame();
+        return;
+      }
+
+      if (session && session.phone) {
+        var key = session.phone;
+        accounts[key] = {
           phone: key,
-          country: sessionUser.country || '+254',
-          password: '',
-          balance: Number(sessionUser.balance || 0),
+          country: session.country || '+254',
+          password: (accounts[key] && accounts[key].password) || '',
+          balance: Number(session.balance || 0),
           demoBalance: 0,
-          betHistory: [],
-          welcomeBonus: false,
-          firstDepositBonusClaimed: !!sessionUser.firstDepositBonusClaimed,
+          betHistory: Array.isArray(session.betHistory) ? session.betHistory : [],
+          welcomeBonus: !!session.welcomeBonus,
+          firstDepositBonusClaimed: !!session.firstDepositBonusClaimed,
           createdAt: Date.now()
         };
         saveAccounts(accounts);
         createSession(accounts[key]);
-      } else {
-        // No home login yet — guest play with local balance (deposit still works)
-        const guestKey = 'guest';
-        if (!accounts[guestKey]) {
-          accounts[guestKey] = {
-            phone: guestKey,
-            country: '+254',
-            password: '',
-            balance: 0,
-            demoBalance: 0,
-            betHistory: [],
-            welcomeBonus: false,
-            firstDepositBonusClaimed: false,
-            createdAt: Date.now()
-          };
-          saveAccounts(accounts);
-        }
-        createSession(accounts[guestKey]);
+        showGame();
+        return;
       }
-      showGame();
+
+      // No parent session — login screen (standalone use)
+      showLogin();
+
     }
 
-
-    /* ==========================================
-       ANIMATION LOOP
-    ========================================== */
 
     function loop(){
 
@@ -7685,23 +8261,6 @@
       else boot();
     })();
 
-
-    
-    /* Close game → notify home iframe parent */
-    (function(){
-      const btn = document.getElementById('goBackBtn');
-      if (!btn) return;
-      btn.addEventListener('click', function(){
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage('shika-close-aviator', '*');
-          } else {
-            // standalone: just keep playing / optional history back
-            try { history.back(); } catch(e){}
-          }
-        } catch (e) {}
-      });
-    })();
 
     /* START */
 
