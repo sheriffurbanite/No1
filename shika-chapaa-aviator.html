@@ -2012,7 +2012,7 @@
        LOGIN / REGISTER
   ========================== -->
 
-  <div id="loginView" class="hidden auth-landing-wrapper">
+  <div id="loginView" class="auth-landing-wrapper" style="display:none!important">
 
     <div class="glow-backdrop"></div>
 
@@ -2144,6 +2144,15 @@
             >
 
           </div>
+
+        </div>
+
+        <span
+            id="demoStatus"
+            class="demo-badge hidden"
+          >
+            DEMO
+          </span>
 
         </div>
 
@@ -2286,8 +2295,8 @@
           </button>
           <div id="navMenuDrop" class="nav-menu-drop hidden">
             <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
-            <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
-          </div>
+<button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
+</div>
         </div>
 
         <button
@@ -3254,7 +3263,7 @@
     const PAYMENT_HOST =
       'https://my-server1.bonto.run';     // Payments Socket.IO (from admin)
 
-    /* Compact balance: 850.00 KES, 1k, 1.25k, 300k, 1.5M */
+    /* Compact balance: <=900 full, else 1k / 1.3M */
     function fmtBalance(n){
       n = Number(n || 0);
       const a = Math.abs(n);
@@ -3265,7 +3274,6 @@
       if (a >= 999500) return t(n / 1e6, 'M') + ' KES';
       return t(n / 1e3, 'k') + ' KES';
     }
-
 
 
     const LS_USER =
@@ -6186,27 +6194,47 @@
     ========================================== */
 
     function updateBalanceUI(){
-
-      const bal = currentUser
-        ? Number(currentUser.balance ?? 0)
-        : 0;
-
-      if (balanceDisplay) {
+      const bal = currentUser ? Number(currentUser.balance ?? 0) : 0;
+      if (typeof balanceDisplay !== 'undefined' && balanceDisplay) {
         balanceDisplay.textContent = (typeof fmtBalance === 'function')
           ? fmtBalance(bal)
           : (bal.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' KES');
       }
-
-      if (typeof updateWalletBalance === 'function'){
-        updateWalletBalance();
-      }
-
-      if (demoIndicator) demoIndicator.classList.add('hidden');
-
+      if (typeof updateWalletBalance === 'function') updateWalletBalance();
+      try { if (demoIndicator) demoIndicator.classList.add('hidden'); } catch(e){}
     }
 
 
     /* DEMO TOGGLE removed — real mode only */
+
+
+          document
+            .getElementById(
+              'demoStatus'
+            )
+            .classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+
+          updateBalanceUI();
+
+
+          if(gameView &&
+             !gameView.classList.contains(
+               'hidden'
+             )){
+
+            demoIndicator.classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+          }
+
+        }
+      );
 
 
     /* ==========================================
@@ -6607,15 +6635,14 @@
     }
 
     function showLogin(){
-      // Login UI is disabled inside Aviator — auth only on home page
+      // Login disabled in Aviator — auth only on home page
       try {
-        const loginViewEl = document.getElementById('loginView');
-        if (loginViewEl) loginViewEl.classList.add('hidden');
-      } catch (e) {}
-      // Keep user on the game
+        const lv = document.getElementById('loginView');
+        if (lv) { lv.classList.add('hidden'); lv.style.display = 'none'; }
+      } catch(e){}
       try {
-        if (gameView) gameView.classList.remove('hidden');
-      } catch (e) {}
+        if (typeof gameView !== 'undefined' && gameView) gameView.classList.remove('hidden');
+      } catch(e){}
     }
 
 
@@ -6718,7 +6745,7 @@
 
     function updateWalletBalance(){
       const el = document.getElementById('walletBalanceDisplay');
-      if(!el) return;
+      if (!el) return;
       const bal = currentUser ? Number(currentUser.balance ?? 0) : 0;
       el.textContent = (typeof fmtBalance === 'function')
         ? fmtBalance(bal)
@@ -6726,18 +6753,14 @@
     }
 
     function openWalletModal(){
-      // Deposit only in Aviator — no withdraw / no logout here
-      if(!currentUser){
+      if (!currentUser) {
         showGameNotice('Log in on the home page to deposit', 'info');
         return;
       }
-
       updateWalletBalance();
-
-      // Lock phone to registered account number
       try {
-        const regPhone = (currentUser && currentUser.phone) ? String(currentUser.phone) : '';
-        const raw = regPhone.replace(/\D/g,'');
+        const regPhone = String(currentUser.phone || '');
+        const raw = regPhone.replace(/\D/g, '');
         const last9 = raw.slice(-9);
         const displayPhone = last9 ? ('0' + last9) : regPhone;
         const wp = document.getElementById('walletMpesaPhone');
@@ -6746,36 +6769,25 @@
         if (mp) { mp.value = displayPhone; mp.readOnly = true; }
       } catch(e){}
 
-      // Always real deposit only
-      if (typeof walletDepositTab !== 'undefined' && walletDepositTab) walletDepositTab.classList.remove('hidden');
-      if (typeof walletWithdrawTab !== 'undefined' && walletWithdrawTab) walletWithdrawTab.classList.add('hidden');
+      try { if (walletDepositTab) walletDepositTab.classList.remove('hidden'); } catch(e){}
+      try { if (walletWithdrawTab) walletWithdrawTab.classList.add('hidden'); } catch(e){}
       const expandBtn = document.getElementById('withdrawExpandBtn');
       if (expandBtn) { expandBtn.classList.add('hidden'); expandBtn.style.display = 'none'; }
 
-      if (typeof walletDemoDeposit !== 'undefined' && walletDemoDeposit) walletDemoDeposit.classList.add('hidden');
-      if (typeof walletRealDeposit !== 'undefined' && walletRealDeposit) walletRealDeposit.classList.remove('hidden');
+      try { if (walletDemoDeposit) walletDemoDeposit.classList.add('hidden'); } catch(e){}
+      try { if (walletRealDeposit) walletRealDeposit.classList.remove('hidden'); } catch(e){}
 
-      // Clear amount fields every time modal opens (no sticky values)
-      try {
-        const a1 = document.getElementById('walletMpesaAmount');
-        if (a1) a1.value = '';
-        const a2 = document.getElementById('mpesaAmount');
-        if (a2) a2.value = '';
-        const a3 = document.getElementById('withdrawAmount');
-        if (a3) a3.value = '';
-        const a4 = document.getElementById('customDepositInput');
-        if (a4) a4.value = '';
-        const a5 = document.getElementById('walletCustomDepositInput');
-        if (a5) a5.value = '';
-      } catch(e){}
-
-      // Reset deposit loading UI
+      // Clear amounts every open
+      ['walletMpesaAmount','mpesaAmount','withdrawAmount','customDepositInput','walletCustomDepositInput'].forEach(function(id){
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
       try {
         document.getElementById('depositFormArea')?.classList.remove('hidden');
         document.getElementById('depositLoadingArea')?.classList.add('hidden');
       } catch(e){}
 
-      walletModal.classList.remove('hidden');
+      if (walletModal) walletModal.classList.remove('hidden');
     }
 
     
@@ -6801,17 +6813,40 @@
         closeDrop();
         openWalletModal();
       });
-      /* withdraw removed from game */
+      /* withdraw removed */
       document.getElementById('menuAccountBtn')?.addEventListener('click', () => {
         closeDrop();
         openWalletModal();
       });
-      /* logout removed from game */
+      /* logout removed */
     })();
 
 
     // Expansion tab beside DEPOSIT — opens same Account wallet with Withdraw expanded
-    document.getElementById('withdrawNavBtn')?.addEventListener('click', () => { showGameNotice('Withdraw on the home page only', 'info'); });
+    document.getElementById('withdrawNavBtn')?.addEventListener('click', () => {
+      openWalletModal();
+      const btn = document.getElementById('withdrawExpandBtn');
+      const panel = document.getElementById('walletWithdrawTab');
+      if (panel) {
+        panel.classList.remove('hidden');
+        btn?.classList.add('open');
+        const demoBlock = document.getElementById('withdrawDemoBlock');
+        const formArea = document.getElementById('withdrawFormArea');
+        const loadingArea = document.getElementById('withdrawLoadingArea');
+        const pendingArea = document.getElementById('withdrawPendingArea');
+        loadingArea?.classList.add('hidden');
+        pendingArea?.classList.add('hidden');
+        if (isDemo) {
+          demoBlock?.classList.remove('hidden');
+          formArea?.classList.add('hidden');
+        } else {
+          demoBlock?.classList.add('hidden');
+          formArea?.classList.remove('hidden');
+          const amountInput = document.getElementById('withdrawAmount');
+          if (amountInput) amountInput.value = '';
+        }
+      }
+    });
 
     document.getElementById('closeWalletBtn').addEventListener('click', () => {
       walletModal.classList.add('hidden');
@@ -7519,21 +7554,14 @@
     document.getElementById('goBackBtn').addEventListener('click', function(e){
         e.preventDefault();
         e.stopPropagation();
-        // If opened inside home iframe → close and stay on shika-chapaa.netlify.app/
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage('shika-close-aviator', '*');
             return;
           }
-        } catch (err) {}
-        // Opened directly → home file
+        } catch(err){}
         location.href = 'index.html';
       });
-e.stopPropagation();
-          // Always return to homepage (GitHub Pages + Netlify)
-          location.href = 'index.html';
-        }
-      );
 
 
     document
@@ -7625,17 +7653,14 @@ e.stopPropagation();
     ========================================== */
 
     function init(){
-
-      // No login UI in Aviator — session comes only from home (shared LS)
       isDemo = false;
-
+      // Never show login — launch game with splash directly
       try {
-        const loginViewEl = document.getElementById('loginView');
-        if (loginViewEl) loginViewEl.classList.add('hidden');
-      } catch (e) {}
+        const lv = document.getElementById('loginView');
+        if (lv) { lv.classList.add('hidden'); lv.style.display = 'none'; }
+      } catch(e){}
 
       const saved = localStorage.getItem(LS_USER);
-
       if (saved) {
         try {
           const session = JSON.parse(saved);
@@ -7646,17 +7671,14 @@ e.stopPropagation();
             localStorage.removeItem(LS_USER);
             currentUser = null;
           }
-        } catch (e) {
+        } catch(e) {
           localStorage.removeItem(LS_USER);
           currentUser = null;
         }
       } else {
         currentUser = null;
       }
-
-      // Always open the game (watch without account; deposit/bets need session from home)
       showGame();
-
     }
 
 
@@ -7962,7 +7984,7 @@ e.stopPropagation();
         } else if (h.includes('/download')) {
           downloadModal?.classList.remove('hidden');
         } else if (h.includes('/login') || h === '' || h === '#') {
-          /* login disabled in Aviator */ if (!currentUser) { /* stay on game */ }
+          /* no login in aviator */
         }
       });
 
@@ -8159,51 +8181,48 @@ e.stopPropagation();
     })();
 
 
-
-    // Keep balance in sync with home page (shared LS keys)
-    window.addEventListener('storage', function(ev){
-      if(ev.key===LS_USER || ev.key===LS_ACCOUNTS){
-        try{
-          const s = JSON.parse(localStorage.getItem(LS_USER)||'null');
-          const accounts = loadAccounts();
-          if(s && s.phone && accounts[s.phone]){
-            currentUser = currentUser || {};
-            currentUser.phone = s.phone;
-            currentUser.country = accounts[s.phone].country || s.country;
-            currentUser.balance = Number(accounts[s.phone].balance||0);
-            saveCurrentUser();
-            updateBalanceUI();
-          }
-        }catch(e){}
-      }
-    });
-    setInterval(function(){
-      if(!currentUser || !currentUser.phone) return;
-      try{
-        const accounts = loadAccounts();
-        const a = accounts[currentUser.phone];
-        if(a && Number(a.balance) !== Number(currentUser.balance)){
-          currentUser.balance = Number(a.balance||0);
-          localStorage.setItem(LS_USER, JSON.stringify(currentUser));
-          updateBalanceUI();
-        }
-      }catch(e){}
-    }, 2000);
-
     /* START */
 
     // Default address bar to login until session restores
     try { setAppRoute('#/game'); } catch (e) {}
 
-    // Hard-lock: never show login inside Aviator
+    // Keep balance in sync with home page (shared LS)
+    window.addEventListener('storage', function(ev){
+      if (ev.key === LS_USER || ev.key === LS_ACCOUNTS) {
+        try {
+          const s = JSON.parse(localStorage.getItem(LS_USER) || 'null');
+          const accounts = loadAccounts();
+          if (s && s.phone && accounts[s.phone]) {
+            if (!currentUser) currentUser = {};
+            currentUser.phone = s.phone;
+            currentUser.country = accounts[s.phone].country || s.country;
+            currentUser.balance = Number(accounts[s.phone].balance || 0);
+            saveCurrentUser();
+            updateBalanceUI();
+          }
+        } catch(e){}
+      }
+    });
+    setInterval(function(){
+      if (!currentUser || !currentUser.phone) return;
+      try {
+        const accounts = loadAccounts();
+        const a = accounts[currentUser.phone];
+        if (a && Number(a.balance) !== Number(currentUser.balance)) {
+          currentUser.balance = Number(a.balance || 0);
+          localStorage.setItem(LS_USER, JSON.stringify(currentUser));
+          updateBalanceUI();
+        }
+      } catch(e){}
+    }, 2000);
+
+
     (function lockNoLogin(){
       const lv = document.getElementById('loginView');
       if (!lv) return;
-      const hide = () => { lv.classList.add('hidden'); lv.style.display = 'none'; };
+      const hide = function(){ lv.classList.add('hidden'); lv.style.display = 'none'; };
       hide();
-      try {
-        new MutationObserver(hide).observe(lv, { attributes: true, attributeFilter: ['class', 'style'] });
-      } catch (e) {}
+      try { new MutationObserver(hide).observe(lv, { attributes: true, attributeFilter: ['class','style'] }); } catch(e){}
     })();
 
     init();
