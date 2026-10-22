@@ -6173,22 +6173,6 @@
        BALANCE
     ========================================== */
 
-    
-    /* Compact balance: 850.00 KES | 1.3k KES | 344k KES | 1.6M KES */
-    function fmtBalance(n){
-      n = Number(n || 0);
-      const a = Math.abs(n);
-      if (a <= 900) {
-        return n.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }) + ' KES';
-      }
-      const t = (v, u) => (+v.toFixed(v >= 100 || v < 10 ? 1 : 2)).toString().replace(/\.0$/, '') + u;
-      if (a >= 999500) return t(n / 1e6, 'M') + ' KES';
-      return t(n / 1e3, 'k') + ' KES';
-    }
-
     function updateBalanceUI(){
 
       if(!currentUser)
@@ -6207,7 +6191,15 @@
             );
 
 
-      balanceDisplay.textContent = fmtBalance(bal);
+      balanceDisplay.textContent =
+        bal.toLocaleString(
+          'en-KE',
+          {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+          }
+        ) +
+        ' KES';
 
       // Also refresh wallet dashboard if open
       if(typeof updateWalletBalance === 'function'){
@@ -6775,7 +6767,11 @@
       const bal = isDemo
         ? Number(currentUser.demoBalance ?? 10000)
         : Number(currentUser.balance ?? 0);
-      walletBalanceDisplay.textContent = fmtBalance(isDemo ? Number(currentUser.demoBalance ?? 0) : Number(currentUser.balance ?? 0));
+      walletBalanceDisplay.textContent =
+        bal.toLocaleString('en-KE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + ' KES';
     }
 
     function openWalletModal(){
