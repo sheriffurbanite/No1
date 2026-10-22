@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Shika-Chapaa</title>
+  <title>Shika-Chapaa Aviator</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#101722">
@@ -2020,9 +2020,9 @@
     <header class="top-nav">
 
       <button
-        class="go-back-btn hidden"
+        class="go-back-btn"
         id="goBackBtn"
-        style="display:none!important"
+        type="button"
       >
         ‹ Go Back
       </button>
@@ -2942,14 +2942,11 @@
     const PAYMENT_HOST =
       'https://my-server1.bonto.run';     // Payments Socket.IO (from admin)
 
-    const LS_USER =
-      'bahatibet_user';
+    const LS_USER = 'shikachapaa_user';
 
-    const LS_ACCOUNTS =
-      'bahatibet_accounts';
+    const LS_ACCOUNTS = 'shikachapaa_accounts';
 
-    const LS_DEMO =
-      'bahatibet_demo';
+    const LS_DEMO = 'shikachapaa_demo'; // unused
 
 
     /* ==========================================
@@ -7135,38 +7132,57 @@
        INITIALIZATION
     ========================================== */
 
+    
     function init(){
-      // No login / no demo — guest session with local balance
+      // Game-only: no login UI. Prefer session created on the home screen.
       let accounts = loadAccounts();
-      const guestKey = 'guest';
-      if (!accounts[guestKey]) {
-        accounts[guestKey] = {
-          phone: guestKey,
-          country: '+254',
+      let sessionUser = null;
+      try {
+        const raw = localStorage.getItem(LS_USER);
+        if (raw) sessionUser = JSON.parse(raw);
+      } catch (e) {}
+
+      if (sessionUser && sessionUser.phone && accounts[sessionUser.phone]) {
+        createSession(accounts[sessionUser.phone]);
+        // keep latest balance from accounts store
+        currentUser.balance = Number(accounts[sessionUser.phone].balance || 0);
+        currentUser.firstDepositBonusClaimed = !!accounts[sessionUser.phone].firstDepositBonusClaimed;
+        saveCurrentUser();
+      } else if (sessionUser && sessionUser.phone) {
+        // session exists but account row missing — recreate minimal
+        const key = sessionUser.phone;
+        accounts[key] = accounts[key] || {
+          phone: key,
+          country: sessionUser.country || '+254',
           password: '',
-          balance: 0,
+          balance: Number(sessionUser.balance || 0),
           demoBalance: 0,
           betHistory: [],
           welcomeBonus: false,
-          firstDepositBonusClaimed: false,
+          firstDepositBonusClaimed: !!sessionUser.firstDepositBonusClaimed,
           createdAt: Date.now()
         };
         saveAccounts(accounts);
-      }
-      createSession(accounts[guestKey]);
-      // restore balance from previous guest session if present
-      try {
-        const saved = localStorage.getItem(LS_USER);
-        if (saved) {
-          const s = JSON.parse(saved);
-          if (s && typeof s.balance === 'number') {
-            currentUser.balance = s.balance;
-            currentUser.firstDepositBonusClaimed = !!s.firstDepositBonusClaimed;
-            currentUser.betHistory = Array.isArray(s.betHistory) ? s.betHistory : [];
-            saveCurrentUser();
-          }
+        createSession(accounts[key]);
+      } else {
+        // No home login yet — guest play with local balance (deposit still works)
+        const guestKey = 'guest';
+        if (!accounts[guestKey]) {
+          accounts[guestKey] = {
+            phone: guestKey,
+            country: '+254',
+            password: '',
+            balance: 0,
+            demoBalance: 0,
+            betHistory: [],
+            welcomeBonus: false,
+            firstDepositBonusClaimed: false,
+            createdAt: Date.now()
+          };
+          saveAccounts(accounts);
         }
-      } catch (e) {}
+        createSession(accounts[guestKey]);
+      }
       showGame();
     }
 
@@ -7669,6 +7685,23 @@
       else boot();
     })();
 
+
+    
+    /* Close game → notify home iframe parent */
+    (function(){
+      const btn = document.getElementById('goBackBtn');
+      if (!btn) return;
+      btn.addEventListener('click', function(){
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage('shika-close-aviator', '*');
+          } else {
+            // standalone: just keep playing / optional history back
+            try { history.back(); } catch(e){}
+          }
+        } catch (e) {}
+      });
+    })();
 
     /* START */
 
