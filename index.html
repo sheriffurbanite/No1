@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shika Chapaa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101722">
+<meta name="description" content="Play Aviator and explore Shika Chapaa.">
+<link rel="icon" href="https://i.ibb.co/8gCSX81j/images.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0b0e14;color:#f1f5f9}
+.hidden{display:none!important}
+.shell{min-height:100vh;background:radial-gradient(circle at 50% 0,#171026,#0b0f19 80%);padding-bottom:74px}
+header{height:60px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#121824;border-bottom:1px solid #1f293d;position:sticky;top:0;z-index:100}
+.hamb{display:none;flex-direction:column;justify-content:center;gap:4px;width:34px;height:34px;background:#1e293b;border:1px solid #334155;border-radius:8px;cursor:pointer;padding:7px 6px}
+.hamb span{display:block;height:2px;background:#fff;border-radius:2px}
+.brand{display:flex;align-items:center;gap:8px;cursor:pointer}
+.brand img{width:28px;height:28px;border-radius:6px;object-fit:cover}
+.brand-name{font-size:20px;font-weight:900;font-style:italic;color:#fff;letter-spacing:-.5px}
+.gold{color:gold}
+nav.top{display:flex;gap:6px}
+nav.top button{height:38px;padding:0 14px;background:transparent;border:1px solid transparent;border-radius:8px;color:#cbd5e1;font-size:13px;font-weight:800;cursor:pointer}
+nav.top button.active{background:#1e293b;border-color:#334155;color:#fff}
+nav.top .av{background:linear-gradient(135deg,#ff174447,#800a2073);border-color:#ff174480;color:#ff4d6d}
+.hot{background:#ff1744;color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;margin-left:4px}
+.cluster{display:flex;align-items:center;gap:8px}
+.pill{display:flex;flex-direction:column;align-items:flex-end;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:4px 10px;cursor:pointer}
+.pill small{font-size:9px;text-transform:uppercase;color:#64748b;font-weight:900}
+.pill b{font-size:12px;color:#52b826;font-weight:900}
+.btn-dep,.register-btn{background:gold;color:#0b0f19;border:0;border-radius:18px;padding:7px 14px;font-size:11px;font-weight:900;cursor:pointer}
+.login-btn{background:#1e293b;color:#fff;border:1px solid #334155;border-radius:18px;padding:7px 14px;font-size:11px;font-weight:900;cursor:pointer}
+.prof{display:flex;align-items:center;gap:6px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:4px 10px 4px 4px;color:#fff;cursor:pointer;font-size:12px;font-weight:800}
+.avatar{width:26px;height:26px;border-radius:50%;background:#ff1744;display:grid;place-items:center;font-size:11px;font-weight:900;color:#fff}
+.ribbon{display:none;gap:6px;padding:10px 12px;background:#121824;border-bottom:1px solid #1f293d;overflow-x:auto}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:6px 12px;color:#cbd5e1;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.chip.active{background:#15803d;border-color:#15803d;color:#fff}
+.chip.chip-av{border-color:#ff174480;color:#ff4d6d}
+.chip i{font-style:normal;font-size:10px;color:#94a3b8}.chip.active i{color:#fff}
+.grid{display:grid;grid-template-columns:210px 1fr 310px;gap:14px;padding:14px 16px;max-width:1540px;margin:0 auto}
+.side{background:#121824;border:1px solid #1f293d;border-radius:8px;padding:10px 0;position:sticky;top:74px;align-self:start;max-height:calc(100vh - 88px);overflow-y:auto}
+.side h4{margin:0 0 6px;font-size:10px;font-weight:900;color:#64748b;letter-spacing:.8px;padding:4px 14px 8px;border-bottom:1px solid #1f293d}
+.side button{width:100%;display:flex;justify-content:space-between;gap:8px;padding:8px 14px;background:transparent;border:0;color:#cbd5e1;font-size:12px;font-weight:700;cursor:pointer}
+.side button.active{background:#1e293b;color:#fff;border-left:3px solid #52b826;padding-left:11px}
+.side button i{font-style:normal;font-size:10px;color:#64748b;background:#0b0f19;padding:1px 6px;border-radius:10px}
+main{display:flex;flex-direction:column;gap:14px;min-width:0}
+.subnav{display:flex;justify-content:space-between;background:#121824;border:1px solid #1f293d;border-radius:8px;padding:6px 12px}
+.subnav button{background:transparent;border:0;color:#94a3b8;font-size:12px;font-weight:700;padding:6px 10px;border-radius:6px;cursor:pointer}
+.subnav button.active{background:#1e293b;color:#fff}
+.promo{border-radius:10px;overflow:hidden;border:1px solid #1f293d;background:#080d14}
+.track{display:flex;width:max-content;animation:drift 24s linear infinite alternate}
+.track:hover{animation-play-state:paused}
+@keyframes drift{from{transform:translate(0)}to{transform:translate(-50%)}}
+.slide{width:min(480px,85vw);padding:6px;cursor:pointer}
+.slide .box{position:relative;height:135px;border-radius:8px;overflow:hidden}
+.slide img{width:100%;height:100%;object-fit:cover;filter:brightness(.65);display:block}
+.ov{position:absolute;inset:0;padding:14px 16px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;background:linear-gradient(90deg,rgba(8,13,20,.88),rgba(8,13,20,.3) 70%,transparent)}
+.tag{font-size:10px;font-weight:900;color:gold;background:#ffd7002e;border:1px solid #ffd70066;padding:2px 8px;border-radius:4px}
+.ov h3{margin:0;font-size:18px;font-weight:900;font-style:italic;text-shadow:0 2px 8px #000c}
+.red{color:#ff1744;font-style:normal}
+.playbtn{margin-top:4px;background:#52b826;color:#fff;border:0;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:900;cursor:pointer}
+.avbanner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#1f0b18,#2a0b1f 60%,#150d26);border:1px solid #ff174466;border-radius:10px;padding:12px 18px;cursor:pointer}
+.avbanner .logo{width:52px;height:52px;border:3px solid #00e676;border-radius:50%;overflow:hidden;box-shadow:0 0 16px #00e67680}
+.avbanner img{width:100%;height:100%;object-fit:cover}
+.avbanner .t{flex:1}.avbanner .t small{font-size:10px;font-weight:700;color:#ff4d6d;letter-spacing:.8px}
+.avbanner .t p{margin:2px 0 0;font-size:12px;color:#cbd5e1}
+.avbanner button{background:gold;color:#0b0f19;border:0;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:900;cursor:pointer}
+.odds{background:#121824;border:1px solid #1f293d;border-radius:8px;overflow:hidden}
+.oh{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#111827;border-bottom:1px solid #1f293d;flex-wrap:wrap}
+.oh .l{flex:1;font-size:13px;font-weight:700}.oh .l small{color:#64748b;font-weight:400;margin-left:6px}
+.flt{display:flex;gap:2px;background:#0d1420;border:1px solid #1f293d;border-radius:6px;padding:3px}
+.flt button{background:transparent;border:0;font-size:11px;font-weight:600;color:#64748b;padding:4px 10px;border-radius:4px;cursor:pointer}
+.flt button.on{background:#1e293b;color:#f1f5f9}
+.cols{display:flex;gap:5px}.cols span{width:56px;text-align:center;font-size:11px;font-weight:700;color:#475569}
+.list{max-height:520px;overflow-y:auto}
+.row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #1a2336}
+.row .l{flex:1;min-width:0;padding-right:10px;display:flex;flex-direction:column;gap:3px}
+.lg{font-size:10px;color:#64748b}.tm{font-size:10px;font-weight:600;color:#94a3b8;margin-left:8px}.tm.live{color:#ff4d6d}
+.tms{font-size:13px;font-weight:600}.tms em{font-style:normal;font-size:10px;color:#475569;margin:0 5px}
+.mk{font-size:10px;color:#52b826}
+.odd{width:56px;height:44px;background:#1a2438;border:1px solid #243046;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#f1f5f9}
+.odd small{font-size:9px;color:#64748b}.odd b{font-size:13.5px}
+.odd.sel{background:#52b82629;border-color:#52b826}.odd.sel b{color:#6fdb46}
+.odds-wrap{display:flex;gap:5px}
+.empty{padding:30px;text-align:center;color:#64748b;font-size:13px}
+.slip{background:#121824;border:1px solid #1f293d;border-radius:8px;position:sticky;top:74px;align-self:start;overflow:hidden}
+.slip .tabs{display:flex;background:#0b0f19;border-bottom:1px solid #1f293d}
+.slip .tabs button{flex:1;padding:10px;background:transparent;border:0;color:#64748b;font-size:11px;font-weight:800}
+.slip .tabs .active{color:#fff;border-top:3px solid #52b826;background:#121824}
+.slip .body{padding:14px}
+.si{background:#1b2638;border:1px solid #28374d;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:12px;position:relative}
+.si small{color:#94a3b8;display:block;margin-bottom:3px}.si b{color:#52b826;float:right}
+.si x{position:absolute;right:6px;top:4px;color:#64748b;cursor:pointer}
+.stake{width:100%;background:#0b0f19;border:1px solid #1f293d;border-radius:6px;padding:8px;color:#fff;font-weight:700;margin:8px 0}
+.pbtn{width:100%;padding:12px;background:#52b826;color:#fff;border:0;border-radius:8px;font-weight:900;cursor:pointer}
+footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#111824,#090e17);border:1px solid #1f293d;border-radius:12px;color:#94a3b8;font-size:11px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:16px}
+.fg h3{font-size:11px;font-weight:900;color:gold;letter-spacing:.8px;margin:0 0 10px}
+.fg a{display:block;color:#38bdf8;text-decoration:none;font-size:12px;margin-bottom:6px}
+.fg p{margin:0 0 6px;color:#cbd5e1}
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:1000;display:flex;height:60px;background:#090e17;border-top:1px solid #1c2838}
+.bottom button{flex:1;background:transparent;border:0;color:#00d26a;font-size:11px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bottom .active{color:#00ff80}
+.bottom .ctr{position:relative;min-width:68px}
+.ring{width:56px;height:56px;margin-top:-26px;border:3px solid #00e676;border-radius:50%;background:#000;overflow:hidden;box-shadow:0 4px 18px #00e67699}
+.ring img{width:100%;height:100%;object-fit:cover}
+.ctr span{font-size:11px;font-weight:900;color:#ff1744;margin-top:2px}
+/* drawer */
+.ov-back{position:fixed;inset:0;background:#000000bf;z-index:1500;backdrop-filter:blur(5px)}
+.drawer{width:290px;max-width:82vw;height:100vh;background:#121824;border-right:1px solid #1f293d;padding:18px 16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;transform:translateX(-100%);transition:transform .25s}
+.ov-back.open .drawer{transform:none}
+.dtop{display:flex;justify-content:space-between;align-items:center}
+.dtop .x{background:transparent;border:0;color:#94a3b8;font-size:26px;cursor:pointer}
+.dplayer{display:flex;align-items:center;gap:10px;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:10px;cursor:pointer}
+.dplayer b{display:block;font-size:13px}.dplayer small{color:#52b826;font-weight:800;font-size:11px}
+.dh{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:900;letter-spacing:.8px;margin:0 0 8px}
+.dcard{display:flex;flex-direction:column;width:100%;padding:10px 12px;background:#182232;border:1px solid #233248;border-radius:8px;color:#fff;text-align:left;cursor:pointer;margin-bottom:8px}
+.dcard b{font-size:13px;font-weight:800}.dcard span{font-size:10px;color:#94a3b8}
+.dcard.av{background:linear-gradient(135deg,#ff17444d,#800a2080);border-color:#ff174499;flex-direction:row;justify-content:space-between;align-items:center}
+.dcard.av b{color:#ff4d6d}.dcard.dep b{color:gold}
+.dact{width:100%;display:flex;justify-content:space-between;padding:10px 12px;background:#182232;border:1px solid #233248;border-radius:8px;color:#cbd5e1;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px}
+.dact.out{border-color:#ff17444d;color:#ff4d6d}
+/* modals */
+.mb{position:fixed;inset:0;background:#000000c0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px}
+.m{background:#121824;border:1px solid #1f293d;border-radius:14px;width:100%;max-width:400px;padding:20px}
+.m h2{margin:0 0 14px;font-size:18px;font-weight:900}
+.m label{display:block;font-size:11px;color:#94a3b8;margin:10px 0 4px;font-weight:700}
+.m input,.m select{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;color:#fff;font-size:14px;outline:none}
+.m .r{display:flex;gap:8px}.m .cc{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:12px 14px;font-weight:800;white-space:nowrap}
+.b{width:100%;margin-top:14px;border:0;border-radius:10px;padding:14px;font-weight:900;cursor:pointer;font-size:14px}
+.b-p{background:#4f67f6;color:#fff}.b-g{background:gold;color:#0b0f19}.b-d{background:#c41e3a;color:#fff}.b-x{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
+.b:disabled{opacity:.6;cursor:wait}
+.al{padding:10px;border-radius:8px;font-size:12px;font-weight:600;margin:10px 0}
+.al.e{background:#e11d4826;color:#f87171}.al.s{background:#22c55e26;color:#4ade80}.al.w{background:#fbbf2426;color:#fbbf24}
+.lnk{color:#fff;text-decoration:underline;cursor:pointer;font-weight:700;font-size:12px}
+.note{font-size:11px;color:#64748b;margin-top:8px}
+/* my bets modal */
+.btabs{display:flex;background:#0b0f19;border-bottom:1px solid #1f293d}
+.btabs button{flex:1;padding:14px 8px;background:transparent;border:0;border-bottom:3px solid transparent;color:#64748b;font-size:14px;font-weight:800;cursor:pointer}
+.btabs button.active{color:#fff;background:#121824;border-bottom-color:#52b826}
+.bempty{text-align:center;padding:36px 20px}
+.bempty svg{width:56px;height:56px;color:#64748b}
+.bempty h3{margin:16px 0 8px;font-size:20px;font-weight:900}
+.bempty p{margin:0 0 18px;color:#94a3b8;font-size:14px;line-height:1.5}
+.bempty button{background:#52b826;color:#fff;border:0;border-radius:8px;padding:14px 26px;font-size:15px;font-weight:800;cursor:pointer}
+.bet{background:#1b2638;border:1px solid #28374d;border-radius:8px;padding:10px 12px;margin:10px 14px;font-size:12px}
+.bet div{display:flex;justify-content:space-between;margin-top:4px;color:#cbd5e1}
+.bet b{color:#52b826}
+@media(min-width:901px){.phone-only{display:none!important}}
+@media(max-width:900px){.laptop-only{display:none!important}.grid{grid-template-columns:1fr;padding:10px}.phone-only{display:flex!important}.hamb{display:flex}.ribbon{display:flex}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <button class="hamb phone-only" id="hamb" aria-label="Open player menu"><span></span><span></span><span></span></button>
+  <div class="brand" id="brandBtn"><img src="https://i.ibb.co/8gCSX81j/images.png" alt="Shika Chapaa"><span class="brand-name">SHIKA<span class="gold"> CHAPAA</span></span></div>
+  <nav class="top laptop-only">
+    <button class="active" data-nav="home">Home</button>
+    <button data-nav="live">Live</button>
+    <button class="av" data-go-aviator>Aviator<span class="hot">HOT</span></button>
+    <button data-nav="bets">My Bets</button>
+  </nav>
+  <div class="cluster" id="cluster"></div>
+</header>
+
+<div class="ribbon phone-only" id="ribbon"></div>
+
+<div class="grid">
+  <aside class="side laptop-only"><h4>SPORTS CATEGORIES</h4><div id="sideList"></div></aside>
+  <main>
+    <div class="subnav laptop-only"><div id="subTabs">
+      <button class="active" data-sub="all">Highlights</button><button data-sub="upcoming">Upcoming</button><button data-sub="live">Live</button>
+    </div></div>
+
+    <section class="promo"><div class="track" id="track"></div></section>
+
+    <section class="avbanner" data-go-aviator>
+      <div class="logo"><img src="https://i.ibb.co/8gCSX81j/images.png" alt="Aviator"></div>
+      <div class="t"><small>● PROVABLY FAIR</small><p>Cash out before the plane flies away!</p></div>
+      <button data-go-aviator>Play Now</button>
+    </section>
+
+    <section class="odds">
+      <div class="oh">
+        <div class="l"><span id="secTitle">Soccer</span><small id="secCount"></small></div>
+        <div class="flt" id="flt"><button class="on" data-f="all">All</button><button data-f="live">● Live</button><button data-f="upcoming">Upcoming</button></div>
+        <div class="cols"><span>1</span><span>X</span><span>2</span></div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <footer class="tf">
+      <div class="brand"><img src="https://i.ibb.co/8gCSX81j/images.png" alt=""><span class="brand-name">SHIKA<span class="gold"> CHAPAA</span></span></div>
+      <div class="fg">
+        <div><h3>CONTACT US</h3><a href="tel:0747112112">Customer Care: 0747112112</a><a href="mailto:customercare@shika-chapaa.netlify.app">customercare@shika-chapaa.netlify.app</a></div>
+        <div><h3>SUPPORT AND TRUST</h3><a href="#">FAQ &amp; Help Center</a><a href="#">How to Play Aviator</a><a href="#">Terms and Conditions</a><a href="#">Responsible Gaming</a><a href="#">Privacy Policy</a></div>
+        <div><h3>LEGAL &amp; COMPLIANCE</h3><p>Must be 18 years of age or older to register or play at Shika Chapaa.</p><p>Gambling can be addictive if not done in moderation.</p></div>
+      </div>
+    </footer>
+  </main>
+  <aside class="slip laptop-only">
+    <div class="tabs"><button class="active" id="slipTab">Normal (0)</button><button>Virtuals (0)</button></div>
+    <div class="body" id="slipBody"></div>
+  </aside>
+</div>
+
+<nav class="bottom">
+  <button class="active" data-nav="home">HOME</button>
+  <button data-nav="live">LIVE</button>
+  <button class="ctr" data-go-aviator><div class="ring"><img src="https://i.ibb.co/8gCSX81j/images.png" alt="Aviator"></div><span>Aviator</span></button>
+  <button data-nav="bets">MY BETS</button>
+  <button id="bnAccount">ACCOUNT</button>
+</nav>
+</div>
+
+<!-- Slide-out menu -->
+<div class="ov-back hidden" id="drawerBack">
+  <div class="drawer" id="drawer">
+    <div class="dtop"><div class="brand"><img src="https://i.ibb.co/8gCSX81j/images.png" alt=""><span class="brand-name" style="font-size:18px">SHIKA<span class="gold"> CHAPAA</span></span></div><button class="x" id="drawerClose">×</button></div>
+    <div class="dplayer" id="dPlayer"></div>
+    <div>
+      <div class="dh">SHIKA CHAPAA FEATURES</div>
+      <button class="dcard" data-nav="home"><b>Sportsbook</b><span>Live football odds &amp; matches</span></button>
+      <button class="dcard" data-nav="live"><b>Live Odds</b><span>In-play matches (179 live)</span></button>
+      <button class="dcard av" data-go-aviator><div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><b>Aviator Game</b><span style="color:#cbd5e1">Crash game — cash out live</span></div><span class="hot">HOT</span></button>
+      <button class="dcard" data-nav="bets"><b>My Bets &amp; Slips</b><span>View active &amp; settled wagers</span></button>
+      <button class="dcard dep" id="dDeposit"><b>Deposit via M-Pesa</b><span>Instant M-Pesa STK push</span></button>
+    </div>
+    <div style="border-top:1px solid #1f293d;padding-top:14px">
+      <div class="dh">ACCOUNT &amp; SUPPORT</div>
+      <button class="dact" id="dAccount"><span>My Account Details</span><span>›</span></button>
+      <button class="dact out" id="dLogout"><span>Log Out</span><span>›</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Auth modal -->
+<div class="mb hidden" id="authModal"><div class="m">
+  <h2 id="authTitle">Log In</h2>
+  <div id="authAlert" class="al e hidden"></div>
+  <form id="authForm">
+    <label>Country</label>
+    <select id="country"><option value="+254">Kenya (+254)</option><option value="+255">Tanzania (+255)</option><option value="+256">Uganda (+256)</option></select>
+    <label>Phone</label>
+    <div class="r"><div class="cc" id="cc">+254</div><input id="phone" inputmode="numeric" maxlength="10" placeholder="797124175" required></div>
+    <label>Password</label><input id="pw" type="password" minlength="4" required>
+    <div id="confWrap" class="hidden"><label>Confirm Password</label><input id="pw2" type="password"></div>
+    <label id="termsRow" class="hidden" style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><input type="checkbox" id="terms" style="width:auto"><span>I agree to the Terms &amp; Conditions</span></label>
+    <button class="b b-p" id="authSubmit">LOG IN</button>
+  </form>
+  <p style="text-align:center;margin-top:14px;font-size:12px"><span id="swText">Don't have an account?</span> <a class="lnk" id="swLink">Register here</a></p>
+  <button class="b b-x" id="authClose" style="margin-top:8px">Close</button>
+</div></div>
+
+<!-- Account modal -->
+<div class="mb hidden" id="accModal"><div class="m" style="padding:0;overflow:hidden;border-radius:18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;background:#1e293b;border-bottom:1px solid #334155">
+    <h2 style="margin:0;font-size:20px" id="accTitle">My Account</h2>
+    <button id="accClose" style="background:transparent;border:0;color:#cbd5e1;font-size:28px;cursor:pointer">×</button>
+  </div>
+  <div style="padding:18px">
+    <div id="accMain">
+      <div style="display:flex;align-items:center;gap:16px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:14px">
+        <div class="avatar" style="width:56px;height:56px;font-size:26px">+</div>
+        <div><div id="accPhone" style="font-size:19px;font-weight:900"></div>
+          <div id="accPhone2" style="font-size:13px;color:#94a3b8;margin:2px 0"></div>
+          <div style="font-size:13px;color:#cbd5e1">Available Balance: <b id="accBal" style="color:#52b826;font-size:17px">KES 0.00</b></div></div>
+      </div>
+      <button class="dact" id="aDep" style="background:linear-gradient(135deg,#15803d,#166534);border-color:#22c55e;color:#fff;padding:14px;font-size:14px;font-weight:800"><span>Deposit Funds (M-Pesa STK)</span><span>⚡</span></button>
+      <button class="dact" id="aWd" style="padding:14px;font-size:14px;font-weight:800;color:#fff"><span>Wallet &amp; Withdrawals</span><span>›</span></button>
+      <button class="dact" id="aHist" style="padding:14px;font-size:14px;font-weight:800;color:#fff"><span>Betting History</span><span>›</span></button>
+      <button class="dact out" id="logout" style="padding:14px;font-size:14px;font-weight:800"><span>Log Out</span><span>›</span></button>
+    </div>
+    <div id="depPanel" class="hidden">
+      <label style="margin-top:0">Amount (KES)</label><input id="depAmt" type="text" inputmode="numeric" placeholder="500 - 25,000">
+      <label>M-Pesa number</label><input id="depPhone" readonly>
+      <button class="b b-p" id="depBtn">Deposit via M-Pesa</button>
+      <div id="depMsg"></div>
+      <div class="al w">Min deposit KES 500, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
+      <button class="b b-x back">‹ Back</button>
+    </div>
+    <div id="wdPanel" class="hidden">
+      <div id="wdFormArea">
+        <label style="margin-top:0">Withdraw amount (KES)</label><input id="wdAmt" type="text" inputmode="numeric" placeholder="e.g. 1,000">
+        <button class="b b-p" id="wdBtn">Request Withdrawal</button>
+        <div id="wdMsg"></div>
+        <button class="b b-x back">‹ Back</button>
+      </div>
+      <div id="wdLoadingArea" class="hidden" style="text-align:center;padding:28px 12px">
+        <div style="width:40px;height:40px;border:3px solid #3a3420;border-top-color:#f5c65c;border-radius:50%;margin:0 auto 14px;animation:spin .9s linear infinite"></div>
+        <div id="wdLoadingText" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">Checking details...</div>
+        <div style="font-size:12px;color:#7db3ff">Please wait</div>
+      </div>
+      <div id="wdPendingArea" class="hidden" style="text-align:center;padding:28px 16px 18px;background:#1a1d1e;border:1px solid #30363a;border-radius:12px">
+        <div style="font-size:32px;margin-bottom:10px">⏳</div>
+        <div style="font-size:15px;font-weight:800;color:#f5c65c;margin-bottom:8px">Withdrawal Pending</div>
+        <div style="font-size:12px;color:#aeb7c0;line-height:1.5">Your withdrawal request has been received<br>and is currently pending.</div>
+        <button class="b b-x back" style="margin-top:16px">‹ Back</button>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <div id="histPanel" class="hidden">
+      <div class="empty">No bets yet.<br><small>Placed bets will show here.</small></div>
+      <button class="b b-x back">‹ Back</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- My Bets modal -->
+<div class="mb hidden" id="betsModal"><div class="m" style="padding:0;overflow:hidden;border-radius:18px;max-width:420px">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;background:#1e293b;border-bottom:1px solid #334155">
+    <h2 style="margin:0;font-size:22px">My Bets</h2>
+    <button id="betsClose" style="background:transparent;border:0;color:#cbd5e1;font-size:30px;cursor:pointer">×</button>
+  </div>
+  <div class="btabs"><button class="active" id="tActive"></button><button id="tSettled"></button></div>
+  <div id="betsBody" style="max-height:60vh;overflow-y:auto"></div>
+</div></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const LS_USER='shikachapaa_user', LS_ACC='shikachapaa_accounts';
+let user=null, mode='login', sport='Soccer', filter='all', slip=[];
+
+/* ---------- DEPOSIT CONFIG ----------
+   Payments are confirmed ONLY by the server (TinyPesa callback).
+   The browser never decides that a payment succeeded or how much to credit:
+   it credits exactly the amount the server returns from /api/claim. */
+const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:90000, MIN:500, MAX:25000};
+
+/* ---------- data ---------- */
+const SPORTS={Soccer:179,'Table Tennis':24,Boxing:8,'Aussie Rules':5,Rugby:12,Cricket:15,Baseball:9,Basketball:42,MMA:7,Tennis:31,'eSoccer':28,'Ice Hockey':11,'American Football':16,Handball:9,Darts:10};
+const L=(lg,h,a,t,m,o,live)=>({lg,h,a,t,m,o,live});
+const MATCHES={
+Soccer:[
+L('European Club Series','River Plate Town','Orchard Vale',"71'",49,[2.04,3.21,3.25],1),
+L('Kenya National League','Capital City','Lake Warriors',"72'",38,[3.29,3.13,1.79],1),
+L('East Africa Cup','Coastal Stars','Highland FC',"36'",35,[2.34,2.56,3.27],1),
+L('European Club Series','Metro Athletic','Harbour Town',"85'",51,[2.18,3.11,4.10],1),
+L('East Africa Cup','Sunrise United','Kilimani FC',"82'",42,[2.29,2.71,2.67],1),
+L('Zona Premier','Godaba FC','Rotami FC',"44'",62,[2.04,3.52,3.26],1),
+L('Vortex League','Mopeka Athletic','Zanfari Rovers',"63'",60,[2.58,3.31,2.84],1),
+L('Global Cup','Wemari Wanderers','Tolaka FC','18:00',63,[3.20,3.25,2.10]),
+L('Global Cup','Burani Stars','Loketa Warriors','18:00',61,[2.50,3.30,2.65]),
+L('African Championship','Fentori United','Gabwela City','18:30',55,[1.88,3.40,4.10]),
+L('African Championship','Zukabo Dynamo','Meranti Athletic','18:30',48,[2.15,3.20,3.35]),
+L('Super League','Kombura City','Solino Rangers','19:00',52,[2.45,3.10,2.80]),
+L('Super League','Veltrix Sporting','Balamo Stars','19:00',70,[1.68,3.90,4.80]),
+L('Copa Regional','Rifoni Rovers','Kenzari FC','19:30',41,[2.05,3.30,3.45]),
+L('Atlantic Shield','Brampton Athletic','Varnam FC','20:00',66,[2.70,3.15,2.50]),
+L('NORDIC League','Boreal Star','Fjord Warriors','20:30',39,[2.25,3.25,3.05]),
+L('Pan-Asian Cup','Sakura Dynamo','Dragon FC','21:00',53,[2.40,3.20,2.85]),
+L('Pacific Trophy','Wellington City','Auckland Stars','21:30',36,[2.10,3.35,3.30]),
+L('Eurasian League','Volga Sporting','Ural United','22:00',50,[1.85,3.50,4.00]),
+L('Sub-Saharan Premier','Kigali Warriors','Mombasa FC','22:30',57,[2.00,3.40,3.50]),
+L('Sub-Saharan Premier','Nairobi Dynamo','Kampala Athletic','22:30',64,[1.78,3.70,4.30]),
+L('Midnight Masters','Starlight Rovers','Eclipse City','23:00',72,[2.15,3.30,3.25])],
+'Table Tennis':[L('TT Cup','Ivanov','Petrov',"Set 3",12,[1.55,0,2.30],1),L('TT Cup','Sato','Lin','19:15',10,[1.90,0,1.90]),L('TT Elite','Novak','Horak','20:00',10,[2.10,0,1.70])],
+Basketball:[L('Pro Hoops','Lakes','Titans',"Q3",30,[1.65,0,2.20],1),L('Pro Hoops','Sharks','Wolves','20:00',28,[1.95,0,1.85]),L('East Conf','Kings','Ravens','21:30',25,[2.40,0,1.55])],
+Tennis:[L('Open Series','Mensah','Dubois',"Set 2",44,[1.45,0,2.65],1),L('Open Series','Kim','Rossi','19:45',40,[1.80,0,2.00])],
+Boxing:[L('Main Card','K. Otieno','R. Mills','22:00',8,[2.20,0,1.70])],
+Rugby:[L('Premier XV','Bulls','Stags','19:00',20,[1.60,0,2.35])],
+Cricket:[L('T20 Series','Lions','Falcons',"14.2 ov",18,[1.75,0,2.05],1),L('T20 Series','Kites','Pumas','20:00',15,[2.00,0,1.80])],
+MMA:[L('Fight Night','D. Kamau','J. Reyes','23:30',7,[1.55,0,2.50])]
+};
+const isLive=m=>!!m.live;
+
+/* ---------- storage ---------- */
+const loadAcc=()=>{try{return JSON.parse(localStorage.getItem(LS_ACC)||'{}')}catch{return{}}};
+const saveAcc=a=>localStorage.setItem(LS_ACC,JSON.stringify(a));
+/* compact display: 850.00 KES, 1k, 1.25k, 300k, 800k, 1.5M */
+const fmt=n=>{n=Number(n||0);const a=Math.abs(n);
+  if(a<=900)return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' KES';
+  const t=(v,u)=>(+v.toFixed(2)).toString()+u;
+  return (a>=999500?t(n/1e6,'M'):t(n/1e3,'k'))+' KES'};
+/* full display with commas (used for withdrawals): 1,000,000 KES */
+const fmtFull=n=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})+' KES';
+const num=s=>Number(String(s||'').replace(/[^\d]/g,''))||0;
+const commaInput=el=>el.addEventListener('input',()=>{const r=el.value.replace(/[^\d]/g,'');el.value=r?Number(r).toLocaleString('en-US'):''});
+function saveUser(){if(!user)return;localStorage.setItem(LS_USER,JSON.stringify(user));const a=loadAcc();if(a[user.phone]){a[user.phone].balance=Number(user.balance||0);saveAcc(a)}}
+
+/* ---------- phone helpers ----------
+   Stored as +254797124175 (country code + the 9 digits typed at sign-up).
+   STK push number = 254 + last 9 digits => 254797124175 */
+const nine=p=>String(p||'').replace(/\D/g,'').slice(-9);
+const stkPhone=p=>'254'+nine(p);
+
+/* ---------- header ---------- */
+function header(){
+  const c=$('cluster');
+  if(user){
+    c.innerHTML=`<div class="pill" id="pBal"><small>Balance</small><b>${fmt(user.balance)}</b></div>
+    <button class="btn-dep" id="hDep">DEPOSIT</button>
+    <button class="prof laptop-only" id="pBtn"><span class="avatar">${user.phone.slice(-2)}</span>${user.phone}</button>`;
+    ['pBal','hDep','pBtn'].forEach(i=>$(i)&&$(i).addEventListener('click',()=>openAcc('dep')));
+  }else{
+    c.innerHTML=`<button class="login-btn" id="bLogin">LOG IN</button><button class="register-btn" id="bReg">SIGN UP</button>`;
+    $('bLogin').onclick=()=>openAuth('login');$('bReg').onclick=()=>openAuth('register');
+  }
+  $('dPlayer').innerHTML=user?`<div class="avatar" style="width:60px;height:60px;font-size:26px">+</div><div style="flex:1"><b style="font-size:17px">${user.phone}</b><small style="font-size:14px">Balance: ${fmt(user.balance).replace(/^(.*) KES$/,'KES $1')}</small></div><span>›</span>`
+    :`<div class="avatar" style="width:34px;height:34px">+</div><div style="flex:1"><b>Guest</b><small style="color:#94a3b8">Log in or sign up</small></div><span>›</span>`;
+}
+
+/* ---------- drawer ---------- */
+const openDrawer=()=>{$('drawerBack').classList.remove('hidden');requestAnimationFrame(()=>$('drawerBack').classList.add('open'))};
+const closeDrawer=()=>{$('drawerBack').classList.remove('open');setTimeout(()=>$('drawerBack').classList.add('hidden'),250)};
+$('hamb').onclick=openDrawer;$('drawerClose').onclick=closeDrawer;
+$('drawerBack').addEventListener('click',e=>{if(e.target===$('drawerBack'))closeDrawer()});
+$('dPlayer').onclick=()=>{closeDrawer();user?openAcc('main'):openAuth('login')};
+$('dAccount').onclick=()=>{closeDrawer();user?openAcc('main'):openAuth('login')};
+$('dDeposit').onclick=()=>{closeDrawer();user?openAcc('dep'):openAuth('login')};
+$('dLogout').onclick=()=>{closeDrawer();logout()};
+
+/* ---------- auth ---------- */
+function openAuth(m){mode=m;const r=m==='register';
+  $('authTitle').textContent=r?'Create Account':'Log In';$('authSubmit').textContent=r?'CREATE ACCOUNT':'LOG IN';
+  $('confWrap').classList.toggle('hidden',!r);$('termsRow').classList.toggle('hidden',!r);
+  $('swText').textContent=r?'Already have an account?':"Don't have an account?";$('swLink').textContent=r?'Log in here':'Register here';
+  $('authAlert').classList.add('hidden');try{$('phone').value='';$('pw').value='';$('pw2').value=''}catch(e){}$('authModal').classList.remove('hidden')}
+function authErr(t,ok){const a=$('authAlert');a.textContent=t;a.className='al '+(ok?'s':'e')}
+$('country').onchange=e=>$('cc').textContent=e.target.value;
+$('swLink').onclick=()=>openAuth(mode==='login'?'register':'login');
+$('authClose').onclick=()=>$('authModal').classList.add('hidden');
+$('authForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  let ph=($('phone').value||'').replace(/\D/g,'');
+  if(ph.length===10&&ph[0]==='0')ph=ph.slice(1);          // accept 0797124175 too
+  const pw=$('pw').value,country=$('country').value;
+  if(ph.length!==9)return authErr('Enter a valid 9-digit phone number (e.g. 797124175)');
+  if(pw.length<4)return authErr('Password min 4 characters');
+  const key=country+ph,acc=loadAcc();
+  if(mode==='register'){
+    if(!$('terms').checked)return authErr('Please agree to Terms & Conditions');
+    if(pw!==$('pw2').value)return authErr('Passwords do not match');
+    if(acc[key])return authErr('Phone already registered');
+    acc[key]={phone:key,country,password:pw,balance:0,createdAt:Date.now()};saveAcc(acc);
+    user={phone:key,country,balance:0};saveUser();authErr('Account created!',true);
+    setTimeout(()=>{$('authModal').classList.add('hidden');header()},600);return}
+  const a=acc[key];
+  if(!a)return authErr('Account not found. Register first.');
+  if(a.password!==pw)return authErr('Incorrect password');
+  user={phone:key,country:a.country,balance:Number(a.balance||0)};saveUser();
+  $('authModal').classList.add('hidden');header()});
+
+/* ---------- account / deposit ---------- */
+function openAcc(tab){
+  $('accBal').textContent=fmt(user.balance).replace(/^(.*) KES$/,'KES $1');
+  $('accPhone').textContent=user.phone;$('accPhone2').textContent=user.phone.replace('+','');
+  $('depPhone').value=stkPhone(user.phone);$('depMsg').innerHTML='';$('wdMsg').innerHTML='';$('depAmt').value='';$('wdAmt').value='';
+  setTab(tab||'main');$('accModal').classList.remove('hidden')}
+function setTab(t){
+  ['main','dep','wd','hist'].forEach(k=>$({main:'accMain',dep:'depPanel',wd:'wdPanel',hist:'histPanel'}[k]).classList.toggle('hidden',k!==t));
+  $('accTitle').textContent=({main:'My Account',dep:'Deposit Funds',wd:'Wallet & Withdrawals',hist:'Betting History'})[t];
+  if(t==='wd'&&typeof resetWdPanel==='function')resetWdPanel();
+  if(t==='main'&&typeof resetWdPanel==='function')resetWdPanel()}
+$('aDep').onclick=()=>setTab('dep');$('aWd').onclick=()=>setTab('wd');$('aHist').onclick=()=>setTab('hist');
+document.querySelectorAll('.back').forEach(b=>b.onclick=()=>{if(typeof resetWdPanel==='function')resetWdPanel();setTab('main')});
+$('accClose').onclick=()=>$('accModal').classList.add('hidden');
+function logout(){user=null;localStorage.removeItem(LS_USER);$('accModal').classList.add('hidden');$('betsModal').classList.add('hidden');
+  try{['phone','pw','pw2','depAmt','wdAmt'].forEach(id=>{const el=$(id);if(el)el.value=''});$('terms')&&($('terms').checked=false)}catch(e){}
+  if(typeof resetWdPanel==='function')resetWdPanel();header()}
+$('logout').onclick=logout;
+commaInput($('depAmt'));commaInput($('wdAmt'));
+const msg=(el,t,c)=>el.innerHTML=`<div class="al ${c}">${t}</div>`;
+
+/* Sends the STK request, then polls the server until the TinyPesa callback has
+   confirmed (or failed) the payment. Only then does it ask the server to release
+   the credit. The amount and bonus come from the server, never from this page. */
+async function requestDeposit(amount,phone){
+  const ref='SC-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+  const j=async r=>{try{return await r.json()}catch{return{}}};
+  const r=await fetch(DEPOSIT.API+'/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,reference:ref})});
+  const d=await j(r);
+  if(!r.ok||!d.success)return{success:false,message:d.message||'Request failed'};
+  const end=Date.now()+DEPOSIT.TIMEOUT_MS;
+  while(Date.now()<end){
+    await new Promise(x=>setTimeout(x,3000));
+    const s=await j(await fetch(DEPOSIT.API+'/api/status/'+encodeURIComponent(ref)));
+    if(s.status==='failed')return{success:false,message:s.message||'Payment failed or cancelled.'};
+    if(s.status==='success'){
+      const c=await j(await fetch(DEPOSIT.API+'/api/claim/'+encodeURIComponent(ref),{method:'POST'}));
+      return c.success?{success:true,amount:Number(c.amount)||0,bonus:Number(c.bonus)||0,message:'Payment confirmed.'}
+        :{success:false,message:c.message||'Payment could not be claimed.'};
+    }
+  }
+  const e=new Error('timeout');e.name='AbortError';throw e;
+}
+$('depBtn').onclick=async()=>{
+  const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
+  if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 500.','e');
+  if(amt>DEPOSIT.MAX)return msg(out,'Maximum deposit is KES 25,000.','e');
+  btn.disabled=true;btn.textContent='Waiting for M-Pesa…';
+  msg(out,`Sending request to ${stkPhone(user.phone)}… waiting for confirmation.`,'w');
+  try{
+    const r=await requestDeposit(amt,stkPhone(user.phone));
+    if(r&&r.success){
+      user.balance=Number(user.balance||0)+r.amount+r.bonus;saveUser();header();
+      $('accBal').textContent=fmt(user.balance);$('depAmt').value='';
+      msg(out,'✅ '+(r.message||'Deposit successful.')+(r.bonus?` 🎁 KES ${r.bonus.toLocaleString('en-US')} promo bonus added!`:''),'s');
+    }else msg(out,'❌ '+((r&&r.message)||'Deposit failed. Please try again.'),'e');
+  }catch(err){
+    msg(out,err.name==='AbortError'?'❌ No confirmation from the payment server in time. If you paid, your balance will update once confirmed.':'❌ Could not reach the payment server.','e');
+  }
+  btn.disabled=false;btn.textContent='Deposit via M-Pesa';
+};
+$('wdBtn').onclick=()=>{
+  const a=num($('wdAmt').value);
+  if(!(a>0))return msg($('wdMsg'),'Enter an amount.','e');
+  if(a>user.balance)return msg($('wdMsg'),'Insufficient balance. Available: '+fmtFull(user.balance),'e');
+  $('wdFormArea').classList.add('hidden');
+  $('wdLoadingArea').classList.remove('hidden');
+  $('wdPendingArea').classList.add('hidden');
+  const steps=['Checking details...','Verifying balance...','Submitting request...'];
+  let i=0;$('wdLoadingText').textContent=steps[0];
+  const tick=setInterval(()=>{i++;if(i<steps.length)$('wdLoadingText').textContent=steps[i];},900);
+  setTimeout(()=>{
+    clearInterval(tick);
+    user.balance-=a;saveUser();header();
+    $('accBal').textContent=fmt(user.balance).replace(/^(.*) KES$/,'KES $1');
+    $('wdAmt').value='';
+    $('wdLoadingArea').classList.add('hidden');
+    $('wdPendingArea').classList.remove('hidden');
+  },2800);
+};
+function resetWdPanel(){
+  $('wdFormArea').classList.remove('hidden');
+  $('wdLoadingArea').classList.add('hidden');
+  $('wdPendingArea').classList.add('hidden');
+  $('wdMsg').innerHTML='';
+}
+
+/* ---------- sports list / filters ---------- */
+function renderSports(){
+  const html=Object.entries(SPORTS).map(([n,c])=>`<button class="${n===sport?'active':''}" data-sp="${n}">${n}<i>${c}</i></button>`).join('');
+  $('sideList').innerHTML=html;
+  $('ribbon').innerHTML=`<button class="chip chip-av" data-go-aviator>Aviator<span class="hot">HOT</span></button>`+
+    Object.entries(SPORTS).map(([n,c])=>`<button class="chip ${n===sport?'active':''}" data-sp="${n}">${n}<i>${c}</i></button>`).join('');
+  document.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{sport=b.dataset.sp;renderSports();renderMatches()});
+  bindAviator();
+}
+function renderMatches(){
+  const all=MATCHES[sport]||[];
+  const rows=all.filter(m=>filter==='all'||(filter==='live'?isLive(m):!isLive(m)));
+  $('secTitle').textContent=sport;$('secCount').textContent=rows.length+' matches';
+  document.querySelectorAll('#flt button').forEach(b=>b.classList.toggle('on',b.dataset.f===filter));
+  document.querySelectorAll('#subTabs button').forEach(b=>b.classList.toggle('active',(b.dataset.sub==='all'&&filter==='all')||b.dataset.sub===filter));
+  if(!rows.length){$('list').innerHTML=`<div class="empty">No ${filter==='all'?'':filter+' '}${sport} matches right now.</div>`;return}
+  $('list').innerHTML=rows.map((m,i)=>{
+    const id=sport+'|'+m.h+'|'+m.a,two=m.o[1]===0,labels=two?['1','2']:['1','X','2'],vals=two?[m.o[0],m.o[2]]:m.o;
+    return `<div class="row"><div class="l"><div><span class="lg">${m.lg}</span><span class="tm ${isLive(m)?'live':''}">${isLive(m)?'● ':''}${m.t}</span></div>
+      <div class="tms">${m.h}<em>v</em>${m.a}</div><div class="mk">+${m.m} markets</div></div>
+      <div class="odds-wrap">${vals.map((v,k)=>`<button class="odd ${slip.some(s=>s.id===id&&s.pick===labels[k])?'sel':''}" data-id="${id}" data-pick="${labels[k]}" data-odd="${v}" data-name="${m.h} v ${m.a}"><small>${labels[k]}</small><b>${v.toFixed(2)}</b></button>`).join('')}</div></div>`}).join('');
+  document.querySelectorAll('.odd').forEach(b=>b.onclick=()=>toggleSlip(b.dataset));
+}
+$('flt').addEventListener('click',e=>{const f=e.target.dataset.f;if(f){filter=f;renderMatches()}});
+$('subTabs').addEventListener('click',e=>{const s=e.target.dataset.sub;if(s){filter=s;renderMatches()}});
+
+/* ---------- bet slip ---------- */
+function toggleSlip(d){
+  const i=slip.findIndex(s=>s.id===d.id);
+  if(i>-1&&slip[i].pick===d.pick)slip.splice(i,1);
+  else{if(i>-1)slip.splice(i,1);slip.push({id:d.id,pick:d.pick,odd:Number(d.odd),name:d.name})}
+  renderMatches();renderSlip()}
+function renderSlip(){
+  $('slipTab').textContent=`Normal (${slip.length})`;
+  if(!slip.length){$('slipBody').innerHTML='<div class="empty">Your slip is empty<br><small>Click any odd to add your prediction.</small></div>';return}
+  const tot=slip.reduce((a,s)=>a*s.odd,1);
+  $('slipBody').innerHTML=slip.map((s,i)=>`<div class="si"><x data-rm="${i}">×</x><small>${s.name}</small>Pick ${s.pick}<b>${s.odd.toFixed(2)}</b></div>`).join('')+
+    `<input class="stake" id="stake" type="number" placeholder="Stake (KES)" min="1"><div style="font-size:12px;display:flex;justify-content:space-between">Total odds<b>${tot.toFixed(2)}</b></div>
+    <div style="font-size:12px;display:flex;justify-content:space-between;margin:4px 0 10px">Possible win<b id="win" style="color:#52b826">0.00 KES</b></div><button class="pbtn" id="place">PLACE BET</button>`;
+  document.querySelectorAll('[data-rm]').forEach(x=>x.onclick=()=>{slip.splice(Number(x.dataset.rm),1);renderMatches();renderSlip()});
+  $('stake').oninput=e=>$('win').textContent=fmt(Number(e.target.value||0)*tot);
+  $('place').onclick=()=>{
+    const s=Number($('stake').value);
+    if(!user)return openAuth('login');
+    if(!(s>0))return alert('Enter a stake.');
+    if(s>user.balance)return alert('Insufficient balance. Please deposit.');
+    const tot2=slip.reduce((a,x)=>a*x.odd,1);
+    const all=loadBets();all.push({phone:user.phone,t:Date.now(),stake:s,win:s*tot2,picks:slip.map(x=>({...x})),status:'active'});saveBets(all);
+    user.balance-=s;saveUser();header();slip=[];renderMatches();renderSlip();alert('Bet placed.')}}
+
+/* ---------- my bets ---------- */
+const LS_BETS='shikachapaa_bets';
+const loadBets=()=>{try{return JSON.parse(localStorage.getItem(LS_BETS)||'[]')}catch{return[]}};
+const saveBets=b=>localStorage.setItem(LS_BETS,JSON.stringify(b));
+let betTab='active';
+function renderBets(){
+  const mine=user?loadBets().filter(b=>b.phone===user.phone):[];
+  const act=mine.filter(b=>b.status==='active'),set=mine.filter(b=>b.status!=='active');
+  $('tActive').textContent=`Active Bets (${act.length})`;$('tSettled').textContent=`Settled Bets (${set.length})`;
+  $('tActive').classList.toggle('active',betTab==='active');$('tSettled').classList.toggle('active',betTab==='settled');
+  const list=betTab==='active'?act:set;
+  if(!list.length){
+    $('betsBody').innerHTML=`<div class="bempty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M12 7v2m0 3v1m0 3v1" stroke-linecap="round"/></svg>
+    <h3>No ${betTab} bets found</h3><p>You don't have any ${betTab} bets right now. Select odds from the sportsbook to place your bet.</p><button id="explore">Explore Matches</button></div>`;
+    $('explore').onclick=()=>{$('betsModal').classList.add('hidden');go('home')};return}
+  $('betsBody').innerHTML=list.map(b=>`<div class="bet"><small style="color:#94a3b8">${new Date(b.t).toLocaleString()}</small>
+    ${b.picks.map(p=>`<div><span>${p.name} (${p.pick})</span><span>${p.odd.toFixed(2)}</span></div>`).join('')}
+    <div style="border-top:1px solid #28374d;padding-top:6px;margin-top:8px"><span>Stake ${fmt(b.stake)}</span><b>Win ${fmt(b.win)}</b></div></div>`).join('')}
+function openBets(){if(!user)return openAuth('login');betTab='active';renderBets();$('betsModal').classList.remove('hidden')}
+$('tActive').onclick=()=>{betTab='active';renderBets()};
+$('tSettled').onclick=()=>{betTab='settled';renderBets()};
+$('betsClose').onclick=()=>$('betsModal').classList.add('hidden');
+
+/* ---------- misc wiring ---------- */
+function launchAviator(){
+  /* Stay on https://shika-chapaa.netlify.app/ only — game opens in-page */
+  var layer=document.getElementById('avLayer');
+  if(!layer){
+    layer=document.createElement('div');
+    layer.id='avLayer';
+    layer.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#0b0e14;display:flex;flex-direction:column');
+    layer.innerHTML='<iframe id="avFrame" src="shika-chapaa-aviator.html" title="Aviator" style="border:0;width:100%;height:100%;flex:1;background:#0b0e14" allow="autoplay"></iframe>';
+    document.body.appendChild(layer);
+    window.addEventListener('message',function(e){
+      if(e&&e.data==='shika-close-aviator'){
+        var L=document.getElementById('avLayer');
+        if(L){L.style.display='none';var f=document.getElementById('avFrame');if(f)f.src='about:blank'}
+        /* refresh balance after returning from game */
+        try{var a=loadAcc();if(user&&a[user.phone]){user.balance=Number(a[user.phone].balance||0);saveUser();header()}}catch(err){}
+      }
+    });
+  }else{
+    layer.style.display='flex';
+    var f=document.getElementById('avFrame');
+    if(f) f.src='shika-chapaa-aviator.html';
+  }
+}
+function bindAviator(){document.querySelectorAll('[data-go-aviator]').forEach(el=>el.onclick=e=>{e.preventDefault();e.stopPropagation();closeDrawer();launchAviator()})}
+function go(n){
+  closeDrawer();
+  if(n==='home'){filter='all';renderMatches();window.scrollTo({top:0,behavior:'smooth'})}
+  if(n==='live'){filter='live';renderMatches();$('list').scrollIntoView({behavior:'smooth',block:'center'})}
+  if(n==='bets')openBets();
+  document.querySelectorAll('nav.top [data-nav],.bottom [data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===(n==='bets'?'bets':n)))}
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.nav)));
+$('brandBtn').onclick=()=>go('home');
+$('bnAccount').onclick=()=>user?openAcc('dep'):openAuth('login');
+
+/* promos */
+const PROMOS=[
+ ['photo-1508098682722-e99c43a406b2','KSH 3,500 WELCOME BONUS!','',false],
+ ['photo-1518609878373-06d740f60d8b','MULTIPLIER UP TO 10,000X WEEKLY',' AVIATOR',true],
+ ['photo-1522778119026-d647f0596c20','FASTEST M-PESA PAYOUTS',' FOOTBALL',false]];
+const slideHTML=p=>`<div class="slide"><div class="box"><img src="https://images.unsplash.com/${p[0]}?auto=format&fit=crop&w=1200&q=80" alt="SHIKA CHAPAA"><div class="ov"><span class="tag">${p[1]}</span>
+ <h3><span style="color:#fff">SHIKA</span><span class="gold"> CHAPAA</span>${p[3]?`<span class="red">${p[2]}</span>`:`<span style="color:#fff">${p[2]}</span>`}</h3><button class="playbtn" data-play="${p[3]?1:0}">PLAY NOW</button></div></div></div>`;
+$('track').innerHTML=PROMOS.map(slideHTML).join('')+PROMOS.map(slideHTML).join('');
+document.querySelectorAll('.playbtn').forEach(b=>b.onclick=()=>{if(b.dataset.play==='1')launchAviator()});
+
+/* restore session */
+try{const s=JSON.parse(localStorage.getItem(LS_USER)||'null'),a=loadAcc();
+  if(s&&a[s.phone])user={phone:s.phone,country:a[s.phone].country,balance:Number(a[s.phone].balance||0)}}catch(e){}
+header();renderSports();renderMatches();renderSlip();bindAviator();
+
+/* keep balance in sync with Aviator page */
+window.addEventListener('storage',e=>{
+  if(e.key===LS_USER||e.key===LS_ACC){
+    try{
+      const s=JSON.parse(localStorage.getItem(LS_USER)||'null');
+      const a=loadAcc();
+      if(s&&a[s.phone]){user={phone:s.phone,country:a[s.phone].country,balance:Number(a[s.phone].balance||0)};header()}
+    }catch(err){}
+  }
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&user){
+    const a=loadAcc();
+    if(a[user.phone]){user.balance=Number(a[user.phone].balance||0);saveUser();header()}
+  }
+});
+
+})();
+</script>
+</body>
+</html>
