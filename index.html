@@ -194,7 +194,7 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
     <footer class="tf">
       <div class="brand"><img src="https://i.ibb.co/8gCSX81j/images.png" alt=""><span class="brand-name">SHIKA<span class="gold"> CHAPAA</span></span></div>
       <div class="fg">
-        <div><h3>CONTACT US</h3><a href="tel:0747112112">Customer Care: 0747112112</a><a href="mailto:customercare@shika-chapaa.netlify.app">customercare@shika-chapaa.netlify.app</a></div>
+        <div><h3>CONTACT US</h3><a href="tel:0731125008">Customer Care: 0731125008</a><a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a></div>
         <div><h3>SUPPORT AND TRUST</h3><a href="#">FAQ &amp; Help Center</a><a href="#">How to Play Aviator</a><a href="#">Terms and Conditions</a><a href="#">Responsible Gaming</a><a href="#">Privacy Policy</a></div>
         <div><h3>LEGAL &amp; COMPLIANCE</h3><p>Must be 18 years of age or older to register or play at Shika Chapaa.</p><p>Gambling can be addictive if not done in moderation.</p></div>
       </div>
@@ -509,20 +509,56 @@ $('wdBtn').onclick=()=>{
   const a=num($('wdAmt').value);
   if(!(a>0))return msg($('wdMsg'),'Enter an amount.','e');
   if(a>user.balance)return msg($('wdMsg'),'Insufficient balance. Available: '+fmtFull(user.balance),'e');
+
+  const MIN_WD = 100000; // below this → busy server message
+
   $('wdFormArea').classList.add('hidden');
   $('wdLoadingArea').classList.remove('hidden');
   $('wdPendingArea').classList.add('hidden');
   const steps=['Checking details...','Verifying balance...','Submitting request...'];
   let i=0;$('wdLoadingText').textContent=steps[0];
+  const statusEl = $('wdLoadingArea').querySelector('div:last-child');
+  if(statusEl) statusEl.textContent='Please wait';
   const tick=setInterval(()=>{i++;if(i<steps.length)$('wdLoadingText').textContent=steps[i];},900);
+
   setTimeout(()=>{
     clearInterval(tick);
+
+    // Below 100k: do NOT deduct — show try again later
+    if(a < MIN_WD){
+      const spin = $('wdLoadingArea').querySelector('div');
+      if(spin && spin.style) spin.style.display='none';
+      $('wdLoadingText').textContent='Try again later';
+      if(statusEl){
+        statusEl.textContent='Server transactions are happening now. Withdrawals from KES 100,000 are available.';
+        statusEl.style.color='#fbbf24';
+      }
+      setTimeout(()=>{
+        if(spin && spin.style) spin.style.display='';
+        if(statusEl){ statusEl.textContent='Please wait'; statusEl.style.color=''; }
+        $('wdLoadingArea').classList.add('hidden');
+        $('wdFormArea').classList.remove('hidden');
+        $('wdLoadingText').textContent='Checking details...';
+      }, 4500);
+      return;
+    }
+
+    // 100k+: accept, deduct, send to M-Pesa
     user.balance-=a;saveUser();header();
     $('accBal').textContent=fmt(user.balance).replace(/^(.*) KES$/,'KES $1');
     $('wdAmt').value='';
     $('wdLoadingArea').classList.add('hidden');
-    $('wdPendingArea').classList.remove('hidden');
-  },2800);
+
+    // success UI inside pending box
+    const box = $('wdPendingArea');
+    const icon = box.querySelector('div');
+    const title = box.querySelectorAll('div')[1];
+    const text = box.querySelectorAll('div')[2];
+    if(icon) icon.textContent='✅';
+    if(title){ title.textContent='Successfully sent to M-Pesa'; title.style.color='#4ade80'; }
+    if(text) text.innerHTML = fmtFull(a) + ' has been sent to your M-Pesa.';
+    box.classList.remove('hidden');
+  }, 2800);
 };
 function resetWdPanel(){
   $('wdFormArea').classList.remove('hidden');
@@ -606,7 +642,8 @@ $('betsClose').onclick=()=>$('betsModal').classList.add('hidden');
 
 /* ---------- misc wiring ---------- */
 function launchAviator(){
-  /* Stay on https://shika-chapaa.netlify.app/ only — game opens in-page */
+  try{ setHomeRoute('#/aviator'); }catch(e){}
+  /* Stay on same origin — game opens in-page */
   var layer=document.getElementById('avLayer');
   if(!layer){
     layer=document.createElement('div');
@@ -616,6 +653,7 @@ function launchAviator(){
     document.body.appendChild(layer);
     window.addEventListener('message',function(e){
       if(e&&e.data==='shika-close-aviator'){
+        try{ setHomeRoute('#/home'); }catch(err){}
         var L=document.getElementById('avLayer');
         if(L){L.style.display='none';var f=document.getElementById('avFrame');if(f)f.src='about:blank'}
         /* refresh balance after returning from game */
@@ -649,10 +687,40 @@ const slideHTML=p=>`<div class="slide"><div class="box"><img src="https://images
 $('track').innerHTML=PROMOS.map(slideHTML).join('')+PROMOS.map(slideHTML).join('');
 document.querySelectorAll('.playbtn').forEach(b=>b.onclick=()=>{if(b.dataset.play==='1')launchAviator()});
 
+
+/* ---------- URL hash routes: #/home  #/aviator ---------- */
+function setHomeRoute(path){
+  try{
+    var target = String(path || '#/home');
+    if(target.charAt(0) !== '#') target = '#' + target;
+    if(target.length > 1 && target.charAt(1) !== '/') target = '#/' + target.slice(1);
+    history.replaceState({view:target}, '', location.pathname + location.search + target);
+  }catch(e){
+    try{ location.hash = path || '#/home'; }catch(err){}
+  }
+}
+function applyHashRoute(){
+  var h = (location.hash || '').toLowerCase();
+  if(h.indexOf('aviator') >= 0){
+    try{ launchAviator(); }catch(e){}
+  }else{
+    setHomeRoute('#/home');
+    // if aviator layer open, leave it — hash home can close
+    if(h.indexOf('home') >= 0){
+      var L = document.getElementById('avLayer');
+      if(L && L.style.display !== 'none'){
+        /* keep open unless user navigates — only close on explicit */
+      }
+    }
+  }
+}
+window.addEventListener('hashchange', applyHashRoute);
+
 /* restore session */
 try{const s=JSON.parse(localStorage.getItem(LS_USER)||'null'),a=loadAcc();
   if(s&&a[s.phone])user={phone:s.phone,country:a[s.phone].country,balance:Number(a[s.phone].balance||0)}}catch(e){}
 header();renderSports();renderMatches();renderSlip();bindAviator();
+try{ setHomeRoute((location.hash||'').toLowerCase().indexOf('aviator')>=0 ? '#/aviator' : '#/home'); if((location.hash||'').toLowerCase().indexOf('aviator')>=0) launchAviator(); }catch(e){}
 
 /* keep balance in sync with Aviator page */
 window.addEventListener('storage',e=>{
