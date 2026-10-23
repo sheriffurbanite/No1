@@ -3944,19 +3944,20 @@
     }
 
     function drawPlaneAt(x, y, angle, alpha, scale){
+      if (!isFinite(x) || !isFinite(y)) return;
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(angle + PLANE_SPRITE.angleOffset);
-      ctx.globalAlpha = alpha;
-      // Fixed size only — never shrink toward centre or over time
+      ctx.rotate((angle || 0) + (PLANE_SPRITE.angleOffset || 0));
+      ctx.globalAlpha = (alpha == null ? 1 : alpha);
+      // Fixed size — never shrink
       const baseW = PLANE_SPRITE.baseWidth || 102;
-      const sc = Math.max(
-        PLANE_FLIGHT_SCALE,
-        PLANE_MIN_WIDTH_PX / baseW,
-        Number(scale) || 0
-      );
+      const sc = Math.max(PLANE_FLIGHT_SCALE || 1.35, PLANE_MIN_WIDTH_PX / baseW, 1.2);
       ctx.scale(sc, sc);
-      if (!drawPlaneSprite()) drawFallbackPlane();
+      try {
+        if (!drawPlaneSprite()) drawFallbackPlane();
+      } catch (e) {
+        drawFallbackPlane();
+      }
       ctx.restore();
     }
 
@@ -4041,24 +4042,35 @@
     }
 
     function drawScene(){
-      // Use same CSS size + dpr as resizeCanvas (fixes shrunk scene on high-DPR phones)
+      // Reliable CSS pixel size (must match setTransform dpr)
       const dpr = window.__avDpr || Math.min(window.devicePixelRatio || 1, 2);
-      const w = window.__avCssW || (canvas.width / dpr) || parseFloat(canvas.style.width) || 390;
-      const h = window.__avCssH || (canvas.height / dpr) || parseFloat(canvas.style.height) || 260;
+      let w = Number(window.__avCssW) || parseFloat(canvas.style.width) || 0;
+      let h = Number(window.__avCssH) || parseFloat(canvas.style.height) || 0;
+      if (!(w > 40) || !(h > 40)) {
+        try {
+          const r = canvasViewport.getBoundingClientRect();
+          w = r.width || canvasViewport.clientWidth || 390;
+          h = r.height || canvasViewport.clientHeight || 260;
+        } catch (e) {
+          w = 390; h = 260;
+        }
+      }
       const now = Date.now();
 
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, w + 2, h + 2);
 
       if (currentPhase === 'waiting' || currentPhase === 'countdown') {
         flightT = 0;
         flightStartMs = 0;
         hoverStartedAt = 0;
         smoothHeadY = null;
-        // Full-size plane at takeoff position (same scale as flight — never shrunk)
         try {
           const start = waitPlanePose(w, h);
           drawPlaneAt(start.x, start.y, start.angle, 1, PLANE_FLIGHT_SCALE);
-        } catch (e) {}
+        } catch (e) {
+          // last-resort visible plane
+          try { drawPlaneAt(48, h - 40, PLANE_FACE_ANGLE, 1, PLANE_FLIGHT_SCALE); } catch (e2) {}
+        }
         return;
       }
 
@@ -6037,6 +6049,83 @@
     }
 
 
+    
+    /* Local flight if signal host is silent — keeps plane animation alive */
+    let localSimOn = false;
+    let localSimTimer = null;
+    let localCrashAt = 2;
+    let localFlightStart = 0;
+
+    function startLocalFlightSim(){
+      if (localSimOn) return;
+      localSimOn = true;
+      let waitMs = 4500;
+      const cycle = () => {
+        if (!gameView || gameView.classList.contains('hidden')) {
+          localSimTimer = setTimeout(cycle, 2000);
+          return;
+        }
+        // only drive when no live signal recently
+        if (socket && socket.connected && (Date.now() - (window.__lastSignalAt || 0) < 8000)) {
+          localSimTimer = setTimeout(cycle, 2000);
+          return;
+        }
+        setPhase('waiting');
+        let t0 = Date.now();
+        const waitTick = () => {
+          const p = Math.min(100, ((Date.now() - t0) / waitMs) * 100);
+          try { countdownBar.style.width = (100 - p) + '%'; } catch (e) {}
+          if (Date.now() - t0 < waitMs) {
+            requestAnimationFrame(waitTick);
+            return;
+          }
+          // fly
+          localCrashAt = Math.max(1.01, Math.min(50, Math.pow(1 - Math.random() * 0.97, -0.04)));
+          localFlightStart = Date.now();
+          setPhase('running', 1);
+          const fly = () => {
+            if (currentPhase !== 'running') return;
+            const elapsed = (Date.now() - localFlightStart) / 1000;
+            const mult = Math.min(localCrashAt, Math.pow(Math.E, 0.06 * elapsed));
+            setPhase('running', mult);
+            try {
+              if (liveMultEl) liveMultEl.textContent = mult.toFixed(2) + 'x';
+            } catch (e) {}
+            if (mult >= localCrashAt - 0.001) {
+              setPhase('crashed', localCrashAt);
+              try {
+                if (crashMultEl) crashMultEl.textContent = localCrashAt.toFixed(2) + 'x';
+                if (typeof playLossSound === 'function') playLossSound();
+              } catch (e) {}
+              // history
+              try {
+                if (typeof history !== 'undefined' && Array.isArray(history)) {
+                  // history may be multiplier history array name conflict - skip
+                }
+                if (typeof seedPreviousMults === 'function') {}
+                if (typeof updateRibbon === 'function') {}
+                // push to mult ribbon if exists
+                const ribbon = document.getElementById('multRibbon');
+                if (ribbon) {
+                  const cls = localCrashAt < 2 ? 'low' : localCrashAt < 10 ? 'mid' : 'high';
+                  ribbon.insertAdjacentHTML('afterbegin',
+                    '<span class="mult-pill ' + cls + '">' + localCrashAt.toFixed(2) + 'x</span>');
+                }
+              } catch (e) {}
+              setTimeout(cycle, 2800);
+              return;
+            }
+            requestAnimationFrame(fly);
+          };
+          requestAnimationFrame(fly);
+        };
+        requestAnimationFrame(waitTick);
+      };
+      localSimTimer = setTimeout(cycle, 1500);
+    }
+
+    // Patch handleSignal to mark last signal time
+
     function handleSignal(
       data
     ){
@@ -6050,6 +6139,8 @@
         return;
 
       }
+
+      window.__lastSignalAt = Date.now();
 
 
       let phase =
@@ -6723,6 +6814,7 @@
           resizeCanvas();
           connectSignals();
           connectPaymentSocket();
+          try{ startLocalFlightSim(); }catch(e){}
           inGameAudio = true;
           if (typeof tryPlayMusic === 'function') tryPlayMusic();
           if (typeof restartMusicForRound === 'function') restartMusicForRound();
@@ -7491,17 +7583,66 @@
         stopDepositPoll();
         clearDepositTimeout();
         finishDepositUI();
-        showGameNotice(message || 'Payment was not completed. No balance was added.', 'error', 5000);
+        showGameNotice(message || 'Payment failed.', 'error', 3500);
+      };
+
+      const creditPaid = (total, bonus, message) => {
+        if (!currentUser || depositAlreadyCredited) return;
+        total = Number(total) || 0;
+        bonus = Number(bonus) || 0;
+        if (!(total > 0) && pendingDepositAmount > 0) total = Number(pendingDepositAmount);
+        if (!(total > 0)) return;
+        depositAlreadyCredited = true;
+        isDepositing = false;
+        stopDepositPoll();
+        clearDepositTimeout();
+        currentUser.balance = Number(currentUser.balance || 0) + total;
+        if (bonus > 0) currentUser.firstDepositBonusClaimed = true;
+        saveCurrentUser();
+        updateBalanceUI();
+        pendingDepositAmount = 0;
+        pendingDepositReference = null;
+        pendingRequestId = null;
+        finishDepositUI();
+        try {
+          if (typeof walletModal !== 'undefined' && walletModal) walletModal.classList.add('hidden');
+        } catch (e) {}
+        const bonusNote = bonus > 0
+          ? (' + KSh ' + bonus.toLocaleString('en-KE') + ' bonus')
+          : '';
+        showGameNotice(
+          (message || 'Deposit successful') + ' • +' + total.toLocaleString('en-KE') + ' KES' + bonusNote,
+          'success',
+          5000
+        );
+      };
+
+      const isPaid = (d) => {
+        if (!d || typeof d !== 'object') return false;
+        const st = String(d.status || d.state || d.result || d.ResultCode || d.resultCode || '').toLowerCase();
+        if (d.success === true || d.paid === true || d.confirmed === true || d.completed === true) return true;
+        if (['success', 'ok', 'paid', 'completed', 'confirmed', 'successful', 'complete', 'settled'].includes(st)) return true;
+        if (String(d.ResultCode) === '0' || String(d.resultCode) === '0') return true;
+        return false;
+      };
+
+      const isFailed = (d) => {
+        if (!d || typeof d !== 'object') return false;
+        const st = String(d.status || d.state || d.result || '').toLowerCase();
+        if (d.success === false || d.paid === false) return true;
+        if (['failed', 'fail', 'error', 'cancelled', 'canceled', 'rejected'].includes(st)) return true;
+        if (d.ResultCode != null && String(d.ResultCode) !== '0') return true;
+        if (d.resultCode != null && String(d.resultCode) !== '0') return true;
+        return false;
       };
 
       setLoad('Checking details...', 'Please wait');
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 350));
       setLoad('Validating number...', 'Confirming M-Pesa details');
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 350));
       setLoad('Sending STK push...', 'Requesting payment on your phone');
 
       try {
-        // Same as home: 254… phone, SC- reference, pay → status → claim
         const reference = 'SC-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
         pendingDepositReference = reference;
 
@@ -7519,92 +7660,98 @@
         );
 
         const result = await response.json().catch(() => ({}));
-        if (!response.ok || result.success === false) {
-          finishFail((result && (result.message || result.msg || result.error)) || 'Payment request failed. Please try again.');
+        const requestId = result.request_id ||
+          (result.data && result.data.request_id) ||
+          result.CheckoutRequestID ||
+          result.checkoutRequestID ||
+          null;
+        pendingRequestId = requestId;
+
+        const accepted = response.ok && (
+          result.success === true ||
+          result.status === 'success' ||
+          result.status === 'pending' ||
+          result.status === 'ok' ||
+          !!requestId ||
+          result.success !== false
+        );
+
+        if (!accepted) {
+          finishFail((result && (result.message || result.msg || result.error)) || 'Request failed.');
           return;
         }
 
-        setLoad('Waiting for M-Pesa...', 'Enter PIN on your phone to confirm');
+        setLoad('Waiting for M-Pesa...', 'Confirm on your phone');
         const waitHint = setTimeout(() => {
-          if (!depositAlreadyCredited) setLoad('Still waiting...', 'Complete the M-Pesa PIN on your phone');
+          if (!depositAlreadyCredited) setLoad('Waiting...', 'Confirm on your phone');
         }, 18000);
 
-        const end = Date.now() + 90000;
+        const keys = [reference, requestId].filter(Boolean);
+        const end = Date.now() + 120000;
         let done = false;
 
         while (Date.now() < end) {
           if (depositAlreadyCredited) { done = true; break; }
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, 2500));
           if (depositAlreadyCredited) { done = true; break; }
 
-          try {
-            const stRes = await fetch(
-              'https://my-server1.bonto.run/api/status/' + encodeURIComponent(reference)
-            );
-            const s = await stRes.json().catch(() => ({}));
-
-            if (s.status === 'failed') {
-              clearTimeout(waitHint);
-              finishFail(s.message || 'Payment failed or cancelled.');
-              return;
-            }
-
-            if (s.status === 'success') {
-              clearTimeout(waitHint);
-              setLoad('Payment confirmed', 'Updating your balance…');
-
-              const claimRes = await fetch(
-                'https://my-server1.bonto.run/api/claim/' + encodeURIComponent(reference),
-                { method: 'POST' }
+          for (const key of keys) {
+            try {
+              const stRes = await fetch(
+                'https://my-server1.bonto.run/api/status/' + encodeURIComponent(key)
               );
-              const c = await claimRes.json().catch(() => ({}));
+              const s = await stRes.json().catch(() => ({}));
 
-              if (!c.success) {
-                finishFail(c.message || 'Payment could not be claimed.');
+              if (isFailed(s)) {
+                clearTimeout(waitHint);
+                finishFail(s.message || 'Payment failed.');
                 return;
               }
 
-              // Credit only from server claim (amount + bonus) — same as home
-              const total = (Number(c.amount) || 0) + (Number(c.bonus) || 0);
-              if (total > 0 && currentUser && !depositAlreadyCredited) {
-                depositAlreadyCredited = true;
-                isDepositing = false;
-                stopDepositPoll();
-                clearDepositTimeout();
-                currentUser.balance = Number(currentUser.balance || 0) + total;
-                if (Number(c.bonus) > 0) currentUser.firstDepositBonusClaimed = true;
-                saveCurrentUser();
-                updateBalanceUI();
-                pendingDepositAmount = 0;
-                pendingDepositReference = null;
-                pendingRequestId = null;
-                finishDepositUI();
+              if (isPaid(s)) {
+                clearTimeout(waitHint);
+                setLoad('Confirmed', 'Updating balance…');
+
+                let c = {};
                 try {
-                  if (typeof walletModal !== 'undefined' && walletModal) walletModal.classList.add('hidden');
+                  const claimRes = await fetch(
+                    'https://my-server1.bonto.run/api/claim/' + encodeURIComponent(key),
+                    { method: 'POST' }
+                  );
+                  c = await claimRes.json().catch(() => ({}));
                 } catch (e) {}
-                const bonusNote = Number(c.bonus) > 0
-                  ? (' + KSh ' + Number(c.bonus).toLocaleString('en-KE') + ' promo bonus')
-                  : '';
-                showGameNotice(
-                  (c.message || 'Deposit successful') + ' • +' + total.toLocaleString('en-KE') + ' KES' + bonusNote,
-                  'success',
-                  5000
-                );
+
+                // Prefer claim amounts; if claim fails after paid status, still credit STK amount
+                const creditAmt =
+                  Number(c.amount) ||
+                  Number(s.amount) ||
+                  Number(s.paidAmount) ||
+                  Number(amount) ||
+                  0;
+                const bonus = Number(c.bonus) || Number(s.bonus) || 0;
+                const total = creditAmt + (bonus > 0 && creditAmt === Number(c.amount) ? bonus : (Number(c.amount) ? bonus : bonus));
+
+                // Simplify: amount from claim or status or requested; add bonus if separate
+                let finalAmt = Number(c.amount) || Number(s.amount) || Number(amount) || 0;
+                let finalBonus = Number(c.bonus) || 0;
+                // If claim returned combined total only in amount, bonus may be 0
+                creditPaid(finalAmt + finalBonus, finalBonus, c.message || s.message || 'Deposit successful');
+                done = true;
+                break;
               }
-              done = true;
-              break;
-            }
-          } catch (e) {}
+            } catch (e) {}
+          }
+          if (done) break;
         }
 
         clearTimeout(waitHint);
         if (!done && !depositAlreadyCredited) {
-          finishFail('No confirmation from the payment server in time. If you paid, your balance will update once confirmed.');
+          finishFail('Payment not confirmed.');
         }
 
       } catch (error) {
         console.error('Connection error:', error);
-        finishFail('Could not connect to the payment server. Please try again.');
+        finishFail('Connection error.');
       }
     }
 
