@@ -821,10 +821,13 @@
       flex:0 0 auto;
       flex-shrink:0;
       display:grid;
-      grid-template-columns:1fr;
+      grid-template-columns:1fr 1fr;
       gap:8px;
       position:relative;
       z-index:2
+    }
+    @media (max-width:420px){
+      .dual-bet-panels{ grid-template-columns:1fr; }
     }
 
     .bet-panel-box{
@@ -1133,9 +1136,12 @@
     .win-bubble .cashout-mult{
       font-size:22px;
       font-weight:900;
-      color:#ffffff;
+      color:#00b8d1;
       letter-spacing:-0.5px;
     }
+    .win-bubble .cashout-mult.low{ color:#00b8d1 !important; }
+    .win-bubble .cashout-mult.mid{ color:#9a35cf !important; }
+    .win-bubble .cashout-mult.high{ color:#d826c0 !important; }
 
     .win-bubble .win-badge{
       background:linear-gradient(180deg, #2ecc40 0%, #27ae60 100%);
@@ -2983,6 +2989,36 @@
     <source src="https://res.cloudinary.com/qegjv5mo/video/upload/VID-20261006-WA0001.mp4" type="video/mp4">
   </audio>
 
+  
+  <!-- LIVE CHAT -->
+  <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
+    <div class="chat-panel-head">
+      <div class="chat-head-left">
+        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Choose avatar">☺</button>
+        <span class="chat-online-label">Online: <b id="chatOnlineCount">0</b></span>
+      </div>
+      <button type="button" class="chat-close" id="chatCloseBtn" aria-label="Close chat">×</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <button type="button" class="chat-new-pill" id="chatNewPill">New messages ▾</button>
+    <div class="chat-input-bar">
+      <input type="text" id="chatInput" placeholder="Your message..." maxlength="160" autocomplete="off">
+      <button type="button" class="chat-send-btn" id="chatSendBtn" aria-label="Send">➤</button>
+    </div>
+  </div>
+
+  <div id="avatarPickModal" class="avatar-pick-modal hidden">
+    <div class="avatar-pick-card">
+      <h3>Choose your avatar</h3>
+      <div class="avatar-grid" id="avatarGrid"></div>
+      <div class="avatar-pick-actions">
+        <button type="button" class="avatar-cancel" id="avatarCancelBtn">Cancel</button>
+        <button type="button" class="avatar-save" id="avatarSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  
   <script>
 
     /* ==========================================
@@ -4198,6 +4234,79 @@
        NOTICES
     ========================================== */
 
+    
+    function showGame(){
+      try { setAppRoute('#/aviator'); } catch (e) {}
+
+      var splash = document.getElementById('splash');
+      var splashConn = document.getElementById('splashConnection');
+      var gameViewEl = document.getElementById('gameView');
+
+      // --- SPLASH (always show loading animation) ---
+      if (splash) {
+        splash.classList.remove('hidden', 'fade-out');
+        splash.style.display = 'flex';
+        splash.style.opacity = '1';
+        if (splashConn) splashConn.textContent = 'Connection...';
+      }
+      if (gameViewEl) {
+        gameViewEl.classList.add('hidden');
+      }
+
+      function safe(fn){ try { if (typeof fn === 'function') fn(); } catch (e) { console.warn(e); } }
+
+      function finishEnterGame(){
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(function(){
+            splash.classList.add('hidden');
+            splash.style.display = 'none';
+          }, 380);
+        }
+        if (gameViewEl) {
+          gameViewEl.classList.remove('hidden');
+          gameViewEl.style.display = '';
+        }
+
+        safe(updateBalanceUI);
+        safe(generateLiveBoard);
+        safe(seedPreviousMults);
+        safe(renderBetsList);
+        safe(renderMultiplierRibbon);
+
+        // People playing board refresh
+        try {
+          if (typeof liveBoardPlayers !== 'undefined' && (!liveBoardPlayers || !liveBoardPlayers.length)) {
+            generateLiveBoard();
+          }
+          renderBetsList();
+        } catch (e) {}
+
+        requestAnimationFrame(function(){
+          safe(resizeCanvas);
+          safe(drawScene);
+          safe(connectSignals);
+          safe(connectPaymentSocket);
+          // Music / sounds
+          try {
+            inGameAudio = true;
+            musicOn = (typeof musicOn === 'undefined') ? true : musicOn;
+          } catch (e) {}
+          safe(tryPlayMusic);
+          safe(restartMusicForRound);
+          safe(updateSpeakerUI);
+          // Second resize after layout settles (fixes shrink)
+          setTimeout(function(){ safe(resizeCanvas); safe(drawScene); }, 200);
+          setTimeout(function(){ safe(resizeCanvas); }, 600);
+        });
+      }
+
+      setTimeout(function(){ if (splashConn) splashConn.textContent = 'Connecting...'; }, 500);
+      setTimeout(function(){ if (splashConn) splashConn.textContent = 'Almost ready...'; }, 1200);
+      setTimeout(finishEnterGame, 2000);
+    }
+
+
     function showGameNotice(
       message,
       type='error',
@@ -4280,9 +4389,13 @@
       if(winMultEl){
         var m = Number(multiplier || currentMult) || 1;
         winMultEl.textContent = m.toFixed(2) + 'x';
+        // Same colours as plane / history ribbon (low cyan, mid purple, high pink)
         var cls = (typeof multClass === 'function') ? multClass(m) : (m >= 10 ? 'high' : m >= 2 ? 'mid' : 'low');
-        winMultEl.style.color = cls === 'high' ? '#d826c0' : cls === 'mid' ? '#9a35cf' : '#00b8d1';
-        winMultEl.style.textShadow = '0 0 12px currentColor';
+        winMultEl.classList.remove('low','mid','high');
+        winMultEl.classList.add(cls);
+        var col = cls === 'high' ? '#d826c0' : (cls === 'mid' ? '#9a35cf' : '#00b8d1');
+        winMultEl.style.color = col;
+        winMultEl.style.textShadow = '0 0 14px ' + col;
       }
 
       winAmountEl.textContent =
@@ -6801,16 +6914,11 @@
     ========================================== */
 
     function init(){
-      // Aviator never shows login. Session + balance come from home page keys.
-      try {
-        var di = document.getElementById('demoIndicator');
-        if (di) di.classList.add('hidden');
-      } catch (e) {}
-
+      // Listen to HOME page login only — never show login UI here
       var accounts = loadAccounts();
       var session = null;
       try {
-        var raw = localStorage.getItem(LS_USER);
+        var raw = localStorage.getItem(LS_USER); // shikachapaa_user from home
         if (raw) session = JSON.parse(raw);
       } catch (e) {}
 
@@ -6829,12 +6937,18 @@
             createdAt: Date.now()
           };
           saveAccounts(accounts);
+        } else {
+          // Prefer latest balance from accounts store (home may have updated it)
+          accounts[key].balance = Number(
+            accounts[key].balance != null ? accounts[key].balance : (session.balance || 0)
+          );
         }
         createSession(accounts[key]);
-        currentUser.balance = Number(accounts[key].balance || session.balance || 0);
-        currentUser.firstDepositBonusClaimed = !!(accounts[key].firstDepositBonusClaimed || session.firstDepositBonusClaimed);
+        currentUser.balance = Number(accounts[key].balance || 0);
+        currentUser.firstDepositBonusClaimed = !!accounts[key].firstDepositBonusClaimed;
         saveCurrentUser();
       } else {
+        // Not logged in on home — still open game as guest (balance 0)
         var guestKey = 'guest';
         if (!accounts[guestKey]) {
           accounts[guestKey] = {
@@ -6849,6 +6963,7 @@
       }
 
       try { setAppRoute('#/aviator'); } catch (e) {}
+      // Always enter via splash → game (NO login page)
       showGame();
     }
 
@@ -7342,8 +7457,10 @@
           if (avatarModal) avatarModal.classList.add('hidden');
         });
       }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-      else boot();
+      function startChat(){ try { boot(); } catch(e){ console.warn('chat', e); } }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startChat);
+      else startChat();
+      window.addEventListener('load', startChat);
     })();
 
 
@@ -7358,33 +7475,6 @@
 
   <!-- Terms & Conditions -->
   
-  <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
-    <div class="chat-panel-head">
-      <div class="chat-head-left">
-        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Choose avatar">☺</button>
-        <span class="chat-online-label">Online: <b id="chatOnlineCount">0</b></span>
-      </div>
-      <button type="button" class="chat-close" id="chatCloseBtn" aria-label="Close chat">×</button>
-    </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <button type="button" class="chat-new-pill" id="chatNewPill">New messages ▾</button>
-    <div class="chat-input-bar">
-      <input type="text" id="chatInput" placeholder="Your message..." maxlength="160" autocomplete="off">
-      <button type="button" class="chat-send-btn" id="chatSendBtn" aria-label="Send">➤</button>
-    </div>
-  </div>
-
-  <div id="avatarPickModal" class="avatar-pick-modal hidden">
-    <div class="avatar-pick-card">
-      <h3>Choose your avatar</h3>
-      <div class="avatar-grid" id="avatarGrid"></div>
-      <div class="avatar-pick-actions">
-        <button type="button" class="avatar-cancel" id="avatarCancelBtn">Cancel</button>
-        <button type="button" class="avatar-save" id="avatarSaveBtn">Save</button>
-      </div>
-    </div>
-  </div>
-
   <div id="termsModal" class="modal-backdrop hidden" style="z-index:600">
     <div class="glass-card" style="max-width:440px;max-height:80vh;overflow:auto;margin:auto">
       <h2 style="font-size:1.25rem;font-weight:800;margin-bottom:12px;text-align:center">Terms &amp; Conditions</h2>
