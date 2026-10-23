@@ -658,8 +658,9 @@
       flex:0 0 auto;
       flex-shrink:0;
       width:100%;
-      max-width:390px;
-      height:230px;
+      max-width:100%;
+      height:min(42vw, 280px);
+      min-height:240px;
       margin-left:auto;
       margin-right:auto;
       box-sizing:border-box;
@@ -1740,11 +1741,12 @@
       }
 
       .canvas-viewport{
-        width:calc(100% - 10px);
-        max-width:390px;
-        height:230px;
-        margin-left:5px;
-        margin-right:5px
+        width:calc(100% - 8px);
+        max-width:100%;
+        height:min(48vw, 300px);
+        min-height:250px;
+        margin-left:4px;
+        margin-right:4px
       }
 
       .panel-body{
@@ -3722,21 +3724,26 @@
       const r =
         canvasViewport.getBoundingClientRect();
 
-      // Ignore collapsed sizes (tab switch / keyboard) to avoid tiny plane
+      // Ignore collapsed sizes (tab switch / keyboard)
       let cssW = r.width;
       let cssH = r.height;
       if (!(cssW > 40) || !(cssH > 40)) {
         cssW = canvasViewport.clientWidth || 390;
-        cssH = canvasViewport.clientHeight || 230;
+        cssH = canvasViewport.clientHeight || 260;
       }
       if (!(cssW > 40)) cssW = 390;
-      if (!(cssH > 40)) cssH = 230;
+      if (!(cssH > 40)) cssH = 260;
 
+      // Must match the dpr used in setTransform — never divide draw size by raw devicePixelRatio
       const dpr =
         Math.min(
           window.devicePixelRatio || 1,
           2
         );
+
+      window.__avCssW = cssW;
+      window.__avCssH = cssH;
+      window.__avDpr = dpr;
 
       canvas.width =
         Math.floor(cssW * dpr);
@@ -4034,8 +4041,10 @@
     }
 
     function drawScene(){
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
+      // Use same CSS size + dpr as resizeCanvas (fixes shrunk scene on high-DPR phones)
+      const dpr = window.__avDpr || Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.__avCssW || (canvas.width / dpr) || parseFloat(canvas.style.width) || 390;
+      const h = window.__avCssH || (canvas.height / dpr) || parseFloat(canvas.style.height) || 260;
       const now = Date.now();
 
       ctx.clearRect(0, 0, w, h);
@@ -4045,7 +4054,11 @@
         flightStartMs = 0;
         hoverStartedAt = 0;
         smoothHeadY = null;
-        // No corner plane during wait — avoids small/shrunk look under UFC overlay
+        // Full-size plane at takeoff position (same scale as flight — never shrunk)
+        try {
+          const start = waitPlanePose(w, h);
+          drawPlaneAt(start.x, start.y, start.angle, 1, PLANE_FLIGHT_SCALE);
+        } catch (e) {}
         return;
       }
 
