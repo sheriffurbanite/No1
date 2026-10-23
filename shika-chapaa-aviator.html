@@ -2949,8 +2949,8 @@
             </div>
             <div>
               <label>Amount (KES)</label>
-              <input type="number" id="walletMpesaAmount" placeholder="Min 500 — Max 25,000" min="500" max="25000" step="1">
-              <div class="mpesa-hint">Minimum 500 KES • Maximum 25,000 KES</div>
+              <input type="number" id="walletMpesaAmount" placeholder="Min 100 — Max 25,000" min="100" max="25000" step="1">
+              <div class="mpesa-hint">Minimum 100 KES • Maximum 25,000 KES</div>
             </div>
             <button class="modal-btn primary" id="walletMpesaDepositBtn" style="margin-top:6px;height:42px;font-size:13px">
               Pay with M-Pesa
@@ -3139,12 +3139,12 @@
             <input
               type="number"
               id="mpesaAmount"
-              placeholder="Min 500 — Max 25,000"
-              min="500"
+              placeholder="Min 100 — Max 25,000"
+              min="100"
               max="25000"
               step="1"
             >
-            <div class="mpesa-hint">Minimum 500 KES • Maximum 25,000 KES</div>
+            <div class="mpesa-hint">Minimum 100 KES • Maximum 25,000 KES</div>
           </div>
 
           <button
@@ -3845,8 +3845,8 @@
       baseWidth: 102
     };
     const PLANE_FACE_ANGLE = -PLANE_SPRITE.angleOffset;
-    const PLANE_FLIGHT_SCALE = 1.22;
-    const PLANE_MIN_WIDTH_PX = 96; // never draw smaller than this on screen
+    const PLANE_FLIGHT_SCALE = 1.45;
+    const PLANE_MIN_WIDTH_PX = 120; // fixed on-screen size — never shrink
 
 
     let planeImage = null;
@@ -3941,7 +3941,13 @@
       ctx.translate(x, y);
       ctx.rotate(angle + PLANE_SPRITE.angleOffset);
       ctx.globalAlpha = alpha;
-      const sc = Math.max(scale || 1, 1.05);
+      // Fixed size only — never shrink toward centre or over time
+      const baseW = PLANE_SPRITE.baseWidth || 102;
+      const sc = Math.max(
+        PLANE_FLIGHT_SCALE,
+        PLANE_MIN_WIDTH_PX / baseW,
+        Number(scale) || 0
+      );
       ctx.scale(sc, sc);
       if (!drawPlaneSprite()) drawFallbackPlane();
       ctx.restore();
@@ -4039,8 +4045,7 @@
         flightStartMs = 0;
         hoverStartedAt = 0;
         smoothHeadY = null;
-        const start = waitPlanePose(w, h);
-        drawPlaneAt(start.x, start.y, start.angle, 1, start.scale);
+        // No corner plane during wait — avoids small/shrunk look under UFC overlay
         return;
       }
 
@@ -6994,8 +6999,8 @@
         return;
       }
 
-      if (!Number.isFinite(amount) || amount < 500) {
-        showGameNotice('Minimum deposit is 500 KES', 'error');
+      if (!Number.isFinite(amount) || amount < 100) {
+        showGameNotice('Minimum deposit is 100 KES', 'error');
         return;
       }
 
@@ -7610,8 +7615,8 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         return;
       }
 
-      if (!Number.isFinite(amount) || amount < 500) {
-        showGameNotice('Minimum deposit is 500 KES', 'error');
+      if (!Number.isFinite(amount) || amount < 100) {
+        showGameNotice('Minimum deposit is 100 KES', 'error');
         return;
       }
 
