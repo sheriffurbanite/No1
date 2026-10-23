@@ -149,6 +149,12 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
 .bet b{color:#52b826}
 @media(min-width:901px){.phone-only{display:none!important}}
 @media(max-width:900px){.laptop-only{display:none!important}.grid{grid-template-columns:1fr;padding:10px}.phone-only{display:flex!important}.hamb{display:flex}.ribbon{display:flex}}
+
+.spinner{width:40px;height:40px;border:4px solid #30363a;border-top-color:#4f67f6;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dep-load{text-align:center;padding:28px 12px}
+.dep-load-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px}
+.dep-load-sub{font-size:12px;color:#7db3ff}
 </style>
 </head>
 <body>
@@ -274,12 +280,20 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
       <button class="dact out" id="logout" style="padding:14px;font-size:14px;font-weight:800"><span>Log Out</span><span>›</span></button>
     </div>
     <div id="depPanel" class="hidden">
-      <label style="margin-top:0">Amount (KES)</label><input id="depAmt" type="text" inputmode="numeric" placeholder="500 - 25,000">
-      <label>M-Pesa number</label><input id="depPhone" readonly>
-      <button class="b b-p" id="depBtn">Deposit via M-Pesa</button>
-      <div id="depMsg"></div>
-      <div class="al w">Min deposit KES 500, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
-      <button class="b b-x back">‹ Back</button>
+      <div id="depFormArea">
+        <label style="margin-top:0">Amount (KES)</label><input id="depAmt" type="text" inputmode="numeric" placeholder="500 - 25,000">
+        <label>M-Pesa number</label><input id="depPhone" readonly>
+        <button class="b b-p" id="depBtn">Deposit via M-Pesa</button>
+        <div id="depMsg"></div>
+        <div class="al w">Min deposit KES 500, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
+        <button class="b b-x back">‹ Back</button>
+      </div>
+      <div id="depLoadingArea" class="hidden dep-load">
+        <div class="spinner"></div>
+        <div class="dep-load-title" id="depLoadTitle">Checking details...</div>
+        <div class="dep-load-sub" id="depLoadSub">Please wait</div>
+        <button class="b b-x" id="depCancelWait" style="margin-top:18px;display:none">Close</button>
+      </div>
     </div>
     <div id="wdPanel" class="hidden">
       <div id="wdFormArea">
@@ -300,7 +314,13 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
         <button class="b b-x back" style="margin-top:16px">‹ Back</button>
       </div>
     </div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:40px;height:40px;border:4px solid #30363a;border-top-color:#4f67f6;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dep-load{text-align:center;padding:28px 12px}
+.dep-load-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px}
+.dep-load-sub{font-size:12px;color:#7db3ff}
+</style>
     <div id="histPanel" class="hidden">
       <div class="empty">No bets yet.<br><small>Placed bets will show here.</small></div>
       <button class="b b-x back">‹ Back</button>
@@ -448,7 +468,7 @@ $('authForm').addEventListener('submit',e=>{
 function openAcc(tab){
   $('accBal').textContent=fmt(user.balance).replace(/^(.*) KES$/,'KES $1');
   $('accPhone').textContent=user.phone;$('accPhone2').textContent=user.phone.replace('+','');
-  $('depPhone').value=stkPhone(user.phone);$('depMsg').innerHTML='';$('wdMsg').innerHTML='';$('depAmt').value='';$('wdAmt').value='';
+  $('depPhone').value=stkPhone(user.phone);$('depMsg').innerHTML='';$('wdMsg').innerHTML='';$('depAmt').value='';try{const f=$('depFormArea'),l=$('depLoadingArea');if(f)f.classList.remove('hidden');if(l)l.classList.add('hidden');}catch(e){}$('wdAmt').value='';
   setTab(tab||'main');$('accModal').classList.remove('hidden')}
 function setTab(t){
   ['main','dep','wd','hist'].forEach(k=>$({main:'accMain',dep:'depPanel',wd:'wdPanel',hist:'histPanel'}[k]).classList.toggle('hidden',k!==t));
@@ -491,16 +511,53 @@ $('depBtn').onclick=async()=>{
   const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
   if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 500.','e');
   if(amt>DEPOSIT.MAX)return msg(out,'Maximum deposit is KES 25,000.','e');
-  btn.disabled=true;btn.textContent='Waiting for M-Pesa…';
-  msg(out,`Sending request to ${stkPhone(user.phone)}… waiting for confirmation.`,'w');
+
+  const form=$('depFormArea'), load=$('depLoadingArea');
+  const title=$('depLoadTitle'), sub=$('depLoadSub');
+  const setLoad=(t,s)=>{if(title)title.textContent=t;if(sub)sub.textContent=s};
+
+  btn.disabled=true;
+  if(form)form.classList.add('hidden');
+  if(load)load.classList.remove('hidden');
+  setLoad('Checking details...','Please wait');
+  await new Promise(r=>setTimeout(r,450));
+  setLoad('Validating number...','Confirming M-Pesa details');
+  await new Promise(r=>setTimeout(r,400));
+  setLoad('Sending STK push...','Requesting payment on your phone');
+
+  // After STK is in flight, wording switches inside requestDeposit stages via callbacks
+  let phaseTimer=null;
+  const armWaitCopy=()=>{
+    setLoad('Waiting for M-Pesa...','Enter PIN on your phone to confirm');
+    phaseTimer=setTimeout(()=>setLoad('Still waiting...','Complete the M-Pesa PIN on your phone'), 18000);
+  };
+
   try{
+    // brief pause so user sees "Sending STK" then hand off to confirmed poll
+    await new Promise(r=>setTimeout(r,350));
+    armWaitCopy();
     const r=await requestDeposit(amt,stkPhone(user.phone));
+    if(phaseTimer)clearTimeout(phaseTimer);
+
     if(r&&r.success){
-      user.balance=Number(user.balance||0)+r.amount+r.bonus;saveUser();header();
-      $('accBal').textContent=fmt(user.balance);$('depAmt').value='';
-      msg(out,'✅ '+(r.message||'Deposit successful.')+(r.bonus?` 🎁 KES ${r.bonus.toLocaleString('en-US')} promo bonus added!`:''),'s');
-    }else msg(out,'❌ '+((r&&r.message)||'Deposit failed. Please try again.'),'e');
+      setLoad('Payment confirmed','Updating your balance…');
+      await new Promise(x=>setTimeout(x,400));
+      user.balance=Number(user.balance||0)+Number(r.amount||0)+Number(r.bonus||0);
+      saveUser();header();
+      if($('accBal'))$('accBal').textContent=fmt(user.balance);
+      if($('depAmt'))$('depAmt').value='';
+      if(load)load.classList.add('hidden');
+      if(form)form.classList.remove('hidden');
+      msg(out,'✅ '+(r.message||'Deposit successful.')+(r.bonus?` 🎁 KES ${Number(r.bonus).toLocaleString('en-US')} promo bonus added!`:''),'s');
+    }else{
+      if(load)load.classList.add('hidden');
+      if(form)form.classList.remove('hidden');
+      msg(out,'❌ '+((r&&r.message)||'Deposit failed. Please try again.'),'e');
+    }
   }catch(err){
+    if(phaseTimer)clearTimeout(phaseTimer);
+    if(load)load.classList.add('hidden');
+    if(form)form.classList.remove('hidden');
     msg(out,err.name==='AbortError'?'❌ No confirmation from the payment server in time. If you paid, your balance will update once confirmed.':'❌ Could not reach the payment server.','e');
   }
   btn.disabled=false;btn.textContent='Deposit via M-Pesa';
