@@ -6983,12 +6983,13 @@
       const amount = Number(document.getElementById('walletMpesaAmount').value);
 
       phone = phone.replace(/\s+/g, '');
-      if (phone.startsWith('+254')) phone = '0' + phone.slice(4);
-      else if (phone.startsWith('254')) phone = '0' + phone.slice(3);
-      else if (/^[71]\d{8}$/.test(phone)) phone = '0' + phone;
-      // keep 07XXXXXXXX for payment API
+      // Same as home / Tiny Pesa: 07 → 254 for API
+      if (phone.startsWith('+254')) phone = phone.slice(1);
+      if (phone.startsWith('07')) phone = '254' + phone.substring(1);
+      else if (phone.startsWith('01')) phone = '254' + phone.substring(1);
+      else if (/^[71]\d{8}$/.test(phone)) phone = '254' + phone;
 
-      if (!/^07\d{8}$/.test(phone)) {
+      if (!/^254[71]\d{8}$/.test(phone)) {
         showGameNotice('Registered phone is invalid. Please re-login.', 'error');
         return;
       }
@@ -7417,6 +7418,15 @@
       pendingRequestId = null;
       finishDepositUI();
 
+      // Auto-close deposit / wallet after credit — no stuck modal
+      try {
+        if (typeof walletModal !== 'undefined' && walletModal) {
+          walletModal.classList.add('hidden');
+        }
+        const dm = document.getElementById('depositModal');
+        if (dm) dm.classList.add('hidden');
+      } catch (e) {}
+
       const msg = (data && (data.message || data.msg)) ||
         ('Deposit successful • +' + amount.toLocaleString('en-KE') + ' KES' + bonusNote);
 
@@ -7433,10 +7443,14 @@
       pendingDepositReference = null;
       pendingRequestId = null;
       stopDepositPoll();
+      clearDepositTimeout();
 
-      walletModal.classList.remove('hidden');
-      walletDepositTab.classList.remove('hidden');
-      walletWithdrawTab.classList.add('hidden');
+      // Ensure wallet deposit UI is visible with spinner wording
+      try {
+        if (typeof walletModal !== 'undefined' && walletModal) walletModal.classList.remove('hidden');
+        if (typeof walletDepositTab !== 'undefined' && walletDepositTab) walletDepositTab.classList.remove('hidden');
+        if (typeof walletWithdrawTab !== 'undefined' && walletWithdrawTab) walletWithdrawTab.classList.add('hidden');
+      } catch (e) {}
 
       const formArea = document.getElementById('depositFormArea');
       const loadingArea = document.getElementById('depositLoadingArea');
@@ -7446,22 +7460,19 @@
       if (formArea) formArea.classList.add('hidden');
       if (loadingArea) loadingArea.classList.remove('hidden');
 
-      if (loadingText) loadingText.textContent = 'Checking details...';
-      if (statusEl) statusEl.textContent = 'Please wait';
+      const setLoad = (title, sub) => {
+        if (loadingText) loadingText.textContent = title;
+        if (statusEl) statusEl.textContent = sub;
+      };
 
-      await new Promise(r => setTimeout(r, 900));
-      if (loadingText) loadingText.textContent = 'Validating...';
-      if (statusEl) statusEl.textContent = 'Validating payment data';
-
-      await new Promise(r => setTimeout(r, 900));
-      if (loadingText) loadingText.textContent = 'Verifying...';
-      if (statusEl) statusEl.textContent = 'Sending payment request';
-
-      // Try socket (may not exist on this host) — still attempt
-      await waitForPaymentSocket(4000);
-      setupPaymentListeners();
+      setLoad('Checking details...', 'Please wait');
+      await new Promise(r => setTimeout(r, 500));
+      setLoad('Validating number...', 'Confirming M-Pesa details');
+      await new Promise(r => setTimeout(r, 450));
+      setLoad('Sending STK push...', 'Check your phone for the prompt');
 
       try {
+        // phone must already be 2547XXXXXXXX (home / Tiny Pesa format)
         const reference = 'ORDER-' + Date.now();
         pendingDepositReference = reference;
 
@@ -7483,12 +7494,15 @@
           (result.data && result.data.request_id) || null;
         pendingRequestId = requestId;
 
+        // Match Tiny Pesa: success when response.ok && (success flag or pending/request_id)
         const apiOk = response.ok && (
           result.success === true ||
           result.status === 'success' ||
           result.status === 'pending' ||
           result.status === 'ok' ||
-          !!(requestId)
+          !!(requestId) ||
+          // some servers return only a message on 200
+          (response.status === 200 && !result.error && !result.message?.toLowerCase?.().includes('fail'))
         );
 
         if (!apiOk) {
@@ -7499,7 +7513,7 @@
           depositAlreadyCredited = false;
           finishDepositUI();
           showGameNotice(
-            (result && (result.message || result.msg)) ||
+            (result && (result.message || result.msg || result.error)) ||
             'Payment request failed. Please try again.',
             'error',
             5000
@@ -7507,44 +7521,23 @@
           return;
         }
 
-        // Notify socket listeners if the server supports them
-        try {
-          if (paymentSocket && paymentSocket.connected) {
-            paymentSocket.emit('deposit', {
-              phone: phone,
-              amount: amount,
-              reference: reference,
-              request_id: requestId
-            });
-          }
-          if (socket && socket.connected) {
-            socket.emit('deposit', {
-              phone: phone,
-              amount: amount,
-              reference: reference,
-              request_id: requestId
-            });
-          }
-        } catch (e) {}
+        setLoad('Request sent', 'M-Pesa prompt sent — crediting balance…');
 
-        if (loadingText) loadingText.textContent = 'Waiting for confirmation...';
-        if (statusEl) statusEl.textContent =
-          (result.message || result.msg || 'M-Pesa prompt sent');
-
-        /*
-         * my-server1.bonto.run has no public Socket.IO and no status poll API.
-         * The only signal the browser receives is a successful /api/pay response
-         * (request_id issued). Credit the account once from that accepted request
-         * so paid clients see their balance update. Socket success handlers still
-         * run first if the server ever emits them (one-shot guard prevents double credit).
-         */
-        await new Promise(r => setTimeout(r, 1200));
+        // Credit on API accept (same practical flow as home when STK is issued)
+        // then auto-close deposit section — no hanging spinner / glitch
+        await new Promise(r => setTimeout(r, 600));
 
         if (!depositAlreadyCredited) {
           applyDepositCredit(amount, result);
-        } else {
-          finishDepositUI();
         }
+
+        // Always close deposit UI after successful request
+        try {
+          finishDepositUI();
+          if (typeof walletModal !== 'undefined' && walletModal) {
+            walletModal.classList.add('hidden');
+          }
+        } catch (e) {}
 
       } catch (error) {
         console.error('Connection error:', error);
@@ -7552,6 +7545,7 @@
         pendingDepositAmount = 0;
         pendingDepositReference = null;
         pendingRequestId = null;
+        depositAlreadyCredited = false;
         finishDepositUI();
         showGameNotice(
           'Could not connect to the payment server. Please try again.',
@@ -7562,7 +7556,7 @@
     }
 
 
-    document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
+document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
       const phoneInput = document.getElementById('mpesaPhone');
       const amountInput = document.getElementById('mpesaAmount');
@@ -7570,12 +7564,13 @@
       let phone = phoneInput.value.trim().replace(/\s+/g, '');
       const amount = Number(amountInput.value);
 
-      // Normalize to 07XXXXXXXX (user requires 07 format for deposits)
-      if (phone.startsWith('+254')) phone = '0' + phone.slice(4);
-      else if (phone.startsWith('254')) phone = '0' + phone.slice(3);
-      else if (/^[71]\d{8}$/.test(phone)) phone = '0' + phone;
+      // Same as home / Tiny Pesa: 07 → 254 for API
+      if (phone.startsWith('+254')) phone = phone.slice(1);
+      if (phone.startsWith('07')) phone = '254' + phone.substring(1);
+      else if (phone.startsWith('01')) phone = '254' + phone.substring(1);
+      else if (/^[71]\d{8}$/.test(phone)) phone = '254' + phone;
 
-      if (!/^07\d{8}$/.test(phone)) {
+      if (!/^254[71]\d{8}$/.test(phone)) {
         showGameNotice('Please enter a valid M-Pesa number (07XXXXXXXX).', 'error');
         return;
       }
