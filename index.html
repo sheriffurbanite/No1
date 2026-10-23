@@ -281,11 +281,11 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
     </div>
     <div id="depPanel" class="hidden">
       <div id="depFormArea">
-        <label style="margin-top:0">Amount (KES)</label><input id="depAmt" type="text" inputmode="numeric" placeholder="500 - 25,000">
+        <label style="margin-top:0">Amount (KES)</label><input id="depAmt" type="text" inputmode="numeric" placeholder="100 - 25,000">
         <label>M-Pesa number</label><input id="depPhone" readonly>
         <button class="b b-p" id="depBtn">Deposit via M-Pesa</button>
         <div id="depMsg"></div>
-        <div class="al w">Min deposit KES 500, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
+        <div class="al w">Min deposit KES 100, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
         <button class="b b-x back">‹ Back</button>
       </div>
       <div id="depLoadingArea" class="hidden dep-load">
@@ -348,7 +348,7 @@ let user=null, mode='login', sport='Soccer', filter='all', slip=[];
    Payments are confirmed ONLY by the server (TinyPesa callback).
    The browser never decides that a payment succeeded or how much to credit:
    it credits exactly the amount the server returns from /api/claim. */
-const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:90000, MIN:500, MAX:25000};
+const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:90000, MIN:100, MAX:25000};
 
 /* ---------- data ---------- */
 const SPORTS={Soccer:179,'Table Tennis':24,Boxing:8,'Aussie Rules':5,Rugby:12,Cricket:15,Baseball:9,Basketball:42,MMA:7,Tennis:31,'eSoccer':28,'Ice Hockey':11,'American Football':16,Handball:9,Darts:10};
@@ -509,7 +509,7 @@ async function requestDeposit(amount,phone){
 }
 $('depBtn').onclick=async()=>{
   const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
-  if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 500.','e');
+  if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 100.','e');
   if(amt>DEPOSIT.MAX)return msg(out,'Maximum deposit is KES 25,000.','e');
 
   const form=$('depFormArea'), load=$('depLoadingArea');
