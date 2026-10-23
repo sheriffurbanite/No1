@@ -827,7 +827,7 @@
       z-index:2
     }
     @media (max-width:420px){
-      .dual-bet-panels{ grid-template-columns:1fr; }
+      .dual-bet-panels{grid-template-columns:1fr}
     }
 
     .bet-panel-box{
@@ -1139,9 +1139,9 @@
       color:#00b8d1;
       letter-spacing:-0.5px;
     }
-    .win-bubble .cashout-mult.low{ color:#00b8d1 !important; }
-    .win-bubble .cashout-mult.mid{ color:#9a35cf !important; }
-    .win-bubble .cashout-mult.high{ color:#d826c0 !important; }
+    .win-bubble .cashout-mult.low{color:#00b8d1!important}
+    .win-bubble .cashout-mult.mid{color:#9a35cf!important}
+    .win-bubble .cashout-mult.high{color:#d826c0!important}
 
     .win-bubble .win-badge{
       background:linear-gradient(180deg, #2ecc40 0%, #27ae60 100%);
@@ -2022,7 +2022,7 @@
 
   <div
     id="gameView"
-    class="aviator-root"
+    class="aviator-root hidden"
   >
 
     <header class="top-nav">
@@ -2053,7 +2053,7 @@
         </button>
 
         <span class="balance-amount" id="balanceDisplayWrap">
-          
+          <span id="demoIndicator" class="demo-in-balance hidden">DEMO</span>
           <span id="balanceDisplay">0.00 KES</span>
         </span>
 
@@ -2076,7 +2076,9 @@
           </button>
           <div id="navMenuDrop" class="nav-menu-drop hidden">
             <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
+            
             <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
+            
           </div>
         </div>
 
@@ -2956,7 +2958,6 @@
     </div>
 
   </div>
-
 </div>
 
   <!-- Background music: built-in only, never visible -->
@@ -2989,36 +2990,6 @@
     <source src="https://res.cloudinary.com/qegjv5mo/video/upload/VID-20261006-WA0001.mp4" type="video/mp4">
   </audio>
 
-  
-  <!-- LIVE CHAT -->
-  <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
-    <div class="chat-panel-head">
-      <div class="chat-head-left">
-        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Choose avatar">☺</button>
-        <span class="chat-online-label">Online: <b id="chatOnlineCount">0</b></span>
-      </div>
-      <button type="button" class="chat-close" id="chatCloseBtn" aria-label="Close chat">×</button>
-    </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <button type="button" class="chat-new-pill" id="chatNewPill">New messages ▾</button>
-    <div class="chat-input-bar">
-      <input type="text" id="chatInput" placeholder="Your message..." maxlength="160" autocomplete="off">
-      <button type="button" class="chat-send-btn" id="chatSendBtn" aria-label="Send">➤</button>
-    </div>
-  </div>
-
-  <div id="avatarPickModal" class="avatar-pick-modal hidden">
-    <div class="avatar-pick-card">
-      <h3>Choose your avatar</h3>
-      <div class="avatar-grid" id="avatarGrid"></div>
-      <div class="avatar-pick-actions">
-        <button type="button" class="avatar-cancel" id="avatarCancelBtn">Cancel</button>
-        <button type="button" class="avatar-save" id="avatarSaveBtn">Save</button>
-      </div>
-    </div>
-  </div>
-
-  
   <script>
 
     /* ==========================================
@@ -3048,7 +3019,7 @@
        STATE
     ========================================== */
 
-    let isDemo = false; // demo removed — always real balance
+    let isDemo = false;
 
     let currentUser = null;
 
@@ -3100,7 +3071,7 @@
        ELEMENTS
     ========================================== */
 
-    const loginView = null; // login only on home page
+    const loginView = null;
 
     const gameView =
       document.getElementById('gameView');
@@ -4234,79 +4205,6 @@
        NOTICES
     ========================================== */
 
-    
-    function showGame(){
-      try { setAppRoute('#/aviator'); } catch (e) {}
-
-      var splash = document.getElementById('splash');
-      var splashConn = document.getElementById('splashConnection');
-      var gameViewEl = document.getElementById('gameView');
-
-      // --- SPLASH (always show loading animation) ---
-      if (splash) {
-        splash.classList.remove('hidden', 'fade-out');
-        splash.style.display = 'flex';
-        splash.style.opacity = '1';
-        if (splashConn) splashConn.textContent = 'Connection...';
-      }
-      if (gameViewEl) {
-        gameViewEl.classList.add('hidden');
-      }
-
-      function safe(fn){ try { if (typeof fn === 'function') fn(); } catch (e) { console.warn(e); } }
-
-      function finishEnterGame(){
-        if (splash) {
-          splash.classList.add('fade-out');
-          setTimeout(function(){
-            splash.classList.add('hidden');
-            splash.style.display = 'none';
-          }, 380);
-        }
-        if (gameViewEl) {
-          gameViewEl.classList.remove('hidden');
-          gameViewEl.style.display = '';
-        }
-
-        safe(updateBalanceUI);
-        safe(generateLiveBoard);
-        safe(seedPreviousMults);
-        safe(renderBetsList);
-        safe(renderMultiplierRibbon);
-
-        // People playing board refresh
-        try {
-          if (typeof liveBoardPlayers !== 'undefined' && (!liveBoardPlayers || !liveBoardPlayers.length)) {
-            generateLiveBoard();
-          }
-          renderBetsList();
-        } catch (e) {}
-
-        requestAnimationFrame(function(){
-          safe(resizeCanvas);
-          safe(drawScene);
-          safe(connectSignals);
-          safe(connectPaymentSocket);
-          // Music / sounds
-          try {
-            inGameAudio = true;
-            musicOn = (typeof musicOn === 'undefined') ? true : musicOn;
-          } catch (e) {}
-          safe(tryPlayMusic);
-          safe(restartMusicForRound);
-          safe(updateSpeakerUI);
-          // Second resize after layout settles (fixes shrink)
-          setTimeout(function(){ safe(resizeCanvas); safe(drawScene); }, 200);
-          setTimeout(function(){ safe(resizeCanvas); }, 600);
-        });
-      }
-
-      setTimeout(function(){ if (splashConn) splashConn.textContent = 'Connecting...'; }, 500);
-      setTimeout(function(){ if (splashConn) splashConn.textContent = 'Almost ready...'; }, 1200);
-      setTimeout(finishEnterGame, 2000);
-    }
-
-
     function showGameNotice(
       message,
       type='error',
@@ -4354,12 +4252,12 @@
     let top5BubbleTimer = null;
     function showTop5WinBubbles(){
       try {
-        if (top5BubbleTimer) { clearTimeout(top5BubbleTimer); top5BubbleTimer = null; }
+        if (top5BubbleTimer) clearTimeout(top5BubbleTimer);
         var wins = [];
         if (typeof liveBoardPlayers !== 'undefined' && Array.isArray(liveBoardPlayers)) {
           liveBoardPlayers.forEach(function(p){
             if (p && p.cashed && Number(p.win) > 0)
-              wins.push({ amount: Number(p.win), mult: Number(p.mult || 1), name: p.name || 'Player' });
+              wins.push({amount:Number(p.win), mult:Number(p.mult||1), name:p.name||'Player'});
           });
         }
         wins.sort(function(a,b){ return b.amount - a.amount; });
@@ -4370,10 +4268,6 @@
           if (i >= top.length) return;
           var w = top[i++];
           showWinBubble(w.amount, w.mult);
-          try {
-            var label = document.querySelector('.win-bubble .cashout-label');
-            if (label) label.textContent = (w.name === 'You' ? 'You cashed out!' : (w.name + ' cashed out!'));
-          } catch(e){}
           top5BubbleTimer = setTimeout(next, 1600);
         }
         top5BubbleTimer = setTimeout(next, 700);
@@ -4389,7 +4283,6 @@
       if(winMultEl){
         var m = Number(multiplier || currentMult) || 1;
         winMultEl.textContent = m.toFixed(2) + 'x';
-        // Same colours as plane / history ribbon (low cyan, mid purple, high pink)
         var cls = (typeof multClass === 'function') ? multClass(m) : (m >= 10 ? 'high' : m >= 2 ? 'mid' : 'low');
         winMultEl.classList.remove('low','mid','high');
         winMultEl.classList.add(cls);
@@ -6063,19 +5956,13 @@
     ========================================== */
 
     function fmtBalance(n){
-      n = Number(n || 0);
+      n = Number(n||0);
       var a = Math.abs(n);
-      if (a <= 900) {
-        return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' KES';
-      }
-      var strip = function(v, u) {
-        var s = (+v.toFixed(v >= 100 || v < 10 ? 1 : 2)).toString().replace(/\.0$/, '');
-        return s + u;
-      };
-      if (a >= 999500) return strip(n / 1e6, 'M') + ' KES';
-      return strip(n / 1e3, 'k') + ' KES';
+      if (a <= 900) return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' KES';
+      var strip = function(v,u){ return (+v.toFixed(v>=100||v<10?1:2)).toString().replace(/\.0$/,'')+u; };
+      if (a >= 999500) return strip(n/1e6,'M')+' KES';
+      return strip(n/1e3,'k')+' KES';
     }
-
     function updateBalanceUI(){
 
       if(!currentUser)
@@ -6104,9 +5991,66 @@
     }
 
 
-    /* DEMO TOGGLE removed */
+    /* ==========================================
+       DEMO TOGGLE
+    ========================================== */
 
-/* ==========================================
+    (document.getElementById('demoToggle')||{addEventListener:function(){}}).addEventListener(
+        'click',
+        ()=>{
+
+          isDemo =
+            !isDemo;
+
+
+          localStorage.setItem(
+            LS_DEMO,
+            isDemo
+              ? 'true'
+              : 'false'
+          );
+
+
+          document
+            .getElementById(
+              'demoToggle'
+            )
+            .classList.toggle(
+              'on',
+              isDemo
+            );
+
+
+          document
+            .getElementById(
+              'demoStatus'
+            )
+            .classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+
+          updateBalanceUI();
+
+
+          if(gameView &&
+             !gameView.classList.contains(
+               'hidden'
+             )){
+
+            demoIndicator.classList.toggle(
+              'hidden',
+              !isDemo
+            );
+
+          }
+
+        }
+      );
+
+
+    /* ==========================================
        COUNTRY
     ========================================== */
 
@@ -6204,7 +6148,543 @@
        LOGIN / REGISTER SUBMIT
     ========================================== */
 
-    /* loginForm removed — auth is on home page only */
+    (document.getElementById('loginForm')||{addEventListener:function(){}}).addEventListener(
+        'submit',
+        e=>{
+
+          e.preventDefault();
+
+
+          const phone =
+            normalizePhone(
+              document
+                .getElementById(
+                  'phoneInput'
+                )
+                .value
+            );
+
+
+          const password =
+            document
+              .getElementById(
+                'passwordInput'
+              )
+              .value;
+
+
+          const country =
+            document
+              .getElementById(
+                'countrySelect'
+              )
+              .value;
+
+
+          if(
+            phone.length !==
+            9
+          ){
+
+            showAuthAlert(
+              'Valid 9-digit phone required'
+            );
+
+            return;
+
+          }
+
+
+          if(
+            password.length <
+            4
+          ){
+
+            showAuthAlert(
+              'Password min 4 chars'
+            );
+
+            return;
+
+          }
+
+
+          const key =
+            accountKey(
+              country,
+              phone
+            );
+
+
+          const accounts =
+            loadAccounts();
+
+
+          /* RESET PASSWORD — new password only, no old password asked */
+          if (authMode === 'reset') {
+
+            const confirm =
+              document
+                .getElementById(
+                  'confirmPasswordInput'
+                )
+                .value;
+
+            if (password !== confirm) {
+              showAuthAlert('Passwords do not match');
+              return;
+            }
+
+            if (!accounts[key]) {
+              showAuthAlert('Account not found. Please register first.');
+              return;
+            }
+
+            accounts[key].password = password;
+            saveAccounts(accounts);
+
+            showAuthAlert(
+              'Password updated. You can log in with your new password.',
+              'success'
+            );
+
+            setTimeout(() => setAuthMode('login'), 900);
+            return;
+          }
+
+
+          /* REGISTER */
+
+          if(
+            authMode ===
+            'register'
+          ){
+
+            const confirm =
+              document
+                .getElementById(
+                  'confirmPasswordInput'
+                )
+                .value;
+
+
+            if(
+              password !==
+              confirm
+            ){
+
+              showAuthAlert(
+                'Passwords do not match'
+              );
+
+              return;
+
+            }
+
+
+            if(
+              accounts[key]
+            ){
+
+              showAuthAlert(
+                'This phone number is already registered'
+              );
+
+              return;
+
+            }
+
+
+            accounts[key] = {
+
+              phone:key,
+
+              country,
+
+              password,
+
+              balance:0,
+
+              demoBalance:10000,
+
+              betHistory:[],
+
+              welcomeBonus:false,
+
+              firstDepositBonusClaimed:false,
+
+              createdAt:Date.now()
+
+            };
+
+
+            saveAccounts(
+              accounts
+            );
+
+
+            createSession(
+              accounts[key]
+            );
+
+
+            localStorage.setItem(
+              LS_DEMO,
+              isDemo
+                ? 'true'
+                : 'false'
+            );
+
+
+            showAuthAlert(
+              'Account created. Make a first deposit of KSh 5,000 or more and you will receive a KSh 2,000 bonus.',
+              'success'
+            );
+
+
+            setTimeout(
+              showGame,
+              1200
+            );
+
+
+            return;
+
+          }
+
+
+          /* LOGIN */
+
+          const account =
+            accounts[key];
+
+
+          if(!account){
+
+            showAuthAlert(
+              'Account not found. Please register first.'
+            );
+
+            return;
+
+          }
+
+
+          if(
+            account.password !==
+            password
+          ){
+
+            showAuthAlert(
+              'Incorrect password'
+            );
+
+            return;
+
+          }
+
+
+          createSession(
+            account
+          );
+
+
+          localStorage.setItem(
+            LS_DEMO,
+            isDemo
+              ? 'true'
+              : 'false'
+          );
+
+
+          showAuthAlert(
+            'Logged in successfully.',
+            'success'
+          );
+
+
+          setTimeout(
+            showGame,
+            400
+          );
+
+        }
+      );
+
+
+    /* ==========================================
+       SHOW LOGIN
+    ========================================== */
+
+    function setAppRoute(path){
+      try {
+        let target = String(path || '#/aviator');
+        if (!target.startsWith('#')) {
+          target = '#' + (target.startsWith('/') ? target : ('/' + target));
+        }
+        // Normalize #login → #/login
+        if (target.length > 1 && target[1] !== '/') {
+          target = '#/' + target.slice(1);
+        }
+        const url = window.location.pathname + window.location.search + target;
+        history.replaceState({ view: target }, '', url);
+      } catch (e) {
+        try { window.location.hash = String(path || '#/aviator'); } catch (e2) {}
+      }
+    }
+
+    function showLogin(){
+      // Login is on HOME page only
+      try { setAppRoute('#/aviator'); } catch(e) {}
+      if (typeof showGame === 'function') showGame();
+    }
+
+
+    /* ==========================================
+       SHOW GAME
+    ========================================== */
+
+    function showGame(){
+
+      setAppRoute('#/aviator');
+
+      if(loginView) loginView.classList.add('hidden');
+
+      // Spribe-style splash loading after login
+      const splash = document.getElementById('splash');
+      const splashConn = document.getElementById('splashConnection');
+      if (splash) {
+        splash.classList.remove('hidden', 'fade-out');
+        if (splashConn) splashConn.textContent = 'Connection...';
+      }
+
+      const finishEnterGame = () => {
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(() => splash.classList.add('hidden'), 350);
+        }
+
+        gameView.classList.remove('hidden');
+        updateBalanceUI();
+        try { var _di = document.getElementById('demoIndicator'); if (_di) _di.classList.add('hidden'); } catch(e) {}
+        generateLiveBoard();
+        seedPreviousMults();
+        renderBetsList();
+
+        requestAnimationFrame(() => {
+          resizeCanvas();
+          connectSignals();
+          connectPaymentSocket();
+          inGameAudio = true;
+          if (typeof tryPlayMusic === 'function') tryPlayMusic();
+          if (typeof restartMusicForRound === 'function') restartMusicForRound();
+        });
+      };
+
+      // Brief loading sequence then enter game
+      setTimeout(() => {
+        if (splashConn) splashConn.textContent = 'Connecting...';
+      }, 600);
+      setTimeout(() => {
+        if (splashConn) splashConn.textContent = 'Almost ready...';
+      }, 1400);
+      setTimeout(finishEnterGame, 2200);
+
+    }
+
+
+    /* ==========================================
+       DEPOSIT MODAL
+    ========================================== */
+
+    const depositModal =
+      document.getElementById(
+        'depositModal'
+      );
+
+    const depositLoading =
+      document.getElementById(
+        'depositLoading'
+      );
+
+    const depositLoadingText =
+      document.getElementById(
+        'depositLoadingText'
+      );
+
+    const demoDepositArea =
+      document.getElementById(
+        'demoDepositArea'
+      );
+
+    const realDepositArea =
+      document.getElementById(
+        'realDepositArea'
+      );
+
+    const depositModalText =
+      document.getElementById(
+        'depositModalText'
+      );
+
+
+    /* ---------- WALLET DASHBOARD ---------- */
+
+    const walletModal = document.getElementById('walletModal');
+    const walletBalanceDisplay = document.getElementById('walletBalanceDisplay');
+    const walletDepositTab = document.getElementById('walletDepositTab');
+    const walletWithdrawTab = document.getElementById('walletWithdrawTab');
+    const walletDemoDeposit = document.getElementById('walletDemoDeposit');
+    const walletRealDeposit = document.getElementById('walletRealDeposit');
+
+    function updateWalletBalance(){
+      if(!currentUser) return;
+      const bal = isDemo
+        ? Number(currentUser.demoBalance ?? 10000)
+        : Number(currentUser.balance ?? 0);
+      walletBalanceDisplay.textContent =
+        bal.toLocaleString('en-KE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + ' KES';
+    }
+
+    function openWalletModal(){
+      updateWalletBalance();
+
+      // Lock phone to registered account number (no re-entry)
+      try {
+        const regPhone = (currentUser && currentUser.phone) ? String(currentUser.phone) : '';
+        const displayPhone = regPhone.replace(/^254/, '0');
+        const wp = document.getElementById('walletMpesaPhone');
+        const mp = document.getElementById('mpesaPhone');
+        if (wp) { wp.value = displayPhone || regPhone; wp.readOnly = true; }
+        if (mp) { mp.value = displayPhone || regPhone; mp.readOnly = true; }
+      } catch(e){}
+
+
+      // Deposit always visible; withdraw panel collapsed by default
+      walletDepositTab.classList.remove('hidden');
+      walletWithdrawTab.classList.add('hidden');
+      const expandBtn = document.getElementById('withdrawExpandBtn');
+      if (expandBtn) expandBtn.classList.remove('open');
+
+      // Prepare withdraw demo/real visibility
+      const demoBlock = document.getElementById('withdrawDemoBlock');
+      const formArea = document.getElementById('withdrawFormArea');
+      const loadingArea = document.getElementById('withdrawLoadingArea');
+      const pendingArea = document.getElementById('withdrawPendingArea');
+      if (loadingArea) loadingArea.classList.add('hidden');
+      if (pendingArea) pendingArea.classList.add('hidden');
+      if (isDemo) {
+        if (demoBlock) demoBlock.classList.remove('hidden');
+        if (formArea) formArea.classList.add('hidden');
+      } else {
+        if (demoBlock) demoBlock.classList.add('hidden');
+        if (formArea) formArea.classList.remove('hidden');
+      }
+
+      // Show correct deposit form
+      if(isDemo){
+        walletDemoDeposit.classList.remove('hidden');
+        walletRealDeposit.classList.add('hidden');
+      }else{
+        walletDemoDeposit.classList.add('hidden');
+        walletRealDeposit.classList.remove('hidden');
+
+        const phoneEl = document.getElementById('walletMpesaPhone');
+        if(currentUser && currentUser.phone){
+          const raw = currentUser.phone.replace(/\D/g,'');
+          const last9 = raw.slice(-9);
+          phoneEl.value = '0' + last9;
+        }
+        document.getElementById('walletMpesaAmount').value = '';
+      }
+
+      walletModal.classList.remove('hidden');
+    }
+
+    
+    document.getElementById('depositBtn').addEventListener('click', openWalletModal);
+
+    // Top-right hamburger menu (three horizontal lines)
+    (function setupNavMenu(){
+      const btn = document.getElementById('navMenuBtn');
+      const drop = document.getElementById('navMenuDrop');
+      if (!btn || !drop) return;
+      function closeDrop(){ drop.classList.add('hidden'); }
+      function toggleDrop(e){
+        e.stopPropagation();
+        drop.classList.toggle('hidden');
+      }
+      btn.addEventListener('click', toggleDrop);
+      document.addEventListener('click', (e) => {
+        if (!drop.classList.contains('hidden') && !drop.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+          closeDrop();
+        }
+      });
+      document.getElementById('menuDepositBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+      });
+      (document.getElementById('menuWithdrawBtn')||{addEventListener:function(){}}).addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+        const expandBtn = document.getElementById('withdrawExpandBtn');
+        const panel = document.getElementById('walletWithdrawTab');
+        if (panel) {
+          panel.classList.remove('hidden');
+          expandBtn?.classList.add('open');
+          const demoBlock = document.getElementById('withdrawDemoBlock');
+          const formArea = document.getElementById('withdrawFormArea');
+          document.getElementById('withdrawLoadingArea')?.classList.add('hidden');
+          document.getElementById('withdrawPendingArea')?.classList.add('hidden');
+          if (typeof isDemo !== 'undefined' && isDemo) {
+            demoBlock?.classList.remove('hidden');
+            formArea?.classList.add('hidden');
+          } else {
+            demoBlock?.classList.add('hidden');
+            formArea?.classList.remove('hidden');
+          }
+        }
+      });
+      document.getElementById('menuAccountBtn')?.addEventListener('click', () => {
+        closeDrop();
+        openWalletModal();
+      });
+      (document.getElementById('menuLogoutBtn')||{addEventListener:function(){}}).addEventListener('click', () => {
+        closeDrop();
+        const lm = document.getElementById('logoutModal');
+        if (lm) lm.classList.remove('hidden');
+      });
+    })();
+
+
+    // Expansion tab beside DEPOSIT — opens same Account wallet with Withdraw expanded
+    document.getElementById('withdrawNavBtn')?.addEventListener('click', () => {
+      openWalletModal();
+      const btn = document.getElementById('withdrawExpandBtn');
+      const panel = document.getElementById('walletWithdrawTab');
+      if (panel) {
+        panel.classList.remove('hidden');
+        btn?.classList.add('open');
+        const demoBlock = document.getElementById('withdrawDemoBlock');
+        const formArea = document.getElementById('withdrawFormArea');
+        const loadingArea = document.getElementById('withdrawLoadingArea');
+        const pendingArea = document.getElementById('withdrawPendingArea');
+        loadingArea?.classList.add('hidden');
+        pendingArea?.classList.add('hidden');
+        if (isDemo) {
+          demoBlock?.classList.remove('hidden');
+          formArea?.classList.add('hidden');
+        } else {
+          demoBlock?.classList.add('hidden');
+          formArea?.classList.remove('hidden');
+          const amountInput = document.getElementById('withdrawAmount');
+          if (amountInput) amountInput.value = '';
+        }
+      }
+    });
 
     document.getElementById('closeWalletBtn').addEventListener('click', () => {
       walletModal.classList.add('hidden');
@@ -6264,13 +6744,40 @@
     });
 
     // Wallet real M-Pesa deposit
-    document.getElementById('walletMpesaDepositBtn') && document.getElementById('walletMpesaDepositBtn').addEventListener('click', function(){
-      var el = document.getElementById('walletMpesaPhone');
-      var phone = el ? String(el.value || '').trim() : '';
-      if (!phone && currentUser && currentUser.phone && currentUser.phone !== 'guest') {
-        phone = String(currentUser.phone);
+    document.getElementById('walletMpesaDepositBtn').addEventListener('click', () => {
+      let phone = (currentUser && currentUser.phone) ? String(currentUser.phone).trim() : '';
+      if (!phone) {
+        const el = document.getElementById('walletMpesaPhone');
+        phone = el ? String(el.value || '').trim() : '';
       }
-      var amount = Number((document.getElementById('walletMpesaAmount') || {}).value);
+      const amount = Number(document.getElementById('walletMpesaAmount').value);
+
+      if (phone.startsWith('07')) {
+        phone = '254' + phone.substring(1);
+      } else if (phone.startsWith('01')) {
+        phone = '254' + phone.substring(1);
+      } else if (phone.startsWith('254')) {
+        // ok
+      } else if (/^[71]\d{8}$/.test(phone)) {
+        phone = '254' + phone;
+      }
+
+      if (!/^254[71]\d{8}$/.test(phone)) {
+        showGameNotice('Registered phone is invalid. Please re-login.', 'error');
+        return;
+      }
+
+      if (!Number.isFinite(amount) || amount < 500) {
+        showGameNotice('Minimum deposit is 500 KES', 'error');
+        return;
+      }
+
+      if (amount > 25000) {
+        showGameNotice('Maximum deposit is 25,000 KES', 'error');
+        return;
+      }
+
+      // Use socket-controlled deposit flow (shows staged loading in wallet)
       processMpesaDeposit(phone, amount);
     });
 
@@ -6691,109 +7198,82 @@
       return true;
     }
 
-    
-    /* ========== DEPOSIT — same code path as home page ========== */
-    const DEPOSIT = {
-      API: 'https://my-server1.bonto.run',
-      TIMEOUT_MS: 90000,
-      MIN: 500,
-      MAX: 25000
-    };
-
-    function stkPhoneFrom(p){
-      var d = String(p || '').replace(/\D/g, '');
-      if (d.startsWith('0')) d = '254' + d.slice(1);
-      else if (d.length === 9) d = '254' + d;
-      else if (d.startsWith('254')) { /* ok */ }
-      return d;
-    }
-
-    /* Identical flow to home requestDeposit(amount, phone) */
-    async function requestDeposit(amount, phone){
-      var ref = 'SC-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-      var j = async function(r){ try { return await r.json(); } catch(e){ return {}; } };
-      var r = await fetch(DEPOSIT.API + '/api/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amount, phone: phone, reference: ref })
-      });
-      var d = await j(r);
-      if (!r.ok || !d.success) return { success: false, message: d.message || 'Request failed' };
-      var end = Date.now() + DEPOSIT.TIMEOUT_MS;
-      while (Date.now() < end) {
-        await new Promise(function(x){ setTimeout(x, 3000); });
-        var s = await j(await fetch(DEPOSIT.API + '/api/status/' + encodeURIComponent(ref)));
-        if (s.status === 'failed') return { success: false, message: s.message || 'Payment failed or cancelled.' };
-        if (s.status === 'success') {
-          var c = await j(await fetch(DEPOSIT.API + '/api/claim/' + encodeURIComponent(ref), { method: 'POST' }));
-          return c.success
-            ? { success: true, amount: Number(c.amount) || 0, bonus: Number(c.bonus) || 0, message: 'Payment confirmed.' }
-            : { success: false, message: c.message || 'Payment could not be claimed.' };
-        }
-      }
-      var e = new Error('timeout');
-      e.name = 'AbortError';
-      throw e;
-    }
-
     async function processMpesaDeposit(phone, amount){
       if (isDepositing) return;
       isDepositing = true;
-
       amount = Number(amount);
-      phone = stkPhoneFrom(phone);
+      phone = String(phone||'').replace(/\D/g,'');
+      if (phone.startsWith('0')) phone = '254'+phone.slice(1);
+      else if (phone.length === 9) phone = '254'+phone;
 
       var formArea = document.getElementById('depositFormArea');
       var loadingArea = document.getElementById('depositLoadingArea');
       var loadingText = document.getElementById('depositSectionLoadingText');
-      var statusEl = loadingArea ? loadingArea.querySelector('.loading-status') : null;
+      var statusEl = loadingArea && loadingArea.querySelector('.loading-status');
 
       if (formArea) formArea.classList.add('hidden');
       if (loadingArea) loadingArea.classList.remove('hidden');
       if (loadingText) loadingText.textContent = 'Waiting for M-Pesa…';
-      if (statusEl) statusEl.textContent = 'Sending request to ' + phone + '…';
+      if (statusEl) statusEl.textContent = 'Sending request…';
+
+      var DEPOSIT_API = 'https://my-server1.bonto.run';
+      var TIMEOUT_MS = 90000;
+      var j = async function(r){ try { return await r.json(); } catch(e){ return {}; } };
 
       try {
-        if (!(amount >= DEPOSIT.MIN)) {
-          showGameNotice('Minimum deposit is KES 500', 'error');
-        } else if (amount > DEPOSIT.MAX) {
-          showGameNotice('Maximum deposit is KES 25,000', 'error');
-        } else if (!/^254[71]\d{8}$/.test(phone)) {
-          showGameNotice('Please enter a valid Kenyan M-Pesa number', 'error');
-        } else {
-          var r = await requestDeposit(amount, phone);
-          if (r && r.success) {
+        if (!(amount >= 500)) throw Object.assign(new Error('Minimum deposit is KES 500'), {soft:1});
+        if (amount > 25000) throw Object.assign(new Error('Maximum deposit is KES 25,000'), {soft:1});
+        if (!/^254[71]\d{8}$/.test(phone)) throw Object.assign(new Error('Enter a valid Kenyan M-Pesa number'), {soft:1});
+
+        var ref = 'SC-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+        var r = await fetch(DEPOSIT_API+'/api/pay', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({amount:amount, phone:phone, reference:ref})
+        });
+        var d = await j(r);
+        if (!r.ok || !d.success) throw new Error(d.message||'Request failed');
+
+        if (loadingText) loadingText.textContent = 'Waiting for confirmation…';
+        if (statusEl) statusEl.textContent = d.message || 'Check your phone';
+
+        var endAt = Date.now() + TIMEOUT_MS;
+        var done = false;
+        while (Date.now() < endAt) {
+          await new Promise(function(x){ setTimeout(x, 3000); });
+          var s = await j(await fetch(DEPOSIT_API+'/api/status/'+encodeURIComponent(ref)));
+          if (s.status === 'failed') throw new Error(s.message||'Payment failed or cancelled');
+          if (s.status === 'success') {
+            var c = await j(await fetch(DEPOSIT_API+'/api/claim/'+encodeURIComponent(ref), {method:'POST'}));
+            if (!c.success) throw new Error(c.message||'Could not claim payment');
+            var credited = Number(c.amount)||amount;
+            var bonus = Number(c.bonus)||0;
             if (currentUser) {
-              currentUser.balance = Number(currentUser.balance || 0) + Number(r.amount || 0) + Number(r.bonus || 0);
-              if (Number(r.bonus) > 0) currentUser.firstDepositBonusClaimed = true;
+              currentUser.balance = Number(currentUser.balance||0) + credited + bonus;
+              if (bonus > 0) currentUser.firstDepositBonusClaimed = true;
               saveCurrentUser();
               updateBalanceUI();
             }
-            var msg = '✅ ' + (r.message || 'Deposit successful.');
-            if (r.bonus) msg += ' 🎁 KES ' + Number(r.bonus).toLocaleString('en-US') + ' promo bonus added!';
-            else if (r.amount) msg = 'Deposit successful • +' + Number(r.amount).toLocaleString('en-KE') + ' KES';
-            showGameNotice(msg, 'success', 5000);
-            try {
-              var wm = document.getElementById('walletModal');
-              if (wm) wm.classList.add('hidden');
-            } catch(e) {}
-          } else {
-            showGameNotice('❌ ' + ((r && r.message) || 'Deposit failed. Please try again.'), 'error', 5000);
+            var msg = 'Deposit successful • +'+credited.toLocaleString('en-KE')+' KES';
+            if (bonus) msg += ' + bonus '+bonus.toLocaleString('en-KE');
+            if (typeof showGameNotice === 'function') showGameNotice(msg, 'success', 5000);
+            done = true;
+            break;
           }
         }
+        if (!done) throw Object.assign(new Error('No confirmation in time. If you paid, balance will update once confirmed.'), {name:'AbortError'});
       } catch (err) {
-        showGameNotice(
-          err && err.name === 'AbortError'
-            ? '❌ No confirmation from the payment server in time. If you paid, your balance will update once confirmed.'
-            : '❌ Could not reach the payment server.',
-          'error',
-          6000
-        );
+        if (typeof showGameNotice === 'function') {
+          showGameNotice((err && err.message) || 'Deposit failed', 'error', 5000);
+        }
       }
 
       isDepositing = false;
       if (loadingArea) loadingArea.classList.add('hidden');
       if (formArea) formArea.classList.remove('hidden');
+      try {
+        var wm = document.getElementById('walletModal');
+        if (wm) wm.classList.add('hidden');
+      } catch(e) {}
     }
 
 
@@ -6855,15 +7335,41 @@
             if (window.parent && window.parent !== window) {
               window.parent.postMessage('shika-close-aviator', '*');
             }
-          } catch (e) {}
-          try { setAppRoute('#/home'); } catch (e) {}
+          } catch(e) {}
         });
 
 
-    
+    (document.getElementById('cancelLogoutBtn')||{addEventListener:function(){}}).addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+        }
+      );
 
 
-    
+    (document.getElementById('confirmLogoutBtn')||{addEventListener:function(){}}).addEventListener(
+        'click',
+        ()=>{
+
+          logoutModal.classList.add(
+            'hidden'
+          );
+
+          localStorage.removeItem(
+            LS_USER
+          );
+
+          currentUser =
+            null;
+
+          showLogin();
+
+        }
+      );
 
 
     /* ==========================================
@@ -6914,13 +7420,19 @@
     ========================================== */
 
     function init(){
-      // Listen to HOME page login only — never show login UI here
+      try {
+        var di = document.getElementById('demoIndicator');
+        if (di) di.classList.add('hidden');
+        var dt = document.getElementById('demoToggle');
+        if (dt) dt.classList.remove('on');
+      } catch(e) {}
+
       var accounts = loadAccounts();
       var session = null;
       try {
-        var raw = localStorage.getItem(LS_USER); // shikachapaa_user from home
+        var raw = localStorage.getItem(LS_USER);
         if (raw) session = JSON.parse(raw);
-      } catch (e) {}
+      } catch(e) {}
 
       if (session && session.phone) {
         var key = session.phone;
@@ -6937,35 +7449,31 @@
             createdAt: Date.now()
           };
           saveAccounts(accounts);
-        } else {
-          // Prefer latest balance from accounts store (home may have updated it)
-          accounts[key].balance = Number(
-            accounts[key].balance != null ? accounts[key].balance : (session.balance || 0)
-          );
         }
         createSession(accounts[key]);
-        currentUser.balance = Number(accounts[key].balance || 0);
-        currentUser.firstDepositBonusClaimed = !!accounts[key].firstDepositBonusClaimed;
+        currentUser.balance = Number(accounts[key].balance != null ? accounts[key].balance : (session.balance || 0));
         saveCurrentUser();
       } else {
-        // Not logged in on home — still open game as guest (balance 0)
-        var guestKey = 'guest';
-        if (!accounts[guestKey]) {
-          accounts[guestKey] = {
-            phone: guestKey, country: '+254', password: '',
+        // Guest until home login — still play
+        if (!accounts['guest']) {
+          accounts['guest'] = {
+            phone: 'guest', country: '+254', password: '',
             balance: 0, demoBalance: 0, betHistory: [],
             welcomeBonus: false, firstDepositBonusClaimed: false,
             createdAt: Date.now()
           };
           saveAccounts(accounts);
         }
-        createSession(accounts[guestKey]);
+        createSession(accounts['guest']);
       }
 
-      try { setAppRoute('#/aviator'); } catch (e) {}
-      // Always enter via splash → game (NO login page)
-      showGame();
+      try { setAppRoute('#/aviator'); } catch(e) {}
+      showGame(); // original showGame = splash + music + board + chat ready
     }
+
+    /* ==========================================
+       ANIMATION LOOP
+    ========================================== */
 
     function loop(){
 
@@ -7265,7 +7773,7 @@
         } else if (h.includes('/download')) {
           downloadModal?.classList.remove('hidden');
         } else if (h.includes('/login') || h === '' || h === '#') {
-          /* no login in aviator */ showGame();
+          if (!currentUser) showLogin();
         }
       });
 
@@ -7380,7 +7888,7 @@
         }
 
         // seed 28 messages
-        for (var i = 0; i < 42; i++) messages.push(makeMsg(i % 7 === 0));
+        for (var i = 0; i < 40; i++) messages.push(makeMsg(i % 7 === 0));
         renderAll();
         if (onlineEl) onlineEl.textContent = String(rand(4800, 9200));
 
@@ -7406,7 +7914,7 @@
           if (stuckBottom) chatList.scrollTop = chatList.scrollHeight;
           else if (chatNewPill) chatNewPill.classList.add('show');
           if (onlineEl && Math.random() < 0.25) onlineEl.textContent = String(rand(4800, 9200));
-        }, 4200);
+        }, 4000);
 
         function sendMine(){
           var text = (chatInput && chatInput.value || '').trim();
@@ -7457,10 +7965,8 @@
           if (avatarModal) avatarModal.classList.add('hidden');
         });
       }
-      function startChat(){ try { boot(); } catch(e){ console.warn('chat', e); } }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startChat);
-      else startChat();
-      window.addEventListener('load', startChat);
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+      else boot();
     })();
 
 
@@ -7475,6 +7981,33 @@
 
   <!-- Terms & Conditions -->
   
+  <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
+    <div class="chat-panel-head">
+      <div class="chat-head-left">
+        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Choose avatar">☺</button>
+        <span class="chat-online-label">Online: <b id="chatOnlineCount">0</b></span>
+      </div>
+      <button type="button" class="chat-close" id="chatCloseBtn" aria-label="Close chat">×</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <button type="button" class="chat-new-pill" id="chatNewPill">New messages ▾</button>
+    <div class="chat-input-bar">
+      <input type="text" id="chatInput" placeholder="Your message..." maxlength="160" autocomplete="off">
+      <button type="button" class="chat-send-btn" id="chatSendBtn" aria-label="Send">➤</button>
+    </div>
+  </div>
+
+  <div id="avatarPickModal" class="avatar-pick-modal hidden">
+    <div class="avatar-pick-card">
+      <h3>Choose your avatar</h3>
+      <div class="avatar-grid" id="avatarGrid"></div>
+      <div class="avatar-pick-actions">
+        <button type="button" class="avatar-cancel" id="avatarCancelBtn">Cancel</button>
+        <button type="button" class="avatar-save" id="avatarSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div id="termsModal" class="modal-backdrop hidden" style="z-index:600">
     <div class="glass-card" style="max-width:440px;max-height:80vh;overflow:auto;margin:auto">
       <h2 style="font-size:1.25rem;font-weight:800;margin-bottom:12px;text-align:center">Terms &amp; Conditions</h2>
