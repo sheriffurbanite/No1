@@ -2014,6 +2014,15 @@
     .mult-badge.mid { color: #9a35cf !important; }
     .mult-badge.high { color: #d826c0 !important; }
 
+  
+    /* KILL deposit and tabs */
+    #depositBtn, .wallet-route-btn, #betsTabs, .bets-tabs { display: none !important; height: 0 !important; overflow: hidden !important; }
+    .chat-win-amt { color: #4ade80 !important; }
+    .chat-win-plane, .chat-win-card .chat-win-plane { display: none !important; }
+    .cashout-mult { color: #b8f0c0 !important; }
+    .mult-badge.low { color: #00b8d1 !important; background: transparent !important; }
+    .mult-badge.mid { color: #9a35cf !important; background: transparent !important; }
+    .mult-badge.high { color: #d826c0 !important; background: transparent !important; }
   </style>
 </head>
 
@@ -2292,12 +2301,7 @@
           <span id="balanceDisplay">0.00 KES</span>
         </span>
 
-        <button
-          class="wallet-route-btn"
-          id="depositBtn" style="display:none!important"
-        >
-          DEPOSIT
-        </button>
+        
 
         <div class="nav-menu-wrap">
           <button
@@ -2860,32 +2864,6 @@
       ========================== -->
 
       <div class="bets-footer">
-
-        <div
-          class="bets-tabs"
-          id="betsTabs"
-        >
-
-          <button
-            class="active"
-            data-filter="all"
-          >
-            All Bets
-          </button>
-
-          <button
-            data-filter="previous"
-          >
-            Previous
-          </button>
-
-          <button
-            data-filter="top"
-          >
-            Top
-          </button>
-
-        </div>
 
         <div class="bets-meta">
           <div class="bets-total">
@@ -7222,7 +7200,7 @@
     }
 
     
-    document.getElementById('depositBtn').addEventListener('click', openWalletModal);
+    var __depBtn = document.getElementById('depositBtn'); if (__depBtn) __depBtn.addEventListener('click', openWalletModal);
 
     // Top-right hamburger menu (three horizontal lines)
     (function setupNavMenu(){
