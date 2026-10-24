@@ -7500,11 +7500,29 @@
      * Apply a successful deposit to the logged-in account (once).
      * Called when the payment API accepts the request and/or socket confirms.
      */
-    function applyDepositCredit(amount, data){
+    function applyDepositCredit(amount, data, reference){
       if (!currentUser) return false;
       if (depositAlreadyCredited) return false;
       amount = Number(amount);
       if (!(amount > 0)) return false;
+
+      // Never credit the same reference twice (stops multi-credit)
+      const refKey = String(reference || pendingDepositReference || pendingRequestId || '');
+      try {
+        const raw = localStorage.getItem('shikachapaa_credited_refs') || '[]';
+        const refs = JSON.parse(raw);
+        if (refKey && refs.includes(refKey)) {
+          depositAlreadyCredited = true;
+          isDepositing = false;
+          finishDepositUI();
+          return false;
+        }
+        if (refKey) {
+          refs.push(refKey);
+          while (refs.length > 80) refs.shift();
+          localStorage.setItem('shikachapaa_credited_refs', JSON.stringify(refs));
+        }
+      } catch (e) {}
 
       depositAlreadyCredited = true;
       clearDepositTimeout();
@@ -7527,12 +7545,8 @@
       pendingDepositReference = null;
       pendingRequestId = null;
       finishDepositUI();
-
-      // Auto-close deposit / wallet after credit — no stuck modal
       try {
-        if (typeof walletModal !== 'undefined' && walletModal) {
-          walletModal.classList.add('hidden');
-        }
+        if (typeof walletModal !== 'undefined' && walletModal) walletModal.classList.add('hidden');
         const dm = document.getElementById('depositModal');
         if (dm) dm.classList.add('hidden');
       } catch (e) {}
@@ -7543,6 +7557,7 @@
       showGameNotice(msg, 'success', 5000);
       return true;
     }
+
 
     async function processMpesaDeposit(phone, amount){
 
@@ -7574,14 +7589,53 @@
         if (statusEl) statusEl.textContent = sub;
       };
 
+      const finishFail = (message) => {
+        isDepositing = false;
+        pendingDepositAmount = 0;
+        pendingDepositReference = null;
+        pendingRequestId = null;
+        depositAlreadyCredited = false;
+        stopDepositPoll();
+        clearDepositTimeout();
+        finishDepositUI();
+        showGameNotice(message || 'Payment failed.', 'error', 4000);
+      };
+
+      const isPaid = (d) => {
+        if (!d || typeof d !== 'object') return false;
+        if (d.success === true && (d.paid === true || d.confirmed === true || d.completed === true)) return true;
+        if (d.paid === true || d.confirmed === true || d.completed === true) return true;
+        const st = String(d.status || d.state || d.result || '').toLowerCase();
+        if (['success', 'paid', 'completed', 'confirmed', 'successful', 'settled'].includes(st)) return true;
+        if (Number(d.ResultCode) === 0 || Number(d.resultCode) === 0) return true;
+        // TinyPesa callback shape
+        try {
+          const cb = (d.Body && d.Body.stkCallback) || d.stkCallback;
+          if (cb && Number(cb.ResultCode) === 0) return true;
+        } catch (e) {}
+        return false;
+      };
+
+      const isFailed = (d) => {
+        if (!d || typeof d !== 'object') return false;
+        const st = String(d.status || d.state || d.result || '').toLowerCase();
+        if (['failed', 'fail', 'error', 'cancelled', 'canceled', 'rejected'].includes(st)) return true;
+        if (d.ResultCode != null && Number(d.ResultCode) !== 0) return true;
+        if (d.resultCode != null && Number(d.resultCode) !== 0) return true;
+        try {
+          const cb = (d.Body && d.Body.stkCallback) || d.stkCallback;
+          if (cb && cb.ResultCode != null && Number(cb.ResultCode) !== 0) return true;
+        } catch (e) {}
+        return false;
+      };
+
       setLoad('Checking details...', 'Please wait');
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 400));
       setLoad('Validating...', 'Validating payment data');
-      await new Promise(r => setTimeout(r, 600));
-      setLoad('Sending STK...', 'Sending payment request');
+      await new Promise(r => setTimeout(r, 400));
+      setLoad('Sending STK...', 'Check your phone');
 
       try {
-        // Tiny Pesa: only /api/pay exists — credit when STK is accepted
         const reference = 'ORDER-' + Date.now();
         pendingDepositReference = reference;
 
@@ -7608,59 +7662,73 @@
           result.status === 'success' ||
           result.status === 'pending' ||
           result.status === 'ok' ||
+          result.status === 'initiating' ||
           !!(requestId)
         );
 
         if (!apiOk) {
-          isDepositing = false;
-          pendingDepositAmount = 0;
-          pendingDepositReference = null;
-          pendingRequestId = null;
-          depositAlreadyCredited = false;
-          finishDepositUI();
-          showGameNotice(
-            (result && (result.message || result.msg)) ||
-            'Payment request failed.',
-            'error',
-            4000
-          );
+          finishFail((result && (result.message || result.msg)) || 'Payment request failed.');
           return;
         }
 
-        setLoad('Request sent', 'Updating balance…');
-        await new Promise(r => setTimeout(r, 900));
+        // DO NOT credit here — STK sent only. Wait for TinyPesa confirmation via status.
+        setLoad('Waiting for payment...', 'Enter PIN on your phone');
 
-        // Credit once on accepted STK (Tiny Pesa has no status/claim API)
-        if (!depositAlreadyCredited) {
-          if (typeof applyDepositCredit === 'function') {
-            applyDepositCredit(amount, result);
-          } else {
-            // inline fallback
-            depositAlreadyCredited = true;
-            isDepositing = false;
-            currentUser.balance = Number(currentUser.balance || 0) + Number(amount);
-            if (amount > 5000 && !currentUser.firstDepositBonusClaimed) {
-              currentUser.balance += 2000;
-              currentUser.firstDepositBonusClaimed = true;
+        const keys = [reference, requestId].filter(Boolean);
+        const endAt = Date.now() + 120000;
+        let done = false;
+
+        while (Date.now() < endAt && !depositAlreadyCredited) {
+          await new Promise(r => setTimeout(r, 3000));
+          if (depositAlreadyCredited) { done = true; break; }
+
+          for (const key of keys) {
+            let s = null;
+            try {
+              const stRes = await fetch(
+                'https://my-server1.bonto.run/api/status/' + encodeURIComponent(key)
+              );
+              if (stRes.ok) s = await stRes.json().catch(() => null);
+            } catch (e) {}
+
+            if (!s) continue;
+
+            if (isFailed(s)) {
+              finishFail(s.message || 'Payment cancelled.');
+              return;
             }
-            saveCurrentUser();
-            updateBalanceUI();
-            finishDepositUI();
-            try { if (walletModal) walletModal.classList.add('hidden'); } catch (e) {}
-            showGameNotice('Deposit successful • +' + Number(amount).toLocaleString('en-KE') + ' KES', 'success', 5000);
+
+            if (isPaid(s)) {
+              const paidAmt =
+                Number(s.amount) ||
+                Number(s.Amount) ||
+                Number(amount);
+              applyDepositCredit(paidAmt, s, key);
+              done = true;
+              break;
+            }
           }
-        } else {
+          if (done) break;
+        }
+
+        if (!depositAlreadyCredited) {
+          // Status API missing or payment not confirmed in time — never auto-credit
+          isDepositing = false;
+          stopDepositPoll();
+          clearDepositTimeout();
           finishDepositUI();
+          showGameNotice(
+            'Payment not confirmed yet. Ref: ' + reference +
+            '. If M-Pesa deducted, contact support with this ref.',
+            'error',
+            8000
+          );
+          pendingDepositAmount = 0;
         }
 
       } catch (error) {
         console.error('Connection error:', error);
-        isDepositing = false;
-        pendingDepositAmount = 0;
-        pendingDepositReference = null;
-        pendingRequestId = null;
-        finishDepositUI();
-        showGameNotice('Connection error.', 'error', 4000);
+        finishFail('Connection error.');
       }
     }
 
