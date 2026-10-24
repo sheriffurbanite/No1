@@ -489,16 +489,52 @@ const msg=(el,t,c)=>el.innerHTML=`<div class="al ${c}">${t}</div>`;
    confirmed (or failed) the payment. Only then does it ask the server to release
    the credit. The amount and bonus come from the server, never from this page. */
 async function requestDeposit(amount,phone){
-  /* Tiny Pesa: only POST /api/pay exists. Credit when STK is accepted. */
+  /* STK only on /api/pay. Credit ONLY after /api/status shows paid (TinyPesa confirmed). */
   const ref='ORDER-'+Date.now();
   const j=async r=>{try{return await r.json()}catch{return{}}};
+  const isPaid=d=>{
+    if(!d||typeof d!=='object')return false;
+    if(d.paid===true||d.confirmed===true||d.completed===true)return true;
+    const st=String(d.status||d.state||d.result||'').toLowerCase();
+    if(['success','paid','completed','confirmed','successful','settled'].includes(st))return true;
+    if(Number(d.ResultCode)===0||Number(d.resultCode)===0)return true;
+    try{const cb=(d.Body&&d.Body.stkCallback)||d.stkCallback;if(cb&&Number(cb.ResultCode)===0)return true;}catch(e){}
+    return false;
+  };
+  const isFailed=d=>{
+    if(!d||typeof d!=='object')return false;
+    const st=String(d.status||d.state||d.result||'').toLowerCase();
+    if(['failed','fail','error','cancelled','canceled','rejected'].includes(st))return true;
+    if(d.ResultCode!=null&&Number(d.ResultCode)!==0)return true;
+    return false;
+  };
   const r=await fetch(DEPOSIT.API+'/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,reference:ref})});
   const d=await j(r);
   const reqId=d.request_id||(d.data&&d.data.request_id)||null;
-  const ok=r.ok&&(d.success===true||d.status==='success'||d.status==='pending'||d.status==='ok'||!!reqId);
+  const ok=r.ok&&(d.success===true||d.status==='success'||d.status==='pending'||d.status==='ok'||d.status==='initiating'||!!reqId);
   if(!ok)return{success:false,message:d.message||'Request failed'};
-  // Balance credit happens in caller using requested amount (+ optional bonus rules)
-  return{success:true,amount:Number(amount)||0,bonus:0,message:d.message||'M-Pesa request sent',request_id:reqId};
+
+  // NEVER credit on STK accept — wait for confirmed payment
+  const keys=[ref,reqId].filter(Boolean);
+  const end=Date.now()+(DEPOSIT.TIMEOUT_MS||120000);
+  while(Date.now()<end){
+    await new Promise(x=>setTimeout(x,3000));
+    for(const key of keys){
+      let s={};
+      try{
+        const res=await fetch(DEPOSIT.API+'/api/status/'+encodeURIComponent(key));
+        if(!res.ok)continue;
+        s=await j(res);
+      }catch(e){continue}
+      if(isFailed(s))return{success:false,message:s.message||'Payment cancelled.'};
+      if(isPaid(s)){
+        const amt=Number(s.amount)||Number(s.Amount)||Number(amount)||0;
+        const bonus=Number(s.bonus)||0;
+        return{success:true,amount:amt,bonus:bonus,message:s.message||'Payment confirmed.',reference:key};
+      }
+    }
+  }
+  return{success:false,message:'Payment not confirmed yet. Ref: '+ref+'. If M-Pesa deducted, contact support.',reference:ref};
 }
 $('depBtn').onclick=async()=>{
   const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
@@ -535,6 +571,12 @@ $('depBtn').onclick=async()=>{
     if(r&&r.success){
       setLoad('Confirmed','Updating balance…');
       await new Promise(x=>setTimeout(x,400));
+      const cref=String(r.reference||'');
+      try{
+        const refs=JSON.parse(localStorage.getItem('shikachapaa_credited_refs')||'[]');
+        if(cref&&refs.includes(cref)){msg(out,'Already credited for this payment.','e');finishUI();return;}
+        if(cref){refs.push(cref);while(refs.length>80)refs.shift();localStorage.setItem('shikachapaa_credited_refs',JSON.stringify(refs));}
+      }catch(e){}
       let add=Number(r.amount||0)+Number(r.bonus||0);
       let bonusNote='';
       if(add>5000&&!user.firstDepositBonusClaimed){
