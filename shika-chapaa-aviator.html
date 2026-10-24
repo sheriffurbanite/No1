@@ -51,6 +51,10 @@
     }
 
     .hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
 
     /* =========================
        LOGIN
@@ -414,6 +418,10 @@
       line-height:1;
     }
     .demo-in-balance.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
     #balanceDisplay{color:#20b90a}
 
     .wallet-route-btn{
@@ -469,6 +477,10 @@
       z-index:80
     }
     .nav-menu-drop.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
     .nav-menu-item{
       width:100%;
       text-align:left;
@@ -1786,6 +1798,10 @@
       transition:opacity .35s ease
     }
     .splash.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
     .splash.fade-out{opacity:0;pointer-events:none}
     .spribe-load{
       display:flex;
@@ -1879,6 +1895,10 @@
       overflow:hidden
     }
     .withdraw-expand-panel.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
 
   
     /* Chat button + Betika-style chat panel */
@@ -1894,6 +1914,10 @@
       display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif;
     }
     .chat-panel.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
     .chat-panel-head{
       display:flex;align-items:center;justify-content:space-between;
       padding:10px 12px;background:#161b22;border-bottom:1px solid #252b36;flex-shrink:0;
@@ -1974,6 +1998,10 @@
       display:flex;align-items:center;justify-content:center;padding:16px;
     }
     .avatar-pick-modal.hidden{display:none!important}
+    #loginView .auth-form,
+    #loginView .auth-links-footer,
+    #loginView .demo-switch-row,
+    #loginView #loginAlert{display:none!important}
     .avatar-pick-card{
       background:#161b22;border:1px solid #2a3344;border-radius:14px;padding:16px;
       width:min(340px,94vw);max-height:80vh;overflow:auto;
@@ -6975,15 +7003,23 @@ function generateOfflineCrash(mode){
 
     function showLogin(){
 
-      setAppRoute('#/login');
+      // No login form in game — message only
+      setAppRoute('#/aviator');
 
-      loginView.classList.remove(
-        'hidden'
-      );
+      try {
+        var lv = document.getElementById('loginView');
+        if (lv) {
+          lv.innerHTML =
+            '<div class="glow-backdrop"></div>' +
+            '<div class="glass-card">' +
+            '<div class="login-only-msg">Log in only' +
+            '<span>Open the home page and log in first</span></div>' +
+            '</div>';
+          lv.classList.remove('hidden');
+        }
+      } catch (e) {}
 
-      gameView.classList.add(
-        'hidden'
-      );
+      if (typeof gameView !== 'undefined' && gameView) gameView.classList.add('hidden');
 
       // Mute all game audio when leaving the game
       if (typeof muteAllGameAudio === 'function') {
@@ -8122,60 +8158,111 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
       // Demo permanently off
       try {
+        isDemo = false;
+        localStorage.setItem(LS_DEMO, '0');
         document.getElementById('demoToggle') && document.getElementById('demoToggle').classList.remove('on');
         document.getElementById('demoStatus') && document.getElementById('demoStatus').classList.add('hidden');
         var di = document.getElementById('demoIndicator');
         if (di) di.classList.add('hidden');
       } catch (e) {}
 
-      // Sync login + balance with parent home page (same localStorage keys)
-      var accounts = loadAccounts();
-      var session = null;
-      try {
-        var raw = localStorage.getItem(LS_USER);
-        if (raw) session = JSON.parse(raw);
-      } catch (e) {}
-
-      if (session && session.phone && accounts[session.phone]) {
-        createSession(accounts[session.phone]);
-        currentUser.balance = Number(accounts[session.phone].balance || session.balance || 0);
-        currentUser.firstDepositBonusClaimed = !!(accounts[session.phone].firstDepositBonusClaimed || session.firstDepositBonusClaimed);
-        saveCurrentUser();
-        showGame();
-        return;
-      }
-
-      if (session && session.phone) {
-        var key = session.phone;
-        accounts[key] = {
-          phone: key,
-          country: session.country || '+254',
-          password: (accounts[key] && accounts[key].password) || '',
-          balance: Number(session.balance || 0),
-          demoBalance: 0,
-          betHistory: Array.isArray(session.betHistory) ? session.betHistory : [],
-          welcomeBonus: !!session.welcomeBonus,
-          firstDepositBonusClaimed: !!session.firstDepositBonusClaimed,
-          createdAt: Date.now()
-        };
-        saveAccounts(accounts);
-        createSession(accounts[key]);
-        showGame();
-        return;
-      }
-
-      // No parent session — minimal prompt only
+      // Strip any login form — game has NO login UI (home only)
       try {
         var lv = document.getElementById('loginView');
         if (lv) {
-          var card = lv.querySelector('.glass-card');
-          if (card) {
-            card.innerHTML = '<div class="login-only-msg">Log in only</div>';
-          }
+          lv.innerHTML =
+            '<div class="glow-backdrop"></div>' +
+            '<div class="glass-card">' +
+            '<div class="login-only-msg">Log in only' +
+            '<span>Open the home page and log in first</span></div>' +
+            '</div>';
         }
       } catch (e) {}
-      showLogin();
 
+      function normalizePhoneKey(p){
+        var d = String(p || '').replace(/\D/g, '');
+        if (d.startsWith('254') && d.length >= 12) return d;
+        if (d.startsWith('0') && d.length >= 10) return '254' + d.slice(1);
+        if (d.length === 9) return '254' + d;
+        return d;
+      }
+
+      function tryStartFromSession(){
+        var accounts = loadAccounts();
+        var session = null;
+        try {
+          var raw = localStorage.getItem(LS_USER);
+          if (raw) session = JSON.parse(raw);
+        } catch (e) {}
+
+        if (!session) return false;
+
+        // Home may store phone as +254... or 254... — match accounts flexibly
+        var phone =
+          session.phone ||
+          session.msisdn ||
+          (session.user && session.user.phone) ||
+          '';
+        if (!phone) return false;
+
+        var key = String(phone);
+        var key254 = normalizePhoneKey(phone);
+        var account =
+          accounts[key] ||
+          accounts[key254] ||
+          accounts['+' + key254] ||
+          accounts['0' + key254.slice(3)] ||
+          null;
+
+        if (!account) {
+          // Create account shell from session so game can run with home balance
+          account = {
+            phone: key,
+            country: session.country || '+254',
+            password: '',
+            balance: Number(session.balance || 0),
+            demoBalance: 0,
+            betHistory: Array.isArray(session.betHistory) ? session.betHistory : [],
+            welcomeBonus: !!session.welcomeBonus,
+            firstDepositBonusClaimed: !!session.firstDepositBonusClaimed,
+            createdAt: Date.now()
+          };
+          accounts[key] = account;
+          if (key254 && key254 !== key) accounts[key254] = account;
+          saveAccounts(accounts);
+        }
+
+        createSession(account);
+        currentUser.balance = Number(
+          account.balance != null ? account.balance : (session.balance || 0)
+        );
+        currentUser.firstDepositBonusClaimed = !!(
+          account.firstDepositBonusClaimed || session.firstDepositBonusClaimed
+        );
+        saveCurrentUser();
+        showGame();
+        return true;
+      }
+
+      if (tryStartFromSession()) return;
+
+      // Retry shortly (iframe may load before home writes session)
+      var tries = 0;
+      var t = setInterval(function(){
+        tries++;
+        if (tryStartFromSession() || tries > 15) clearInterval(t);
+      }, 400);
+
+      // Minimal "Log in only" — never full login form
+      try {
+        if (typeof loginView !== 'undefined' && loginView) {
+          loginView.classList.remove('hidden');
+        }
+        if (typeof gameView !== 'undefined' && gameView) {
+          gameView.classList.add('hidden');
+        }
+        setAppRoute('#/aviator');
+      } catch (e) {}
     }
 
 
@@ -8421,12 +8508,12 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
       document.getElementById('closeTermsBtn')?.addEventListener('click', () => {
         termsModal?.classList.add('hidden');
         if (termsCheck) termsCheck.checked = true;
-        setAppRoute('#/login');
+        setAppRoute('#/aviator');
       });
       termsModal?.addEventListener('click', (e) => {
         if (e.target === termsModal) {
           termsModal.classList.add('hidden');
-          setAppRoute('#/login');
+          setAppRoute('#/aviator');
         }
       });
 
@@ -8440,12 +8527,12 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
       }
       document.getElementById('closeDownloadBtn')?.addEventListener('click', () => {
         downloadModal?.classList.add('hidden');
-        setAppRoute('#/login');
+        setAppRoute('#/aviator');
       });
       downloadModal?.addEventListener('click', (e) => {
         if (e.target === downloadModal) {
           downloadModal.classList.add('hidden');
-          setAppRoute('#/login');
+          setAppRoute('#/aviator');
         }
       });
 
@@ -8483,7 +8570,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
       // Set initial route from current view
       if (currentUser) setAppRoute('#/game');
-      else setAppRoute('#/login');
+      else setAppRoute('#/aviator');
     })();
 
     
@@ -8698,7 +8785,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     /* START */
 
     // Default address bar to login until session restores
-    try { setAppRoute('#/login'); } catch (e) {}
+    try { setAppRoute('#/aviator'); } catch (e) {}
     init();
 
   </script>
