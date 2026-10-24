@@ -4114,19 +4114,39 @@
 
       if (currentPhase === 'running') {
         drawCenterGlow(w, h);
+        // Curve path unchanged — only the plane sprite is adjusted near the stretch limit
         drawCurveFill(visualProgress, w, h, headY);
         let planePt = headY != null
           ? hosePoint(visualProgress, w, h, visualProgress, headY)
           : curvePoint(visualProgress, w, h);
-        // Gentle up/down sway + slight pitch
-        const swayT = now / 1000;
-        const swayY = Math.sin(swayT * 2.1) * 4.5 + Math.sin(swayT * 3.4) * 2.2;
-        const swayAngle = Math.sin(swayT * 2.1) * 0.045;
+
+        // How close we are to the stretch limit (0 = early flight, 1 = at/over cap)
+        const limitT = planeCap > 0.001
+          ? Math.max(0, Math.min(1, (visualProgress - planeCap * 0.72) / (planeCap * 0.28)))
+          : 0;
+        const nearLimit = limitT > 0.05 || headY != null;
+
+        // At stretch limit: nose-down ~15° from the normal face angle (curve structure untouched)
+        const PITCH_DOWN_15 = (15 * Math.PI) / 180;
+        let planeAngle = PLANE_FACE_ANGLE;
+        let swayY = 0;
+        if (nearLimit) {
+          planeAngle = PLANE_FACE_ANGLE - PITCH_DOWN_15 * limitT;
+          // Up/down sway only near the stretch limit
+          const swayT = now / 1000;
+          const amp = 5.5 * limitT; // grows as we approach the limit
+          swayY = (Math.sin(swayT * 2.4) * amp) + (Math.sin(swayT * 3.7) * amp * 0.45);
+          // Extra gentle bob when fully hovering at cap
+          if (headY != null) {
+            swayY += Math.sin(swayT * 1.8) * 3.2;
+          }
+        }
+
         planePt = {
           x: Math.min(w - 36, Math.max(24, planePt.x)),
           y: Math.min(h - 28, Math.max(28, planePt.y + swayY))
         };
-        drawPlaneAt(planePt.x, planePt.y, PLANE_FACE_ANGLE + swayAngle, 1, PLANE_FLIGHT_SCALE);
+        drawPlaneAt(planePt.x, planePt.y, planeAngle, 1, PLANE_FLIGHT_SCALE);
       } else if (currentPhase === 'crashed') {
         drawCurveFill(Math.min(visualProgress || 0.4, planeCap), w, h, headY);
       }
