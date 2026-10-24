@@ -3876,19 +3876,23 @@
     }
 
     function maxPlaneProgress(w, h){
+      // Cap progress so full plane body stays visible (never flies off-frame)
       const { x: ox, y: oy } = curveOrigin(w, h);
       const spanX = w - ox - PLANE_MARGIN_RIGHT;
-      const spanY = h - 20;
-      if (spanX <= 0 || spanY <= 0) return 0.75;
-      const byX = (w - PLANE_MARGIN_RIGHT - PLANE_NOSE_REACH - ox) / spanX;
-      const byY = Math.pow(Math.max(0, (oy - PLANE_MARGIN_TOP - 12) / spanY), 1 / 1.62);
-      return Math.max(0.35, Math.min(0.88, byX, byY));
+      const spanY = h * 0.62;
+      if (spanX <= 0 || spanY <= 0) return 0.55;
+      const byX = (w - PLANE_MARGIN_RIGHT - PLANE_NOSE_REACH - ox - 28) / spanX;
+      const byY = Math.max(0.2, (oy - PLANE_MARGIN_TOP - 36) / spanY);
+      return Math.max(0.32, Math.min(0.72, byX, byY));
     }
 
     function curvePoint(progress, w, h){
       const { x: ox, y: oy } = curveOrigin(w, h);
-      const x = ox + progress * (w - ox - PLANE_MARGIN_RIGHT);
-      const y = oy - Math.pow(progress, 1.62) * (h - 20);
+      // Softer rise (less harsh curve) — plane motion feels smoother
+      const p = Math.max(0, Math.min(1, progress));
+      const ease = Math.pow(p, 1.28);
+      const x = ox + ease * (w - ox - PLANE_MARGIN_RIGHT);
+      const y = oy - ease * (h * 0.62);
       return { x, y };
     }
 
@@ -3907,7 +3911,7 @@
       const intro = smoothstep(elapsed / 1600);
       // Keep bob gentle — max dip limited so plane never looks glued to the floor
       const bob = (Math.sin(elapsed / 1600) + 1) * 0.5;
-      const maxDip = Math.min(18, Math.max(0, lowY - peakY));
+      const maxDip = Math.min(14, Math.max(0, lowY - peakY));
       return peakY + intro * bob * maxDip;
     }
 
@@ -4103,10 +4107,18 @@
       if (currentPhase === 'running') {
         drawCenterGlow(w, h);
         drawCurveFill(visualProgress, w, h, headY);
-        const planePt = headY != null
+        let planePt = headY != null
           ? hosePoint(visualProgress, w, h, visualProgress, headY)
           : curvePoint(visualProgress, w, h);
-        drawPlaneAt(planePt.x, planePt.y, PLANE_FACE_ANGLE, 1, PLANE_FLIGHT_SCALE);
+        // Gentle up/down sway + slight pitch so motion feels alive (not rough jumps)
+        const swayT = now / 1000;
+        const swayY = Math.sin(swayT * 2.1) * 4.5 + Math.sin(swayT * 3.4) * 2.2;
+        const swayAngle = Math.sin(swayT * 2.1) * 0.045;
+        planePt = {
+          x: Math.min(w - 36, Math.max(24, planePt.x)),
+          y: Math.min(h - 28, Math.max(28, planePt.y + swayY))
+        };
+        drawPlaneAt(planePt.x, planePt.y, PLANE_FACE_ANGLE + swayAngle, 1, PLANE_FLIGHT_SCALE);
       } else if (currentPhase === 'crashed') {
         drawCurveFill(Math.min(visualProgress || 0.4, planeCap), w, h, headY);
       }
@@ -6181,6 +6193,7 @@
     let localCrashAt = 2;
     let localFlightStart = 0;
     let offlineActive = false;
+    let offlineConsecutiveBelow2x = 0;
 
     function offlineRandomUnit(){
       try {
@@ -6190,30 +6203,41 @@
           return a[0] / 4294967296;
         }
       } catch (e) {}
-      return Math.random();
-    }
-
-    function generateOfflineCrash(mode){
-      // Match no-gen: 79% <1.2 | ~16% 1.2–7 | 3% 7–12.23 | 2% 12.23–100
+function generateOfflineCrash(mode){
+      // 79% <2x, max 8 lows in a row; 2–4x common among rest; highs tricky
       const r = offlineRandomUnit();
       let value;
-      if (mode === 'happyHour') {
-        if (r < 0.7) value = 1.01 + offlineRandomUnit() * 0.19;
-        else if (r < 0.88) value = 1.2 + offlineRandomUnit() * 5.8;
-        else if (r < 0.95) value = 7 + offlineRandomUnit() * 5.23;
-        else value = 12.23 + offlineRandomUnit() * (100 - 12.23);
+      const forceExit = offlineConsecutiveBelow2x >= 8;
+
+      if (!forceExit && mode !== 'happyHour' && r < 0.79) {
+        if (r < 0.15) value = 1.01 + offlineRandomUnit() * 0.14;
+        else if (r < 0.4) value = 1.15 + offlineRandomUnit() * 0.3;
+        else value = 1.45 + offlineRandomUnit() * 0.54;
+      } else if (!forceExit && mode === 'happyHour' && r < 0.65) {
+        value = 1.01 + offlineRandomUnit() * 0.98;
       } else {
-        if (r < 0.79) {
-          value = 1.01 + offlineRandomUnit() * 0.19;
-        } else if (r < 0.95) {
-          value = 1.2 + offlineRandomUnit() * 5.8;
-        } else if (r < 0.98) {
-          value = 7 + offlineRandomUnit() * 5.23;
+        const r2 = offlineRandomUnit();
+        if (mode === 'happyHour') {
+          if (r2 < 0.5) value = 2 + offlineRandomUnit() * 2;
+          else if (r2 < 0.78) value = 4 + offlineRandomUnit() * 6;
+          else if (r2 < 0.93) value = 10 + offlineRandomUnit() * 30;
+          else if (r2 < 0.99) value = Math.exp(Math.log(40) + offlineRandomUnit() * (Math.log(200) - Math.log(40)));
+          else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(1000) - Math.log(200)));
         } else {
-          value = 12.23 + offlineRandomUnit() * (100 - 12.23);
+          if (r2 < 0.55) value = 2 + offlineRandomUnit() * 2;       // 2–4x common
+          else if (r2 < 0.8) value = 4 + offlineRandomUnit() * 8;  // 4–12
+          else if (r2 < 0.93) value = 12 + offlineRandomUnit() * 38;
+          else if (r2 < 0.99) value = Math.exp(Math.log(50) + offlineRandomUnit() * (Math.log(200) - Math.log(50)));
+          else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(2000) - Math.log(200)));
         }
       }
-      return Math.min(100, Math.max(1.01, Math.round(value * 100) / 100));
+      value = Math.min(OFFLINE_MAX_CRASH, Math.max(1.01, Math.round(value * 100) / 100));
+      if (value < 2) offlineConsecutiveBelow2x++;
+      else offlineConsecutiveBelow2x = 0;
+      return value;
+    }
+
+    round(value * 100) / 100));
     }
 
     function offlineAnimDuration(target){
