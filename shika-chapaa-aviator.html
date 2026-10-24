@@ -667,23 +667,16 @@
       flex-shrink:0;
       width:100%;
       max-width:100%;
-      height:min(48vw, 320px);
-      min-height:260px;
+      height:min(52vw, 320px);
+      min-height:280px;
       margin-left:auto;
       margin-right:auto;
       box-sizing:border-box;
       overflow:hidden;
       color:#fff;
-      background-color:#05080f;
-      background-image:repeating-conic-gradient(
-        at -10% 110%,
-        rgb(24,24,24) 0deg,
-        rgb(24,24,24) 4deg,
-        rgb(7,7,7) 4deg,
-        rgb(7,7,7) 8deg
-      );
+      background:#05080f;
       border:0.555556px solid rgb(44,45,48);
-      border-radius:22px
+      border-radius:14px
     }
 
     .canvas-viewport canvas{
@@ -3865,29 +3858,29 @@
     
     const PLANE_MIN_WIDTH_PX = 120; // fixed on-screen size — never shrink
 
-    /* Demo-accurate stage: blue glow + rotating dark rays + Bezier path */
+    
+    /* =========================================================
+       EXACT demo stage + plane (from shared Aviator Demo)
+       — blue glow, rotating dark ray strips, Bezier path,
+         smooth tilt, hover bob, spinning propeller plane
+       ========================================================= */
     const AV = {
       RISE: 8,
       HOVER_X: 0.66,
       HOVER_Y: 0.55,
-      BOB_X: 6,
-      BOB_Y: 7,
-      CTRL: 0.62,
-      MAX_TILT: (25 * Math.PI) / 180,
-      EDGE: 0.05,
-      TIGHT: 0.8,
-      GROWTH: 0.08
+      MAX_TILT: (25 * Math.PI) / 180
     };
     let avAngSm = null;
 
+    // Blue glow that slowly breathes + dark rays from bottom-left
     function drawAvBackground(ctx, W, H, now) {
       const p = 0.5 + 0.5 * Math.sin(now / 2500);
       const gx = W * 0.5, gy = H * 0.35;
-      const g = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.max(W, H) * 0.8);
-      g.addColorStop(0, "rgb(" + ((20 + p * 10) | 0) + "," + ((95 + p * 28) | 0) + "," + ((140 + p * 28) | 0) + ")");
-      g.addColorStop(0.55, "#0a1a2c");
-      g.addColorStop(1, "#05080f");
-      ctx.fillStyle = g;
+      const grad = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.max(W, H) * 0.8);
+      grad.addColorStop(0, "rgb(" + ((20 + p * 10) | 0) + "," + ((95 + p * 28) | 0) + "," + ((140 + p * 28) | 0) + ")");
+      grad.addColorStop(0.55, "#0a1a2c");
+      grad.addColorStop(1, "#05080f");
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
       ctx.save();
@@ -3905,255 +3898,182 @@
       ctx.restore();
     }
 
-    function avPathState(t, now, W, H, isBet) {
-      const x0 = 10, y0 = H - 22;
-      const k = Math.min(1, Math.max(0, t / AV.RISE));
-      const e = k * k * (3 - 2 * k); // smoothstep
-      const bob = Math.min(1, Math.max(0, t - (AV.RISE - 1)));
-      let bx = x0 + e * (W * AV.HOVER_X - x0) + Math.sin(now / 900) * AV.BOB_X * bob;
-      let by = y0 - e * (H * AV.HOVER_Y) + Math.sin(now / 600) * AV.BOB_Y * bob;
-      bx = Math.min(W - 40, Math.max(28, bx));
-      by = Math.min(H - 28, Math.max(32, by));
-      const cx = x0 + (bx - x0) * AV.CTRL;
-      const cy = y0;
-
-      // Smoothed tilt (demo): follow curve, soft cap 25°, light bob on angle
-      const dy = isBet ? -H * AV.HOVER_Y : by - cy;
-      const dx = isBet ? W * AV.HOVER_X * 0.38 : bx - cx;
-      const raw = Math.atan2(dy, dx) * 0.9 - 0.15;
-      const target = -AV.MAX_TILT * Math.tanh(-raw / AV.MAX_TILT) + Math.cos(now / 600) * 0.03 * bob;
-      if (avAngSm === null) avAngSm = target;
-      avAngSm += (target - avAngSm) * 0.12;
-
-      return { x0, y0, bx, by, cx, cy, angle: avAngSm, bob };
-    }
-
-    function drawAvPath(ctx, s, H) {
+    function avPoly(ctx, p) {
       ctx.beginPath();
-      ctx.moveTo(s.x0, s.y0);
-      ctx.quadraticCurveTo(s.cx, s.cy, s.bx, s.by);
-      ctx.shadowColor = "#e50539";
-      ctx.shadowBlur = 10;
-      ctx.strokeStyle = "#e50539";
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.lineTo(s.bx, H);
-      ctx.lineTo(s.x0, H);
+      ctx.moveTo(p[0][0], p[0][1]);
+      for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]);
       ctx.closePath();
-      const g = ctx.createLinearGradient(0, s.by, 0, H);
-      g.addColorStop(0, "rgba(229,5,57,0.55)");
-      g.addColorStop(1, "rgba(229,5,57,0.2)");
-      ctx.fillStyle = g;
       ctx.fill();
     }
 
+    // Demo plane image + auto-crop + spinning propeller (exact)
+    const DEMO_PLANE_SRC =
+      "https://res.cloudinary.com/qegjv5mo/image/upload/v1792852069/file_000000003f8c81f4bad650191a68f807.png";
+    const demoPlaneImg = new Image();
+    let demoPlaneReady = false;
+    let demoPBox = null;
 
-    
+    function prepDemoPlane() {
+      let b = { x: 0, y: 0, w: demoPlaneImg.naturalWidth, h: demoPlaneImg.naturalHeight };
+      try {
+        const c = document.createElement("canvas");
+        c.width = b.w;
+        c.height = b.h;
+        const g2 = c.getContext("2d");
+        g2.drawImage(demoPlaneImg, 0, 0);
+        const d = g2.getImageData(0, 0, b.w, b.h).data;
+        let x1 = b.w, y1 = b.h, x2 = 0, y2 = 0;
+        for (let y = 0; y < b.h; y++) {
+          for (let x = 0; x < b.w; x++) {
+            const i = (y * b.w + x) * 4;
+            if (d[i + 3] > 40 && Math.max(d[i], d[i + 1], d[i + 2]) > 70) {
+              if (x < x1) x1 = x;
+              if (x > x2) x2 = x;
+              if (y < y1) y1 = y;
+              if (y > y2) y2 = y;
+            }
+          }
+        }
+        if (x2 > x1 && y2 > y1) b = { x: x1, y: y1, w: x2 - x1, h: y2 - y1, ok: true };
+      } catch (e) {}
+      demoPBox = b;
+      demoPlaneReady = true;
+    }
 
-
-    let planeImage = null;
-    let planeImageReady = false;
-    let hoverStartedAt = 0;
-    let smoothHeadY = null;
-    let flightT = 0;
-    let flightStartMs = 0;
-    let crashStartMs = 0;
-
-    (function loadPlaneSprite(){
-      planeImage = new Image();
-      planeImage.onload = () => { planeImageReady = true; };
-      planeImage.onerror = () => { planeImageReady = false; };
-      planeImage.src = PLANE_SPRITE.src;
+    (function loadDemoPlane() {
+      demoPlaneImg.crossOrigin = "anonymous";
+      demoPlaneImg.onload = prepDemoPlane;
+      demoPlaneImg.onerror = function () {
+        demoPlaneImg.onerror = null;
+        demoPlaneImg.removeAttribute("crossorigin");
+        demoPlaneImg.src = DEMO_PLANE_SRC;
+      };
+      demoPlaneImg.src = DEMO_PLANE_SRC;
     })();
 
-    function curveOrigin(w, h){
-      return flightStartAnchor(w, h);
-    }
-
-    function maxPlaneProgress(w, h){
-      // Cap so full plane body stays visible
-      const { x: ox, y: oy } = curveOrigin(w, h);
-      const spanX = w - ox - PLANE_MARGIN_RIGHT;
-      const spanY = h * 0.62;
-      if (spanX <= 0 || spanY <= 0) return 0.55;
-      const byX = (w - PLANE_MARGIN_RIGHT - (typeof PLANE_NOSE_REACH !== 'undefined' ? PLANE_NOSE_REACH : 40) - ox - 28) / spanX;
-      const byY = Math.max(0.2, (oy - (typeof PLANE_MARGIN_TOP !== 'undefined' ? PLANE_MARGIN_TOP : 20) - 36) / spanY);
-      return Math.max(0.32, Math.min(0.72, byX, byY));
-    }
-
-    function curvePoint(progress, w, h){
-      const { x: ox, y: oy } = curveOrigin(w, h);
-      // Softer rise — smoother flight, body stays readable
-      const p = Math.max(0, Math.min(1, progress));
-      const ease = Math.pow(p, 1.28);
-      const x = ox + ease * (w - ox - PLANE_MARGIN_RIGHT);
-      const y = oy - ease * (h * 0.62);
-      return { x, y };
-    }
-
-    function curveBaselineY(h){
-      return curveOrigin(0, h).y;
-    }
-
-    function smoothstep(t){
-      const x = Math.min(1, Math.max(0, t));
-      return x * x * (3 - 2 * x);
-    }
-
-    function hoverDipTarget(now, peakY, lowY){
-      if (!hoverStartedAt) hoverStartedAt = now;
-      const elapsed = Math.max(0, now - hoverStartedAt);
-      const intro = smoothstep(elapsed / 1600);
-      // Keep bob gentle — max dip limited so plane never looks glued to the floor
-      const bob = (Math.sin(elapsed / 1600) + 1) * 0.5;
-      const maxDip = Math.min(14, Math.max(0, lowY - peakY));
-      return peakY + intro * bob * maxDip;
-    }
-
-    function hosePoint(progress, w, h, cap, headY){
-      const base = curvePoint(progress, w, h);
-      if (headY == null || cap <= 0) return base;
-      const peak = curvePoint(cap, w, h);
-      const t = Math.min(1, Math.max(0, progress / cap));
-      // Soft blend only near the tip — trail stays a curve, not a long horizontal
-      const blend = t * t;
-      const y = base.y + (headY - peak.y) * blend * 0.35;
-      return { x: base.x, y };
-    }
-
-    function drawPlaneSprite(){
-      if (!planeImageReady) return false;
-      const s = PLANE_SPRITE;
-      const iw = s.baseWidth;
-      const ih = (planeImage.height / planeImage.width) * iw;
-      const ax = iw * s.anchorX;
-      const ay = ih * s.anchorY;
-      ctx.drawImage(planeImage, -ax, -ay, iw, ih);
-      return true;
-    }
-
-    function drawFallbackPlane(){
-      ctx.fillStyle = '#e31b2f';
-      ctx.beginPath();
-      ctx.moveTo(-4, 5);
-      ctx.lineTo(38, 7);
-      ctx.quadraticCurveTo(50, 4, 46, -3);
-      ctx.quadraticCurveTo(28, -8, 6, -5);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawPlaneAt(x, y, angle, alpha, scale){
-      if (!isFinite(x) || !isFinite(y)) return;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate((angle || 0) + (PLANE_SPRITE.angleOffset || 0));
-      ctx.globalAlpha = (alpha == null ? 1 : alpha);
-      // Fixed size — never shrink
-      const baseW = PLANE_SPRITE.baseWidth || 102;
-      const sc = Math.max(PLANE_FLIGHT_SCALE || 1.35, PLANE_MIN_WIDTH_PX / baseW, 1.2);
-      ctx.scale(sc, sc);
-      try {
-        if (!drawPlaneSprite()) drawFallbackPlane();
-      } catch (e) {
-        drawFallbackPlane();
+    // Exact plane() from demo — image with propeller, or vector fallback
+    function drawDemoPlane(ctx, x, y, a, now, al) {
+      if (demoPlaneReady && demoPBox) {
+        const w = 108;
+        const h = (w * demoPBox.h) / demoPBox.w;
+        const ax = w * 0.05;
+        const ay = h * 0.96;
+        ctx.save();
+        ctx.globalAlpha = al;
+        ctx.globalCompositeOperation = "screen";
+        ctx.translate(x - Math.cos(a) * 52, y - Math.sin(a) * 52);
+        ctx.rotate(a + 0.2);
+        if (!demoPBox.ok) {
+          ctx.drawImage(demoPlaneImg, demoPBox.x, demoPBox.y, demoPBox.w, demoPBox.h, -ax, -ay, w, h);
+          ctx.restore();
+          return;
+        }
+        const CUT = 0.905;
+        const cw = w * CUT;
+        ctx.drawImage(demoPlaneImg, demoPBox.x, demoPBox.y, demoPBox.w * CUT, demoPBox.h, -ax, -ay, cw, h);
+        // spinning propeller
+        const hx = -ax + cw;
+        const hy = -ay + h * 0.475;
+        const L = h * 0.5;
+        const c = Math.cos(now / 120);
+        ctx.fillStyle = "rgba(255,0,40,0.28)";
+        ctx.beginPath();
+        ctx.ellipse(hx, hy, w * 0.025, L, 0, 0, 7);
+        ctx.fill();
+        ctx.strokeStyle = "#ff0028";
+        ctx.lineWidth = 3;
+        for (const sg of [-1, 1]) {
+          ctx.beginPath();
+          ctx.ellipse(hx, hy + (sg * L * c) / 2, w * 0.016, Math.abs((L * c) / 2) + 1, 0, 0, 7);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#ff0028";
+        ctx.beginPath();
+        ctx.ellipse(hx, hy, w * 0.02, h * 0.05, 0, 0, 7);
+        ctx.fill();
+        ctx.restore();
+        return;
       }
+
+      // Vector fallback (exact demo paths)
+      ctx.save();
+      ctx.globalAlpha = al;
+      ctx.translate(x, y);
+      ctx.rotate(a);
+      ctx.scale(1.25, 1.25);
+      ctx.fillStyle = "#9c0027";
+      avPoly(ctx, [[-2, -4], [-24, -31], [-10, -32], [17, -5]]);
+      avPoly(ctx, [[-32, -1], [-45, -14], [-37, -14], [-26, -2]]);
+      avPoly(ctx, [[-32, 1], [-45, 14], [-37, 14], [-26, 2]]);
+      ctx.fillStyle = "#e50539";
+      ctx.beginPath();
+      ctx.moveTo(-46, 0);
+      ctx.bezierCurveTo(-32, -6, -10, -9, 12, -8);
+      ctx.quadraticCurveTo(30, -7, 33, 0);
+      ctx.quadraticCurveTo(30, 7, 12, 8);
+      ctx.bezierCurveTo(-10, 9, -32, 6, -46, 0);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.28)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-36, -2);
+      ctx.bezierCurveTo(-20, -6, 0, -7, 18, -6);
+      ctx.stroke();
+      ctx.fillStyle = "#ff3b66";
+      avPoly(ctx, [[-2, 4], [-26, 35], [-11, 36], [19, 6]]);
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.beginPath();
+      ctx.moveTo(19, 6);
+      ctx.lineTo(-11, 36);
+      ctx.stroke();
+      ctx.fillStyle = "#6b001c";
+      ctx.beginPath();
+      ctx.ellipse(27, 0, 5, 8.5, 0, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "#4a0a18";
+      ctx.beginPath();
+      ctx.ellipse(2, -1, 9, 4.2, 0, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 4, 1.4, 0, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
+      ctx.beginPath();
+      ctx.ellipse(35, 0, 3.2, 22, 0, 0, 7);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(35, 0);
+      ctx.scale(0.25, 1);
+      ctx.rotate(now / 55);
+      ctx.strokeStyle = "#f3f4f6";
+      ctx.lineWidth = 7;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-20, 0);
+      ctx.lineTo(20, 0);
+      ctx.moveTo(0, -20);
+      ctx.lineTo(0, 20);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "#d1d5db";
+      ctx.beginPath();
+      ctx.arc(35, 0, 2.6, 0, 7);
+      ctx.fill();
       ctx.restore();
     }
 
-    function planeLocalBounds(angle, scale){
-      const s = PLANE_SPRITE;
-      const iw = s.baseWidth;
-      const ih = planeImageReady && planeImage && planeImage.height
-        ? (planeImage.height / planeImage.width) * iw
-        : iw * 0.62;
-      const ax = iw * s.anchorX;
-      const ay = ih * s.anchorY;
-      const theta = angle + s.angleOffset;
-      const cos = Math.cos(theta);
-      const sin = Math.sin(theta);
-      const sc = scale || 1;
-      const corners = [[-ax,-ay],[iw-ax,-ay],[iw-ax,ih-ay],[-ax,ih-ay]];
-      let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-      for (const xy of corners){
-        const x = xy[0], y = xy[1];
-        const rx = (x*cos - y*sin)*sc;
-        const ry = (x*sin + y*cos)*sc;
-        if (rx < minX) minX = rx;
-        if (ry < minY) minY = ry;
-        if (rx > maxX) maxX = rx;
-        if (ry > maxY) maxY = ry;
-      }
-      return { minX, minY, maxX, maxY };
-    }
-
-    function flightStartAnchor(w, h){
-      const b = planeLocalBounds(PLANE_FACE_ANGLE, PLANE_FLIGHT_SCALE);
-      const pad = 6;
-      return { x: pad - b.minX, y: h - pad - b.maxY };
-    }
-
-    function waitPlanePose(w, h){
-      const o = flightStartAnchor(w, h);
-      return { x: o.x, y: o.y, angle: PLANE_FACE_ANGLE, scale: PLANE_FLIGHT_SCALE };
-    }
-
-    function drawCenterGlow(w, h){
-      const g = ctx.createRadialGradient(w*0.5, h*0.42, 10, w*0.5, h*0.42, w*0.52);
-      g.addColorStop(0, 'rgba(90,130,210,0.22)');
-      g.addColorStop(0.45, 'rgba(90,130,210,0.1)');
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-    }
-
-    function drawCurveFill(progress, w, h, headY){
-      if (progress <= 0) return;
-      const ox = curveOrigin(w, h).x;
-      const oy = curveBaselineY(h);
-      const floor = oy;
-      const ptAt = (p) => {
-        const pt = headY != null ? hosePoint(p, w, h, progress, headY) : curvePoint(p, w, h);
-        return { x: pt.x, y: Math.min(floor, pt.y) };
-      };
-      const end = ptAt(progress);
-      const steps = Math.max(20, Math.floor(progress * 100));
-      function traceCurve(){
-        ctx.moveTo(ox, oy);
-        for (let i = 0; i <= steps; i++){
-          const p = (i / steps) * progress;
-          const pt = ptAt(p);
-          ctx.lineTo(pt.x, pt.y);
-        }
-      }
-      ctx.beginPath();
-      traceCurve();
-      ctx.lineTo(end.x, oy);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(227, 27, 47, 0.92)';
-      ctx.fill();
-      ctx.beginPath();
-      traceCurve();
-      ctx.strokeStyle = '#e31b2f';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-    }
-
-    function drawScene(){
-      const dpr = window.__avDpr || Math.min(window.devicePixelRatio || 1, 2);
+    function drawScene() {
       let w = Number(window.__avCssW) || parseFloat(canvas.style.width) || 0;
       let h = Number(window.__avCssH) || parseFloat(canvas.style.height) || 0;
       if (!(w > 40) || !(h > 40)) {
         try {
           const r = canvasViewport.getBoundingClientRect();
           w = r.width || canvasViewport.clientWidth || 390;
-          h = r.height || canvasViewport.clientHeight || 260;
+          h = r.height || canvasViewport.clientHeight || 320;
         } catch (e) {
-          w = 390; h = 260;
+          w = 390;
+          h = 320;
         }
       }
       const now = Date.now();
@@ -4161,56 +4081,86 @@
       ctx.clearRect(0, 0, w + 2, h + 2);
       drawAvBackground(ctx, w, h, now);
 
-      const isBet = currentPhase === 'waiting' || currentPhase === 'countdown';
+      const x0 = 10;
+      const y0 = h - 22;
+      const isBet = currentPhase === "waiting" || currentPhase === "countdown";
+
       if (isBet) {
-        flightT = 0;
         flightStartMs = 0;
-        hoverStartedAt = 0;
-        smoothHeadY = null;
-        const s0 = avPathState(0, now, w, h, true);
-        // Tail sits on curve start; use YOUR plane sprite, fixed orientation feel via sprite offset
-        const px = s0.x0 + Math.cos(s0.angle) * 8;
-        const py = s0.y0 + Math.sin(s0.angle) * 8;
-        drawPlaneAt(px, py, s0.angle, 1, PLANE_FLIGHT_SCALE);
+        avAngSm = null;
+        // Pre-takeoff pose (exact demo angle targeting)
+        const dy = -h * AV.HOVER_Y;
+        const dx = w * AV.HOVER_X * 0.38;
+        const raw = Math.atan2(dy, dx) * 0.9 - 0.15;
+        const target = -AV.MAX_TILT * Math.tanh(-raw / AV.MAX_TILT);
+        avAngSm = target;
+        const px = x0 + Math.cos(avAngSm) * 52;
+        const py = y0 + Math.sin(avAngSm) * 52;
+        drawDemoPlane(ctx, px, py, avAngSm, now, 1);
         return;
       }
 
-      if (currentPhase !== 'running' && currentPhase !== 'crashed') return;
+      if (currentPhase !== "running" && currentPhase !== "crashed") return;
 
-      if (!flightStartMs && currentPhase === 'running') flightStartMs = now;
+      if (!flightStartMs && currentPhase === "running") flightStartMs = now;
 
       let t = (now - (flightStartMs || now)) / 1000;
-      if (currentPhase === 'crashed') {
+      if (currentPhase === "crashed") {
         t = ((crashStartMs || now) - (flightStartMs || now)) / 1000;
         if (t < 0) t = AV.RISE;
       }
 
-      const s = avPathState(t, now, w, h, false);
-      drawAvPath(ctx, s, h);
+      // smoothstep progress, then gentle hover (exact demo)
+      const k = Math.min(1, Math.max(0, t / AV.RISE));
+      const e = k * k * (3 - 2 * k);
+      const bob = Math.min(1, Math.max(0, t - (AV.RISE - 1)));
+      const bx = x0 + e * (w * AV.HOVER_X - x0) + Math.sin(now / 900) * 6 * bob;
+      const by = y0 - e * (h * AV.HOVER_Y) + Math.sin(now / 600) * 7 * bob;
+      const cx = x0 + (bx - x0) * 0.62;
+      const cy = y0;
 
-      // Plane tail sits on the end of the curve (demo geometry)
-      let px = s.bx + Math.cos(s.angle) * 52;
-      let py = s.by + Math.sin(s.angle) * 52;
-      let alpha = 1;
+      // Curve + fill (exact demo)
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.quadraticCurveTo(cx, cy, bx, by);
+      ctx.shadowColor = "#e50539";
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = "#e50539";
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.lineTo(bx, h);
+      ctx.lineTo(x0, h);
+      ctx.closePath();
+      const fillG = ctx.createLinearGradient(0, by, 0, h);
+      fillG.addColorStop(0, "rgba(229,5,57,0.55)");
+      fillG.addColorStop(1, "rgba(229,5,57,0.2)");
+      ctx.fillStyle = fillG;
+      ctx.fill();
 
-      if (currentPhase === 'crashed') {
+      // Smoothed tilt (exact demo)
+      const dy = by - cy;
+      const dx = bx - cx;
+      const raw = Math.atan2(dy, dx) * 0.9 - 0.15;
+      const target =
+        -AV.MAX_TILT * Math.tanh(-raw / AV.MAX_TILT) + Math.cos(now / 600) * 0.03 * bob;
+      if (avAngSm === null) avAngSm = target;
+      avAngSm += (target - avAngSm) * 0.12;
+
+      // Plane tail on curve end
+      let px = bx + Math.cos(avAngSm) * 52;
+      let py = by + Math.sin(avAngSm) * 52;
+      let al = 1;
+      if (currentPhase === "crashed") {
         const d = (now - (crashStartMs || now)) / 1000;
         px += d * 700;
         py -= d * 190;
-        alpha = Math.max(0, 1 - d * 1.2);
-      } else {
-        px = Math.min(w - 20, Math.max(20, px));
-        py = Math.min(h - 20, Math.max(20, py));
+        al = Math.max(0, 1 - d * 1.2);
       }
-
-      if (alpha > 0.02) {
-        drawPlaneAt(px, py, s.angle, alpha, PLANE_FLIGHT_SCALE);
-      }
+      drawDemoPlane(ctx, px, py, avAngSm, now, al);
     }
 
-
-    /* ==========================================
-       GAME PHASE
 
     /* ==========================================
        GAME PHASE
