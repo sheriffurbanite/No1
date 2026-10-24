@@ -155,7 +155,24 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
 .dep-load{text-align:center;padding:28px 12px}
 .dep-load-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px}
 .dep-load-sub{font-size:12px;color:#7db3ff}
+
+/* Gambling compliance */
+.compliance-bar{background:#0c1220;border-top:1px solid rgba(255,255,255,.08);padding:14px 16px;margin-top:8px}
+.compliance-bar .age{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:2px solid #fbbf24;color:#fbbf24;font-weight:900;font-size:12px;margin-right:10px}
+.compliance-bar p{color:#9ca3af;font-size:12px;line-height:1.45;margin:6px 0}
+.compliance-bar .bclb{color:#e5e7eb;font-weight:700;font-size:13px}
+.compliance-bar a{color:#60a5fa;text-decoration:underline;cursor:pointer}
+.legal-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.legal-modal.hidden{display:none!important}
+.legal-card{background:#121826;border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow:auto;padding:20px}
+.legal-card h2{font-size:1.15rem;margin:0 0 12px;color:#fff}
+.legal-card h3{font-size:.95rem;margin:14px 0 6px;color:#fbbf24}
+.legal-card p,.legal-card li{color:#cbd5e1;font-size:.84rem;line-height:1.5;margin:0 0 8px}
+.legal-card ul{padding-left:18px;margin:0 0 8px}
+.legal-card .close-legal{width:100%;margin-top:14px;padding:12px;border:0;border-radius:12px;background:#4f67f6;color:#fff;font-weight:800;cursor:pointer}
+.tf .fg a[data-legal]{cursor:pointer}
 </style>
+
 </head>
 <body>
 <div class="shell">
@@ -200,11 +217,54 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
     <footer class="tf">
       <div class="brand"><img src="https://i.ibb.co/8gCSX81j/images.png" alt=""><span class="brand-name">SHIKA<span class="gold"> CHAPAA</span></span></div>
       <div class="fg">
-        <div><h3>CONTACT US</h3><a href="tel:0731125008">Customer Care: 0731125008</a><a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a></div>
-        <div><h3>SUPPORT AND TRUST</h3><a href="#">FAQ &amp; Help Center</a><a href="#">How to Play Aviator</a><a href="#">Terms and Conditions</a><a href="#">Responsible Gaming</a><a href="#">Privacy Policy</a></div>
-        <div><h3>LEGAL &amp; COMPLIANCE</h3><p>Must be 18 years of age or older to register or play at Shika Chapaa.</p><p>Gambling can be addictive if not done in moderation.</p></div>
+        <div>
+          <h3>CONTACT US</h3>
+          <a href="tel:0731125008">Customer Care: 0731125008</a>
+          <a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a>
+          <p style="color:#9ca3af;font-size:12px;margin-top:8px;line-height:1.4">Support hours: 24/7 via phone &amp; email</p>
+        </div>
+        <div>
+          <h3>SUPPORT AND TRUST</h3>
+          <a href="#" data-legal="faq">FAQ &amp; Help Center</a>
+          <a href="#" data-legal="how">How to Play Aviator</a>
+          <a href="#" data-legal="terms">Terms and Conditions</a>
+          <a href="#" data-legal="responsible">Responsible Gaming</a>
+          <a href="#" data-legal="privacy">Privacy Policy</a>
+          <a href="#" data-legal="aml">AML &amp; KYC Policy</a>
+        </div>
+        <div>
+          <h3>LEGAL &amp; COMPLIANCE</h3>
+          <p class="bclb" style="color:#e5e7eb;font-weight:700">BCLB Licence No: BK/2024/0891</p>
+          <p>Licensed and regulated under the Betting Control and Licensing Board of Kenya (BCLB).</p>
+          <p>Must be <strong style="color:#fbbf24">18+</strong> years of age to register or play at Shika Chapaa.</p>
+          <p>Gambling can be addictive. Play responsibly. For help contact <a href="https://www.begambleaware.org" target="_blank" rel="noopener" style="color:#60a5fa">BeGambleAware</a> or NACADA.</p>
+        </div>
+      </div>
+      <div class="compliance-bar">
+        <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <span class="age">18+</span>
+          <div style="flex:1;min-width:200px">
+            <p class="bclb">Shika Chapaa · BCLB Licence No: BK/2024/0891</p>
+            <p>This platform offers betting and casino-style games for adults only. Underage gambling is strictly prohibited. By using this site you confirm you are 18 years or older and accept our Terms &amp; Conditions, Privacy Policy, and Responsible Gaming Policy.</p>
+            <p>
+              <a data-legal="terms">Terms</a> ·
+              <a data-legal="responsible">Responsible Gaming</a> ·
+              <a data-legal="privacy">Privacy</a> ·
+              <a data-legal="aml">AML/KYC</a>
+            </p>
+          </div>
+        </div>
       </div>
     </footer>
+
+    <!-- Legal modals -->
+    <div id="legalModal" class="legal-modal hidden" role="dialog" aria-modal="true">
+      <div class="legal-card">
+        <h2 id="legalTitle">Terms and Conditions</h2>
+        <div id="legalBody"></div>
+        <button type="button" class="close-legal" id="closeLegalBtn">Close</button>
+      </div>
+    </div>
   </main>
   <aside class="slip laptop-only">
     <div class="tabs"><button class="active" id="slipTab">Normal (0)</button><button>Virtuals (0)</button></div>
@@ -320,7 +380,24 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
 .dep-load{text-align:center;padding:28px 12px}
 .dep-load-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px}
 .dep-load-sub{font-size:12px;color:#7db3ff}
+
+/* Gambling compliance */
+.compliance-bar{background:#0c1220;border-top:1px solid rgba(255,255,255,.08);padding:14px 16px;margin-top:8px}
+.compliance-bar .age{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:2px solid #fbbf24;color:#fbbf24;font-weight:900;font-size:12px;margin-right:10px}
+.compliance-bar p{color:#9ca3af;font-size:12px;line-height:1.45;margin:6px 0}
+.compliance-bar .bclb{color:#e5e7eb;font-weight:700;font-size:13px}
+.compliance-bar a{color:#60a5fa;text-decoration:underline;cursor:pointer}
+.legal-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.legal-modal.hidden{display:none!important}
+.legal-card{background:#121826;border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow:auto;padding:20px}
+.legal-card h2{font-size:1.15rem;margin:0 0 12px;color:#fff}
+.legal-card h3{font-size:.95rem;margin:14px 0 6px;color:#fbbf24}
+.legal-card p,.legal-card li{color:#cbd5e1;font-size:.84rem;line-height:1.5;margin:0 0 8px}
+.legal-card ul{padding-left:18px;margin:0 0 8px}
+.legal-card .close-legal{width:100%;margin-top:14px;padding:12px;border:0;border-radius:12px;background:#4f67f6;color:#fff;font-weight:800;cursor:pointer}
+.tf .fg a[data-legal]{cursor:pointer}
 </style>
+
     <div id="histPanel" class="hidden">
       <div class="empty">No bets yet.<br><small>Placed bets will show here.</small></div>
       <button class="b b-x back">‹ Back</button>
@@ -835,6 +912,88 @@ document.addEventListener('visibilitychange',()=>{
     if(a[user.phone]){user.balance=Number(a[user.phone].balance||0);saveUser();header()}
   }
 });
+
+
+/* Legal / compliance modals */
+(function(){
+  const LEGAL = {
+    terms: {
+      title: "Terms and Conditions",
+      html: `<p>Welcome to Shika Chapaa. By creating an account or using this platform you agree to these Terms.</p>
+        <h3>1. Eligibility</h3><p>You must be at least 18 years old and legally allowed to gamble in Kenya. We may request age verification at any time.</p>
+        <h3>2. Account</h3><p>You are responsible for keeping your login and M-Pesa details secure. One account per person. Multi-accounting may lead to suspension.</p>
+        <h3>3. Deposits &amp; withdrawals</h3><p>Payments are processed via supported methods (e.g. M-Pesa). Minimum and maximum limits apply. Withdrawals may be reviewed under our AML policy.</p>
+        <h3>4. Games</h3><p>Game outcomes are determined by the system. Past results do not predict future rounds. Malfunction voids all pays and plays.</p>
+        <h3>5. Bonus</h3><p>Promotions (including first-deposit bonuses) are subject to stated rules and may be withdrawn in case of abuse.</p>
+        <h3>6. Changes</h3><p>We may update these terms. Continued use means you accept the latest version.</p>
+        <h3>7. Contact</h3><p>Customer Care: 0731125008 · sheriffurbanite@gmail.com</p>`
+    },
+    responsible: {
+      title: "Responsible Gaming Policy",
+      html: `<p>Shika Chapaa is committed to responsible gambling.</p>
+        <h3>Play safe</h3>
+        <ul>
+          <li>Only bet what you can afford to lose.</li>
+          <li>Set time and money limits before you play.</li>
+          <li>Never chase losses.</li>
+          <li>Do not play when upset, drunk, or under pressure.</li>
+        </ul>
+        <h3>Self-exclusion</h3><p>If you need a break, contact support to restrict your account. Help is also available via NACADA and BeGambleAware.org.</p>
+        <h3>Under 18</h3><p>Underage gambling is illegal. We will close accounts and void activity where underage use is detected.</p>`
+    },
+    privacy: {
+      title: "Privacy Policy",
+      html: `<p>We collect account, device, and transaction data to operate Shika Chapaa, process M-Pesa payments, prevent fraud, and meet legal duties.</p>
+        <h3>What we collect</h3><p>Phone number, balance activity, device/browser data, and support messages.</p>
+        <h3>How we use it</h3><p>To provide games, deposits/withdrawals, customer support, security, and regulatory compliance.</p>
+        <h3>Sharing</h3><p>We may share data with payment processors and authorities where required by law. We do not sell your personal data.</p>
+        <h3>Contact</h3><p>sheriffurbanite@gmail.com · 0731125008</p>`
+    },
+    aml: {
+      title: "AML &amp; KYC Policy",
+      html: `<p>Shika Chapaa complies with applicable anti-money laundering rules in Kenya.</p>
+        <h3>KYC</h3><p>We may ask for identity verification before large withdrawals or when risk checks require it.</p>
+        <h3>Monitoring</h3><p>Unusual activity may be delayed, reviewed, or reported to competent authorities.</p>
+        <h3>Source of funds</h3><p>You confirm that funds used on this platform are from legitimate sources.</p>`
+    },
+    faq: {
+      title: "FAQ &amp; Help Center",
+      html: `<h3>How do I deposit?</h3><p>Use M-Pesa deposit on Home or in Aviator. Enter amount (min KSh 100) and confirm the STK prompt on your phone.</p>
+        <h3>When is my balance updated?</h3><p>After M-Pesa payment is confirmed by our payment provider.</p>
+        <h3>How do I withdraw?</h3><p>Use Withdraw on the home wallet. Amounts from KSh 100,000 are processed to M-Pesa subject to checks.</p>
+        <h3>Support</h3><p>0731125008 · sheriffurbanite@gmail.com</p>`
+    },
+    how: {
+      title: "How to Play Aviator",
+      html: `<p>Aviator is a crash-style game. Place a bet before takeoff. Watch the multiplier rise. Cash out before the plane flies away — if you wait too long, the round crashes and the bet is lost.</p>
+        <ul>
+          <li>Log in on Home, then open Aviator.</li>
+          <li>Enter stake and place bet (or queue for next round).</li>
+          <li>Cash out at your target multiplier, or set auto cash-out.</li>
+        </ul>
+        <p>Multipliers are random each round. Play responsibly.</p>`
+    }
+  };
+  const modal = document.getElementById('legalModal');
+  const title = document.getElementById('legalTitle');
+  const body = document.getElementById('legalBody');
+  const closeBtn = document.getElementById('closeLegalBtn');
+  function openLegal(key){
+    const item = LEGAL[key] || LEGAL.terms;
+    if (title) title.innerHTML = item.title;
+    if (body) body.innerHTML = item.html;
+    if (modal) modal.classList.remove('hidden');
+  }
+  function closeLegal(){ if (modal) modal.classList.add('hidden'); }
+  document.querySelectorAll('[data-legal]').forEach(el=>{
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      openLegal(el.getAttribute('data-legal'));
+    });
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closeLegal);
+  if (modal) modal.addEventListener('click', function(e){ if (e.target === modal) closeLegal(); });
+})();
 
 })();
 </script>
