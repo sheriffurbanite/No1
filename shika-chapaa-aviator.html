@@ -667,14 +667,14 @@
       flex-shrink:0;
       width:100%;
       max-width:100%;
-      height:min(42vw, 280px);
-      min-height:240px;
+      height:min(48vw, 320px);
+      min-height:260px;
       margin-left:auto;
       margin-right:auto;
       box-sizing:border-box;
       overflow:hidden;
       color:#fff;
-      background-color:rgb(7,7,7);
+      background-color:#05080f;
       background-image:repeating-conic-gradient(
         at -10% 110%,
         rgb(24,24,24) 0deg,
@@ -3865,68 +3865,92 @@
     
     const PLANE_MIN_WIDTH_PX = 120; // fixed on-screen size — never shrink
 
-    /* Aviator-style Bezier path (curve structure + hover bob + tangent tilt) */
-    const AV_CURVE = {
-      GROWTH: 0.08,
-      RISE_SECS: 6,
-      HOVER_X: 0.70,
+    /* Demo-accurate stage: blue glow + rotating dark rays + Bezier path */
+    const AV = {
+      RISE: 8,
+      HOVER_X: 0.66,
       HOVER_Y: 0.55,
       BOB_X: 6,
-      BOB_Y: 8,
-      MAX_TILT_DEG: 25,
-      CTRL: 0.6
+      BOB_Y: 7,
+      CTRL: 0.62,
+      MAX_TILT: (25 * Math.PI) / 180,
+      EDGE: 0.05,
+      TIGHT: 0.8,
+      GROWTH: 0.08
     };
+    let avAngSm = null;
 
-    function avCurveState(t, now, W, H) {
-      const x0 = 12, y0 = H - 16;
-      const k = Math.min(1, Math.max(0, t / AV_CURVE.RISE_SECS));
-      const ease = 1 - (1 - k) * (1 - k); // fast start, slow into hover
-      const bob = Math.min(1, Math.max(0, t - (AV_CURVE.RISE_SECS - 1)));
-      let bx = x0 + ease * (W * AV_CURVE.HOVER_X - x0) + Math.sin(now / 700) * AV_CURVE.BOB_X * bob;
-      let by = y0 - ease * (H * AV_CURVE.HOVER_Y) + Math.sin(now / 450) * AV_CURVE.BOB_Y * bob;
-      // Keep plane body on canvas
-      bx = Math.min(W - 40, Math.max(28, bx));
-      by = Math.min(H - 28, Math.max(32, by));
-      const cx = x0 + (bx - x0) * AV_CURVE.CTRL;
-      const cy = y0;
-      // Tilt follows end tangent, capped (nose not too high)
-      let angle = Math.atan2(by - cy, bx - cx) * 0.9 - 0.2;
-      const maxTilt = (AV_CURVE.MAX_TILT_DEG * Math.PI) / 180;
-      angle = Math.max(-maxTilt, Math.min(maxTilt * 0.35, angle));
-      return { x0, y0, bx, by, cx, cy, angle };
-    }
+    function drawAvBackground(ctx, W, H, now) {
+      const p = 0.5 + 0.5 * Math.sin(now / 2500);
+      const gx = W * 0.5, gy = H * 0.35;
+      const g = ctx.createRadialGradient(gx, gy, 10, gx, gy, Math.max(W, H) * 0.8);
+      g.addColorStop(0, "rgb(" + ((20 + p * 10) | 0) + "," + ((95 + p * 28) | 0) + "," + ((140 + p * 28) | 0) + ")");
+      g.addColorStop(0.55, "#0a1a2c");
+      g.addColorStop(1, "#05080f");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
 
-    function drawAvCurve(ctx, s) {
-      ctx.beginPath();
-      ctx.moveTo(s.x0, s.y0);
-      ctx.quadraticCurveTo(s.cx, s.cy, s.bx, s.by);
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 3;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      ctx.stroke();
-      ctx.lineTo(s.bx, s.y0);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(239,68,68,0.28)';
-      ctx.fill();
-    }
-
-    function drawAvRays(ctx, W, H, now) {
       ctx.save();
-      ctx.translate(12, H - 16);
-      ctx.rotate(now / 9000);
-      const n = 14, R = Math.hypot(W, H) * 1.2;
+      ctx.translate(0, H);
+      ctx.rotate(now / 7000);
+      const n = 56, R = Math.hypot(W, H) * 1.3;
       for (let i = 0; i < n; i += 2) {
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, R, (i * 2 * Math.PI) / n, ((i + 1) * 2 * Math.PI) / n);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(255,255,255,0.045)';
+        ctx.fillStyle = "rgba(0,0,0,0.42)";
         ctx.fill();
       }
       ctx.restore();
     }
 
+    function avPathState(t, now, W, H, isBet) {
+      const x0 = 10, y0 = H - 22;
+      const k = Math.min(1, Math.max(0, t / AV.RISE));
+      const e = k * k * (3 - 2 * k); // smoothstep
+      const bob = Math.min(1, Math.max(0, t - (AV.RISE - 1)));
+      let bx = x0 + e * (W * AV.HOVER_X - x0) + Math.sin(now / 900) * AV.BOB_X * bob;
+      let by = y0 - e * (H * AV.HOVER_Y) + Math.sin(now / 600) * AV.BOB_Y * bob;
+      bx = Math.min(W - 40, Math.max(28, bx));
+      by = Math.min(H - 28, Math.max(32, by));
+      const cx = x0 + (bx - x0) * AV.CTRL;
+      const cy = y0;
+
+      // Smoothed tilt (demo): follow curve, soft cap 25°, light bob on angle
+      const dy = isBet ? -H * AV.HOVER_Y : by - cy;
+      const dx = isBet ? W * AV.HOVER_X * 0.38 : bx - cx;
+      const raw = Math.atan2(dy, dx) * 0.9 - 0.15;
+      const target = -AV.MAX_TILT * Math.tanh(-raw / AV.MAX_TILT) + Math.cos(now / 600) * 0.03 * bob;
+      if (avAngSm === null) avAngSm = target;
+      avAngSm += (target - avAngSm) * 0.12;
+
+      return { x0, y0, bx, by, cx, cy, angle: avAngSm, bob };
+    }
+
+    function drawAvPath(ctx, s, H) {
+      ctx.beginPath();
+      ctx.moveTo(s.x0, s.y0);
+      ctx.quadraticCurveTo(s.cx, s.cy, s.bx, s.by);
+      ctx.shadowColor = "#e50539";
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = "#e50539";
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.lineTo(s.bx, H);
+      ctx.lineTo(s.x0, H);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(0, s.by, 0, H);
+      g.addColorStop(0, "rgba(229,5,57,0.55)");
+      g.addColorStop(1, "rgba(229,5,57,0.2)");
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+
+    
 
 
     let planeImage = null;
@@ -4135,16 +4159,19 @@
       const now = Date.now();
 
       ctx.clearRect(0, 0, w + 2, h + 2);
+      drawAvBackground(ctx, w, h, now);
 
-      // Waiting / countdown — plane at takeoff, no curve yet
-      if (currentPhase === 'waiting' || currentPhase === 'countdown') {
+      const isBet = currentPhase === 'waiting' || currentPhase === 'countdown';
+      if (isBet) {
         flightT = 0;
         flightStartMs = 0;
         hoverStartedAt = 0;
         smoothHeadY = null;
-        drawAvRays(ctx, w, h, now);
-        const s0 = avCurveState(0, now, w, h);
-        drawPlaneAt(s0.x0 + 8, s0.y0 - 6, 0, 1, PLANE_FLIGHT_SCALE);
+        const s0 = avPathState(0, now, w, h, true);
+        // Tail sits on curve start; use YOUR plane sprite, fixed orientation feel via sprite offset
+        const px = s0.x0 + Math.cos(s0.angle) * 8;
+        const py = s0.y0 + Math.sin(s0.angle) * 8;
+        drawPlaneAt(px, py, s0.angle, 1, PLANE_FLIGHT_SCALE);
         return;
       }
 
@@ -4152,40 +4179,38 @@
 
       if (!flightStartMs && currentPhase === 'running') flightStartMs = now;
 
-      // Time since takeoff (for path). Multiplier still drives game logic separately.
       let t = (now - (flightStartMs || now)) / 1000;
       if (currentPhase === 'crashed') {
         t = ((crashStartMs || now) - (flightStartMs || now)) / 1000;
-        if (t < 0) t = AV_CURVE.RISE_SECS;
+        if (t < 0) t = AV.RISE;
       }
 
-      drawAvRays(ctx, w, h, now);
-      const s = avCurveState(t, now, w, h);
-      drawAvCurve(ctx, s);
+      const s = avPathState(t, now, w, h, false);
+      drawAvPath(ctx, s, h);
 
-      let px = s.bx, py = s.by, angle = s.angle, alpha = 1;
+      // Plane tail sits on the end of the curve (demo geometry)
+      let px = s.bx + Math.cos(s.angle) * 52;
+      let py = s.by + Math.sin(s.angle) * 52;
+      let alpha = 1;
 
       if (currentPhase === 'crashed') {
-        // Fly away upper-right + fade (from reference behaviour)
         const d = (now - (crashStartMs || now)) / 1000;
-        px += d * 600;
-        py -= d * 200;
+        px += d * 700;
+        py -= d * 190;
         alpha = Math.max(0, 1 - d * 1.2);
-        angle = s.angle - d * 0.35;
-      }
-
-      // Keep on-screen while flying (before crash exit)
-      if (currentPhase === 'running') {
-        px = Math.min(w - 36, Math.max(24, px));
-        py = Math.min(h - 28, Math.max(28, py));
+      } else {
+        px = Math.min(w - 20, Math.max(20, px));
+        py = Math.min(h - 20, Math.max(20, py));
       }
 
       if (alpha > 0.02) {
-        drawPlaneAt(px, py, angle, alpha, PLANE_FLIGHT_SCALE);
+        drawPlaneAt(px, py, s.angle, alpha, PLANE_FLIGHT_SCALE);
       }
     }
 
 
+    /* ==========================================
+       GAME PHASE
 
     /* ==========================================
        GAME PHASE
@@ -6271,34 +6296,26 @@
     }
 
     function generateOfflineCrash(mode){
-      // 79% <2x, max 8 lows in a row; 2–4x common among rest; highs tricky
-      const r = offlineRandomUnit();
-      let value;
+      // Match server + demo: EDGE / TIGHT classic curve; max 8 under 2x in a row
+      const EDGE = mode === 'happyHour' ? 0.03 : 0.05;
+      const TIGHT = mode === 'happyHour' ? 0.95 : 0.8;
       const forceExit = offlineConsecutiveBelow2x >= 8;
-
-      if (!forceExit && mode !== 'happyHour' && r < 0.79) {
-        if (r < 0.15) value = 1.01 + offlineRandomUnit() * 0.14;
-        else if (r < 0.4) value = 1.15 + offlineRandomUnit() * 0.3;
-        else value = 1.45 + offlineRandomUnit() * 0.54;
-      } else if (!forceExit && mode === 'happyHour' && r < 0.65) {
-        value = 1.01 + offlineRandomUnit() * 0.98;
-      } else {
-        const r2 = offlineRandomUnit();
-        if (mode === 'happyHour') {
-          if (r2 < 0.5) value = 2 + offlineRandomUnit() * 2;
-          else if (r2 < 0.78) value = 4 + offlineRandomUnit() * 6;
-          else if (r2 < 0.93) value = 10 + offlineRandomUnit() * 30;
-          else if (r2 < 0.99) value = Math.exp(Math.log(40) + offlineRandomUnit() * (Math.log(200) - Math.log(40)));
-          else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(1000) - Math.log(200)));
-        } else {
-          if (r2 < 0.55) value = 2 + offlineRandomUnit() * 2;
-          else if (r2 < 0.8) value = 4 + offlineRandomUnit() * 8;
-          else if (r2 < 0.93) value = 12 + offlineRandomUnit() * 38;
-          else if (r2 < 0.99) value = Math.exp(Math.log(50) + offlineRandomUnit() * (Math.log(200) - Math.log(50)));
-          else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(2000) - Math.log(200)));
+      let value;
+      if (!forceExit) {
+        const r = offlineRandomUnit();
+        if (r < EDGE) value = 1.0;
+        else {
+          const raw = (1 - EDGE) / (1 - r);
+          value = 1 + (raw - 1) * TIGHT;
+          value = Math.max(1.01, Math.floor(value * 100) / 100);
         }
+      } else {
+        const r = offlineRandomUnit();
+        const raw = (1 - EDGE) / Math.max(1e-9, 1 - r);
+        value = Math.max(2.0, 1 + (raw - 1) * TIGHT);
+        value = Math.floor(value * 100) / 100;
       }
-      value = Math.min(OFFLINE_MAX_CRASH, Math.max(1.01, Math.round(value * 100) / 100));
+      value = Math.min(OFFLINE_MAX_CRASH, Math.max(1.0, Math.round(value * 100) / 100));
       if (value < 2) offlineConsecutiveBelow2x++;
       else offlineConsecutiveBelow2x = 0;
       return value;
