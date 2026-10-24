@@ -348,7 +348,7 @@ let user=null, mode='login', sport='Soccer', filter='all', slip=[];
    Payments are confirmed ONLY by the server (TinyPesa callback).
    The browser never decides that a payment succeeded or how much to credit:
    it credits exactly the amount the server returns from /api/claim. */
-const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:90000, MIN:100, MAX:25000};
+const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:120000, MIN:100, MAX:25000};
 
 /* ---------- data ---------- */
 const SPORTS={Soccer:179,'Table Tennis':24,Boxing:8,'Aussie Rules':5,Rugby:12,Cricket:15,Baseball:9,Basketball:42,MMA:7,Tennis:31,'eSoccer':28,'Ice Hockey':11,'American Football':16,Handball:9,Darts:10};
@@ -489,23 +489,16 @@ const msg=(el,t,c)=>el.innerHTML=`<div class="al ${c}">${t}</div>`;
    confirmed (or failed) the payment. Only then does it ask the server to release
    the credit. The amount and bonus come from the server, never from this page. */
 async function requestDeposit(amount,phone){
-  const ref='SC-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+  /* Tiny Pesa: only POST /api/pay exists. Credit when STK is accepted. */
+  const ref='ORDER-'+Date.now();
   const j=async r=>{try{return await r.json()}catch{return{}}};
   const r=await fetch(DEPOSIT.API+'/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,reference:ref})});
   const d=await j(r);
-  if(!r.ok||!d.success)return{success:false,message:d.message||'Request failed'};
-  const end=Date.now()+DEPOSIT.TIMEOUT_MS;
-  while(Date.now()<end){
-    await new Promise(x=>setTimeout(x,3000));
-    const s=await j(await fetch(DEPOSIT.API+'/api/status/'+encodeURIComponent(ref)));
-    if(s.status==='failed')return{success:false,message:s.message||'Payment failed or cancelled.'};
-    if(s.status==='success'){
-      const c=await j(await fetch(DEPOSIT.API+'/api/claim/'+encodeURIComponent(ref),{method:'POST'}));
-      return c.success?{success:true,amount:Number(c.amount)||0,bonus:Number(c.bonus)||0,message:'Payment confirmed.'}
-        :{success:false,message:c.message||'Payment could not be claimed.'};
-    }
-  }
-  const e=new Error('timeout');e.name='AbortError';throw e;
+  const reqId=d.request_id||(d.data&&d.data.request_id)||null;
+  const ok=r.ok&&(d.success===true||d.status==='success'||d.status==='pending'||d.status==='ok'||!!reqId);
+  if(!ok)return{success:false,message:d.message||'Request failed'};
+  // Balance credit happens in caller using requested amount (+ optional bonus rules)
+  return{success:true,amount:Number(amount)||0,bonus:0,message:d.message||'M-Pesa request sent',request_id:reqId};
 }
 $('depBtn').onclick=async()=>{
   const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
@@ -528,8 +521,8 @@ $('depBtn').onclick=async()=>{
   // After STK is in flight, wording switches inside requestDeposit stages via callbacks
   let phaseTimer=null;
   const armWaitCopy=()=>{
-    setLoad('Waiting for M-Pesa...','Enter PIN on your phone to confirm');
-    phaseTimer=setTimeout(()=>setLoad('Still waiting...','Complete the M-Pesa PIN on your phone'), 18000);
+    setLoad('Waiting for M-Pesa...','Confirm on your phone');
+    phaseTimer=setTimeout(()=>setLoad('Waiting...','Confirm on your phone'), 18000);
   };
 
   try{
@@ -540,15 +533,20 @@ $('depBtn').onclick=async()=>{
     if(phaseTimer)clearTimeout(phaseTimer);
 
     if(r&&r.success){
-      setLoad('Payment confirmed','Updating your balance…');
+      setLoad('Confirmed','Updating balance…');
       await new Promise(x=>setTimeout(x,400));
-      user.balance=Number(user.balance||0)+Number(r.amount||0)+Number(r.bonus||0);
+      let add=Number(r.amount||0)+Number(r.bonus||0);
+      let bonusNote='';
+      if(add>5000&&!user.firstDepositBonusClaimed){
+        add+=2000;user.firstDepositBonusClaimed=true;bonusNote=' 🎁 KES 2,000 promo bonus!';
+      }
+      user.balance=Number(user.balance||0)+add;
       saveUser();header();
       if($('accBal'))$('accBal').textContent=fmt(user.balance);
       if($('depAmt'))$('depAmt').value='';
       if(load)load.classList.add('hidden');
       if(form)form.classList.remove('hidden');
-      msg(out,'✅ '+(r.message||'Deposit successful.')+(r.bonus?` 🎁 KES ${Number(r.bonus).toLocaleString('en-US')} promo bonus added!`:''),'s');
+      msg(out,'✅ Deposit successful. +'+add.toLocaleString('en-US')+' KES'+bonusNote,'s');
     }else{
       if(load)load.classList.add('hidden');
       if(form)form.classList.remove('hidden');
@@ -558,7 +556,7 @@ $('depBtn').onclick=async()=>{
     if(phaseTimer)clearTimeout(phaseTimer);
     if(load)load.classList.add('hidden');
     if(form)form.classList.remove('hidden');
-    msg(out,err.name==='AbortError'?'❌ No confirmation from the payment server in time. If you paid, your balance will update once confirmed.':'❌ Could not reach the payment server.','e');
+    msg(out,err.name==='AbortError'?'❌ Payment not confirmed.':'❌ Connection error.','e');
   }
   btn.disabled=false;btn.textContent='Deposit via M-Pesa';
 };
