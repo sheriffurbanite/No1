@@ -424,6 +424,7 @@
     .demo-in-balance.hidden{display:none!important}
     #balanceDisplay{color:#20b90a}
 
+    #depositBtn,.wallet-route-btn.hidden{display:none!important}
     .wallet-route-btn{
       height:24px;
       padding:0 10px;
@@ -1223,6 +1224,7 @@
       flex-direction:column
     }
 
+    #betsTabs,.bets-tabs{display:none!important}
     .bets-tabs{
       display:flex;
       height:24px;
@@ -1996,6 +1998,22 @@
     .login-only-msg{
       text-align:center;padding:28px 12px;color:#e5e7eb;font-size:16px;font-weight:800;
     }
+  
+    /* === forced UI rules (user request) === */
+    #depositBtn, .wallet-route-btn { display: none !important; }
+    #betsTabs, .bets-tabs { display: none !important; }
+    .chat-win-amt { color: #4ade80 !important; }
+    .chat-win-plane { display: none !important; }
+    .cashout-mult { color: #b8f0c0 !important; text-shadow: 0 0 10px rgba(46,204,64,0.35) !important; }
+    .mult-badge, .mult-badge.low, .mult-badge.mid, .mult-badge.high {
+      background: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+    }
+    .mult-badge.low { color: #00b8d1 !important; }
+    .mult-badge.mid { color: #9a35cf !important; }
+    .mult-badge.high { color: #d826c0 !important; }
+
   </style>
 </head>
 
@@ -2276,7 +2294,7 @@
 
         <button
           class="wallet-route-btn"
-          id="depositBtn"
+          id="depositBtn" style="display:none!important"
         >
           DEPOSIT
         </button>
@@ -2292,7 +2310,7 @@
             <span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span>
           </button>
           <div id="navMenuDrop" class="nav-menu-drop hidden">
-            <button type="button" class="nav-menu-item" id="menuDepositBtn">Deposit</button>
+            <button type="button" class="nav-menu-item" id="menuDepositBtn" style="display:none" style="display:none">Deposit</button><!-- game deposit disabled -->
             <button type="button" class="nav-menu-item" id="menuWithdrawBtn">Withdraw</button>
             <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
             <button type="button" class="nav-menu-item danger hidden" style="display:none!important" id="menuLogoutBtn">Logout</button>
@@ -4570,6 +4588,14 @@
       amount,
       multiplier
     ){
+      try {
+        window.__scLastWin = {
+          mult: Number(multiplier || currentMult || 1),
+          win: Number(amount || 0),
+          bet: 0,
+          round: Number(multiplier || currentMult || 1)
+        };
+      } catch (e) {}
 
       const m = Number(multiplier || currentMult || 1);
       const winMultEl = document.getElementById('winMult');
@@ -6218,8 +6244,8 @@
 
     function generateOfflineCrash(mode){
       // Match server + demo: EDGE / TIGHT classic curve; max 8 under 2x in a row
-      const EDGE = mode === 'happyHour' ? 0.03 : 0.05;
-      const TIGHT = mode === 'happyHour' ? 0.95 : 0.8;
+      const EDGE = mode === 'happyHour' ? 0.04 : 0.08;
+      const TIGHT = mode === 'happyHour' ? 0.75 : 0.55;
       const forceExit = offlineConsecutiveBelow2x >= 8;
       let value;
       if (!forceExit) {
@@ -8129,6 +8155,13 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     ========================================== */
 
     function init(){
+      try {
+        var db = document.getElementById('depositBtn');
+        if (db) { db.style.display = 'none'; db.onclick = function(e){ e && e.preventDefault(); return false; }; }
+        var bt = document.getElementById('betsTabs');
+        if (bt) bt.style.display = 'none';
+      } catch (e) {}
+
 
       try {
         isDemo = false;
@@ -8563,14 +8596,27 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         ];
         var COLORS = ['#3b82f6','#22c55e','#eab308','#a855f7','#ef4444','#06b6d4','#f97316','#ec4899','#64748b'];
         var MSGS = [
-          'Hii inauwa','Aviator kuwacha si raisi hii red devil','Kinooo sana','Najiuwa Leo 😅😅','Manyoya 👋',
-          'Aviator ikona siku sitoi kitu','good luck everyone 🔥','who cashed at 2x?','plane going high leo',
-          'I took 1.5x safe','big multiplier coming','cashout now!!','easy 3x tuko pamoja','waiting for 10x 😎',
-          'KE on top','M-Pesa loaded','hold hold hold','took profit','gg bro','smooth flight',
-          'shika chapaa 💰','next round is mine','don\'t be greedy','Nairobi in the chat','Kisumu tuko hapa',
-          'small stakes leo','feeling lucky','1.2x is fine','moon mission 🚀','almost had it',
-          'tuko pamoja','respect the crash','early cash safe','late cash brave','yoh',
-          'nimechoka na red','hii game inacheza','nimeweka 500','cashout 2.1x niko poa','next one bigger'
+          'Shika Chapaa iko fire leo 🔥','Hii round ni yetu bro','Nairobi in the building',
+          'Kisumu tuko solid','Mombasa hatuchecki chini','Cashout poa manze',
+          'Plane iko high saa hii','Usishike greed bro','Small stake big brain',
+          'Shika Chapaa nimependa','Hii multiplier iko sweet','Nilichukua 2.1x safe',
+          'Next round ni yangu','Watu wa KE on top','M-Pesa iko ready',
+          'Bro shika chapaa literally','Sina stress niko chill','Hold kidogo tu',
+          'Flew away ilinibamba','Nimejipanga leo','Aviator ni lifestyle',
+          'Chat iko live tuko wengi','Bonus round feeling','Siwezi miss hii',
+          'Smooth flight manze','Red early usijali','Green day inakuja',
+          'Shika Chapaa best app','Wenzangu cashout smart','Hii ni skill si luck tu',
+          'Rongai tuko live','Thika in the chat','Eldoret hatulali',
+          'Nimeweka 200 tu','Big one loading...','Usilie after crash',
+          'Tuko pamoja kila round','Chapaa inakuanga hapa','Game iko fair leo',
+          'Hii inauwa','Aviator kuwacha si raisi hii red devil','Kinooo sana',
+          'Najiuwa Leo 😅😅','Manyoya 👋','Aviator ikona siku sitoi kitu',
+          'good luck everyone 🔥','who cashed at 2x?','plane going high leo',
+          'I took 1.5x safe','cashout now!!','easy 3x tuko pamoja','waiting for 10x 😎',
+          'hold hold hold','took profit','gg bro','don\'t be greedy',
+          '1.2x is fine','moon mission 🚀','almost had it','respect the crash',
+          'early cash safe','late cash brave','nimechoka na red','hii game inacheza',
+          'nimeweka 500','cashout 2.1x niko poa','next one bigger','Shika Chapaa 💰'
         ];
 
         function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
@@ -8621,26 +8667,34 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         }
 
         function rowHtml(m){
+          var mid = m.uid || (m.id + '_' + (m.time||'') + '_' + (m.mult||m.text||'').toString().slice(0,12));
           var avHtml = m.avatar
             ? '<img class="chat-avatar" src="' + m.avatar + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"><div class="chat-avatar-fallback" style="display:none;background:' + pick(COLORS) + '">' + (m.id||'?').charAt(0) + '</div>'
             : '<div class="chat-avatar-fallback" style="background:' + pick(COLORS) + '">' + (m.id||'?').charAt(0) + '</div>';
+          var likeCls = m._liked ? 'chat-likes liked' : 'chat-likes';
+          var heart = m._liked ? '♥' : '♡';
           if (m.type === 'win') {
             var mc = multColor(m.mult);
-            var cardStyle = 'border-color:' + mc + '99;background:linear-gradient(135deg,' + mc + '33 0%,#0d1a28 55%,#0a1620 100%);box-shadow:0 4px 16px ' + mc + '40';
-            return '<div class="chat-row">' + avHtml +
-              '<div class="chat-win-card" style="' + cardStyle + '"><div class="chat-meta"><span class="chat-name" style="color:' + mc + '">' + m.id + '</span><span class="chat-time">' + m.time + '</span></div>' +
+            var avWin = m.avatar
+              ? '<img class="win-card-av" src="' + m.avatar + '" alt="">'
+              : '<div class="win-card-av" style="display:flex;align-items:center;justify-content:center;background:#3b82f6;color:#fff;font-size:12px;font-weight:800">' + (m.id||'?').charAt(0) + '</div>';
+            return '<div class="chat-row" data-mid="' + mid + '">' + avHtml +
+              '<div class="chat-win-card">' +
+              '<div class="win-card-top">' + avWin +
+              '<span class="chat-name">' + m.id + '</span>' +
+              '<span class="chat-time" style="margin-left:auto;font-size:11px;color:#94a3b8">' + m.time + '</span></div>' +
               '<div class="chat-win-body"><div class="chat-win-grid">' +
               '<div><span>Cashed out:</span><strong class="chat-win-mult" style="color:' + mc + '">' + m.mult + 'x</strong></div>' +
-              '<div><span>Win:</span><strong class="chat-win-amt" style="color:' + mc + '">' + Number(m.win).toLocaleString() + '.00 KES</strong></div>' +
-              '<div><span>Round:</span><strong class="chat-win-round" style="color:' + mc + '">' + m.round + 'x</strong></div>' +
+              '<div><span>Win:</span><strong class="chat-win-amt">' + Number(m.win).toLocaleString() + '.00 KES</strong></div>' +
+              '<div><span>Round:</span><strong class="chat-win-round">' + m.round + 'x</strong></div>' +
               '<div><span>Bet:</span><strong class="chat-win-bet">' + Number(m.bet).toLocaleString() + '.00 KES</strong></div>' +
               '</div></div></div>' +
-              '<div class="chat-likes">♡ ' + m.likes + '</div></div>';
+              '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heart + ' <span class="like-n">' + (m.likes||0) + '</span></div></div>';
           }
-          return '<div class="chat-row">' + avHtml +
+          return '<div class="chat-row" data-mid="' + mid + '">' + avHtml +
             '<div class="chat-bubble"><div class="chat-meta"><span class="chat-name">' + m.id + '</span><span class="chat-time">' + m.time + '</span></div>' +
             '<div class="chat-text">' + m.text + '</div></div>' +
-            '<div class="chat-likes">♡ ' + m.likes + '</div></div>';
+            '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heart + ' <span class="like-n">' + (m.likes||0) + '</span></div></div>';
         }
 
         function renderAll(){
@@ -8700,7 +8754,49 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           stuckBottom = true;
           chatList.scrollTop = chatList.scrollHeight;
         }
-        if (chatSend) chatSend.addEventListener('click', sendMine);
+        
+        if (chatList && !chatList._likeBound) {
+          chatList._likeBound = true;
+          chatList.addEventListener('click', function(e){
+            var el = e.target.closest('[data-like]');
+            if (!el) return;
+            e.preventDefault();
+            var mid = el.getAttribute('data-mid');
+            var msg = null;
+            for (var li = 0; li < messages.length; li++) {
+              var mm = messages[li];
+              var id = mm.uid || (mm.id + '_' + (mm.time||'') + '_' + (mm.mult||mm.text||'').toString().slice(0,12));
+              if (id === mid) { msg = mm; break; }
+            }
+            if (!msg) return;
+            if (msg._liked) { msg._liked = false; msg.likes = Math.max(0, (msg.likes||1) - 1); }
+            else { msg._liked = true; msg.likes = (msg.likes||0) + 1; }
+            var n = el.querySelector('.like-n');
+            if (n) n.textContent = String(msg.likes);
+            el.classList.toggle('liked', !!msg._liked);
+            el.innerHTML = (msg._liked ? '♥' : '♡') + ' <span class="like-n">' + (msg.likes||0) + '</span>';
+          });
+        }
+        function shareLatestWin(){
+          try {
+            var last = window.__scLastWin || { mult: '2.15', win: 2150, bet: 1000, round: '2.15' };
+            var msg = {
+              type: 'win', id: 'You', uid: 'you_' + Date.now(), avatar: myAvatar, time: timeStr(), likes: 0,
+              mult: String(last.mult), win: Number(last.win), round: String(last.round || last.mult), bet: Number(last.bet || 0)
+            };
+            messages.push(msg);
+            if (messages.length > 50) messages = messages.slice(-50);
+            chatList.insertAdjacentHTML('beforeend', rowHtml(msg));
+            stuckBottom = true;
+            chatList.scrollTop = chatList.scrollHeight;
+          } catch (err) {}
+        }
+        var shareBtn = document.getElementById('chatShareWinBtn');
+        if (shareBtn) shareBtn.addEventListener('click', shareLatestWin);
+        var av2 = document.getElementById('chatAvatarBtn2');
+        if (av2) av2.addEventListener('click', function(e){ e.stopPropagation(); if (typeof openAvatar === 'function') openAvatar(); else if (avatarBtn) avatarBtn.click(); });
+
+if (chatSend) chatSend.addEventListener('click', sendMine);
         if (chatInput) chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') sendMine(); });
 
         chatBtn.addEventListener('click', function(e){
@@ -8758,11 +8854,16 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
   <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
     <div class="chat-panel-head">
       <div class="chat-head-left">
-        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Choose avatar">☺</button>
+        <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Change your emoji / avatar">😊 Avatar</button>
         <span class="chat-online-label">Online: <b id="chatOnlineCount">0</b></span>
       </div>
       <button type="button" class="chat-close" id="chatCloseBtn" aria-label="Close chat">×</button>
     </div>
+    <div class="chat-toolbar">
+      <button type="button" class="chat-tool-btn" id="chatAvatarBtn2" title="Change avatar">😊 Change emoji</button>
+      <button type="button" class="chat-tool-btn primary" id="chatShareWinBtn" title="Share your latest win">Share win</button>
+    </div>
+    <p class="chat-share-hint">Tap <b>Change emoji</b> for your avatar · <b>Share win</b> posts your last cashout · Tap ♡ to like</p>
     <div class="chat-messages" id="chatMessages"></div>
     <button type="button" class="chat-new-pill" id="chatNewPill">New messages ▾</button>
     <div class="chat-input-bar">
