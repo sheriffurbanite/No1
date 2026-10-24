@@ -51,10 +51,14 @@
     }
 
     .hidden{display:none!important}
+    .login-only-msg{text-align:center;padding:48px 20px;font-size:1.35rem;font-weight:800;color:#fff}
+    .login-only-msg span{display:block;margin-top:10px;font-size:.85rem;font-weight:600;color:#9ca3af}
     #loginView .auth-form,
     #loginView .auth-links-footer,
     #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
+    #loginView #loginAlert,
+    #loginView .auth-title,
+    #loginView .auth-site-logo{display:none!important}
 
     /* =========================
        LOGIN
@@ -418,10 +422,6 @@
       line-height:1;
     }
     .demo-in-balance.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
     #balanceDisplay{color:#20b90a}
 
     .wallet-route-btn{
@@ -477,10 +477,6 @@
       z-index:80
     }
     .nav-menu-drop.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
     .nav-menu-item{
       width:100%;
       text-align:left;
@@ -1798,10 +1794,6 @@
       transition:opacity .35s ease
     }
     .splash.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
     .splash.fade-out{opacity:0;pointer-events:none}
     .spribe-load{
       display:flex;
@@ -1895,10 +1887,6 @@
       overflow:hidden
     }
     .withdraw-expand-panel.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
 
   
     /* Chat button + Betika-style chat panel */
@@ -1914,10 +1902,6 @@
       display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif;
     }
     .chat-panel.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
     .chat-panel-head{
       display:flex;align-items:center;justify-content:space-between;
       padding:10px 12px;background:#161b22;border-bottom:1px solid #252b36;flex-shrink:0;
@@ -1998,10 +1982,6 @@
       display:flex;align-items:center;justify-content:center;padding:16px;
     }
     .avatar-pick-modal.hidden{display:none!important}
-    #loginView .auth-form,
-    #loginView .auth-links-footer,
-    #loginView .demo-switch-row,
-    #loginView #loginAlert{display:none!important}
     .avatar-pick-card{
       background:#161b22;border:1px solid #2a3344;border-radius:14px;padding:16px;
       width:min(340px,94vw);max-height:80vh;overflow:auto;
@@ -3904,19 +3884,19 @@
     }
 
     function maxPlaneProgress(w, h){
-      // Cap progress so full plane body stays visible (never flies off-frame)
+      // Cap so full plane body stays visible
       const { x: ox, y: oy } = curveOrigin(w, h);
       const spanX = w - ox - PLANE_MARGIN_RIGHT;
       const spanY = h * 0.62;
       if (spanX <= 0 || spanY <= 0) return 0.55;
-      const byX = (w - PLANE_MARGIN_RIGHT - PLANE_NOSE_REACH - ox - 28) / spanX;
-      const byY = Math.max(0.2, (oy - PLANE_MARGIN_TOP - 36) / spanY);
+      const byX = (w - PLANE_MARGIN_RIGHT - (typeof PLANE_NOSE_REACH !== 'undefined' ? PLANE_NOSE_REACH : 40) - ox - 28) / spanX;
+      const byY = Math.max(0.2, (oy - (typeof PLANE_MARGIN_TOP !== 'undefined' ? PLANE_MARGIN_TOP : 20) - 36) / spanY);
       return Math.max(0.32, Math.min(0.72, byX, byY));
     }
 
     function curvePoint(progress, w, h){
       const { x: ox, y: oy } = curveOrigin(w, h);
-      // Softer rise (less harsh curve) — plane motion feels smoother
+      // Softer rise — smoother flight, body stays readable
       const p = Math.max(0, Math.min(1, progress));
       const ease = Math.pow(p, 1.28);
       const x = ox + ease * (w - ox - PLANE_MARGIN_RIGHT);
@@ -4138,7 +4118,7 @@
         let planePt = headY != null
           ? hosePoint(visualProgress, w, h, visualProgress, headY)
           : curvePoint(visualProgress, w, h);
-        // Gentle up/down sway + slight pitch so motion feels alive (not rough jumps)
+        // Gentle up/down sway + slight pitch
         const swayT = now / 1000;
         const swayY = Math.sin(swayT * 2.1) * 4.5 + Math.sin(swayT * 3.4) * 2.2;
         const swayAngle = Math.sin(swayT * 2.1) * 0.045;
@@ -6231,7 +6211,10 @@
           return a[0] / 4294967296;
         }
       } catch (e) {}
-function generateOfflineCrash(mode){
+      return Math.random();
+    }
+
+    function generateOfflineCrash(mode){
       // 79% <2x, max 8 lows in a row; 2–4x common among rest; highs tricky
       const r = offlineRandomUnit();
       let value;
@@ -6252,8 +6235,8 @@ function generateOfflineCrash(mode){
           else if (r2 < 0.99) value = Math.exp(Math.log(40) + offlineRandomUnit() * (Math.log(200) - Math.log(40)));
           else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(1000) - Math.log(200)));
         } else {
-          if (r2 < 0.55) value = 2 + offlineRandomUnit() * 2;       // 2–4x common
-          else if (r2 < 0.8) value = 4 + offlineRandomUnit() * 8;  // 4–12
+          if (r2 < 0.55) value = 2 + offlineRandomUnit() * 2;
+          else if (r2 < 0.8) value = 4 + offlineRandomUnit() * 8;
           else if (r2 < 0.93) value = 12 + offlineRandomUnit() * 38;
           else if (r2 < 0.99) value = Math.exp(Math.log(50) + offlineRandomUnit() * (Math.log(200) - Math.log(50)));
           else value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(2000) - Math.log(200)));
@@ -6263,9 +6246,6 @@ function generateOfflineCrash(mode){
       if (value < 2) offlineConsecutiveBelow2x++;
       else offlineConsecutiveBelow2x = 0;
       return value;
-    }
-
-    round(value * 100) / 100));
     }
 
     function offlineAnimDuration(target){
@@ -7003,7 +6983,6 @@ function generateOfflineCrash(mode){
 
     function showLogin(){
 
-      // No login form in game — message only
       setAppRoute('#/aviator');
 
       try {
@@ -8156,7 +8135,6 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
     function init(){
 
-      // Demo permanently off
       try {
         isDemo = false;
         localStorage.setItem(LS_DEMO, '0');
@@ -8166,7 +8144,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         if (di) di.classList.add('hidden');
       } catch (e) {}
 
-      // Strip any login form — game has NO login UI (home only)
+      // No login UI in game — message only
       try {
         var lv = document.getElementById('loginView');
         if (lv) {
@@ -8194,15 +8172,9 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           var raw = localStorage.getItem(LS_USER);
           if (raw) session = JSON.parse(raw);
         } catch (e) {}
-
         if (!session) return false;
 
-        // Home may store phone as +254... or 254... — match accounts flexibly
-        var phone =
-          session.phone ||
-          session.msisdn ||
-          (session.user && session.user.phone) ||
-          '';
+        var phone = session.phone || session.msisdn || (session.user && session.user.phone) || '';
         if (!phone) return false;
 
         var key = String(phone);
@@ -8215,7 +8187,6 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           null;
 
         if (!account) {
-          // Create account shell from session so game can run with home balance
           account = {
             phone: key,
             country: session.country || '+254',
@@ -8246,21 +8217,15 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
       if (tryStartFromSession()) return;
 
-      // Retry shortly (iframe may load before home writes session)
       var tries = 0;
       var t = setInterval(function(){
         tries++;
         if (tryStartFromSession() || tries > 15) clearInterval(t);
       }, 400);
 
-      // Minimal "Log in only" — never full login form
       try {
-        if (typeof loginView !== 'undefined' && loginView) {
-          loginView.classList.remove('hidden');
-        }
-        if (typeof gameView !== 'undefined' && gameView) {
-          gameView.classList.add('hidden');
-        }
+        if (typeof loginView !== 'undefined' && loginView) loginView.classList.remove('hidden');
+        if (typeof gameView !== 'undefined' && gameView) gameView.classList.add('hidden');
         setAppRoute('#/aviator');
       } catch (e) {}
     }
