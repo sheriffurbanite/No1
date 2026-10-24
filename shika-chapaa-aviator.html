@@ -7574,76 +7574,15 @@
         if (statusEl) statusEl.textContent = sub;
       };
 
-      const finishFail = (message) => {
-        isDepositing = false;
-        pendingDepositAmount = 0;
-        pendingDepositReference = null;
-        pendingRequestId = null;
-        depositAlreadyCredited = false;
-        stopDepositPoll();
-        clearDepositTimeout();
-        finishDepositUI();
-        showGameNotice(message || 'Payment failed.', 'error', 3500);
-      };
-
-      const creditPaid = (total, bonus, message) => {
-        if (!currentUser || depositAlreadyCredited) return;
-        total = Number(total) || 0;
-        bonus = Number(bonus) || 0;
-        if (!(total > 0) && pendingDepositAmount > 0) total = Number(pendingDepositAmount);
-        if (!(total > 0)) return;
-        depositAlreadyCredited = true;
-        isDepositing = false;
-        stopDepositPoll();
-        clearDepositTimeout();
-        currentUser.balance = Number(currentUser.balance || 0) + total;
-        if (bonus > 0) currentUser.firstDepositBonusClaimed = true;
-        saveCurrentUser();
-        updateBalanceUI();
-        pendingDepositAmount = 0;
-        pendingDepositReference = null;
-        pendingRequestId = null;
-        finishDepositUI();
-        try {
-          if (typeof walletModal !== 'undefined' && walletModal) walletModal.classList.add('hidden');
-        } catch (e) {}
-        const bonusNote = bonus > 0
-          ? (' + KSh ' + bonus.toLocaleString('en-KE') + ' bonus')
-          : '';
-        showGameNotice(
-          (message || 'Deposit successful') + ' • +' + total.toLocaleString('en-KE') + ' KES' + bonusNote,
-          'success',
-          5000
-        );
-      };
-
-      const isPaid = (d) => {
-        if (!d || typeof d !== 'object') return false;
-        const st = String(d.status || d.state || d.result || d.ResultCode || d.resultCode || '').toLowerCase();
-        if (d.success === true || d.paid === true || d.confirmed === true || d.completed === true) return true;
-        if (['success', 'ok', 'paid', 'completed', 'confirmed', 'successful', 'complete', 'settled'].includes(st)) return true;
-        if (String(d.ResultCode) === '0' || String(d.resultCode) === '0') return true;
-        return false;
-      };
-
-      const isFailed = (d) => {
-        if (!d || typeof d !== 'object') return false;
-        const st = String(d.status || d.state || d.result || '').toLowerCase();
-        if (d.success === false || d.paid === false) return true;
-        if (['failed', 'fail', 'error', 'cancelled', 'canceled', 'rejected'].includes(st)) return true;
-        if (d.ResultCode != null && String(d.ResultCode) !== '0') return true;
-        if (d.resultCode != null && String(d.resultCode) !== '0') return true;
-        return false;
-      };
-
       setLoad('Checking details...', 'Please wait');
-      await new Promise(r => setTimeout(r, 350));
-      setLoad('Validating number...', 'Confirming M-Pesa details');
-      await new Promise(r => setTimeout(r, 350));
-      setLoad('Sending STK push...', 'Requesting payment on your phone');
+      await new Promise(r => setTimeout(r, 600));
+      setLoad('Validating...', 'Validating payment data');
+      await new Promise(r => setTimeout(r, 600));
+      setLoad('Sending STK...', 'Sending payment request');
 
       try {
-        const reference = 'SC-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+        // Tiny Pesa: only /api/pay exists — credit when STK is accepted
+        const reference = 'ORDER-' + Date.now();
         pendingDepositReference = reference;
 
         const response = await fetch(
@@ -7661,97 +7600,67 @@
 
         const result = await response.json().catch(() => ({}));
         const requestId = result.request_id ||
-          (result.data && result.data.request_id) ||
-          result.CheckoutRequestID ||
-          result.checkoutRequestID ||
-          null;
+          (result.data && result.data.request_id) || null;
         pendingRequestId = requestId;
 
-        const accepted = response.ok && (
+        const apiOk = response.ok && (
           result.success === true ||
           result.status === 'success' ||
           result.status === 'pending' ||
           result.status === 'ok' ||
-          !!requestId ||
-          result.success !== false
+          !!(requestId)
         );
 
-        if (!accepted) {
-          finishFail((result && (result.message || result.msg || result.error)) || 'Request failed.');
+        if (!apiOk) {
+          isDepositing = false;
+          pendingDepositAmount = 0;
+          pendingDepositReference = null;
+          pendingRequestId = null;
+          depositAlreadyCredited = false;
+          finishDepositUI();
+          showGameNotice(
+            (result && (result.message || result.msg)) ||
+            'Payment request failed.',
+            'error',
+            4000
+          );
           return;
         }
 
-        setLoad('Waiting for M-Pesa...', 'Confirm on your phone');
-        const waitHint = setTimeout(() => {
-          if (!depositAlreadyCredited) setLoad('Waiting...', 'Confirm on your phone');
-        }, 18000);
+        setLoad('Request sent', 'Updating balance…');
+        await new Promise(r => setTimeout(r, 900));
 
-        const keys = [reference, requestId].filter(Boolean);
-        const end = Date.now() + 120000;
-        let done = false;
-
-        while (Date.now() < end) {
-          if (depositAlreadyCredited) { done = true; break; }
-          await new Promise(r => setTimeout(r, 2500));
-          if (depositAlreadyCredited) { done = true; break; }
-
-          for (const key of keys) {
-            try {
-              const stRes = await fetch(
-                'https://my-server1.bonto.run/api/status/' + encodeURIComponent(key)
-              );
-              const s = await stRes.json().catch(() => ({}));
-
-              if (isFailed(s)) {
-                clearTimeout(waitHint);
-                finishFail(s.message || 'Payment failed.');
-                return;
-              }
-
-              if (isPaid(s)) {
-                clearTimeout(waitHint);
-                setLoad('Confirmed', 'Updating balance…');
-
-                let c = {};
-                try {
-                  const claimRes = await fetch(
-                    'https://my-server1.bonto.run/api/claim/' + encodeURIComponent(key),
-                    { method: 'POST' }
-                  );
-                  c = await claimRes.json().catch(() => ({}));
-                } catch (e) {}
-
-                // Prefer claim amounts; if claim fails after paid status, still credit STK amount
-                const creditAmt =
-                  Number(c.amount) ||
-                  Number(s.amount) ||
-                  Number(s.paidAmount) ||
-                  Number(amount) ||
-                  0;
-                const bonus = Number(c.bonus) || Number(s.bonus) || 0;
-                const total = creditAmt + (bonus > 0 && creditAmt === Number(c.amount) ? bonus : (Number(c.amount) ? bonus : bonus));
-
-                // Simplify: amount from claim or status or requested; add bonus if separate
-                let finalAmt = Number(c.amount) || Number(s.amount) || Number(amount) || 0;
-                let finalBonus = Number(c.bonus) || 0;
-                // If claim returned combined total only in amount, bonus may be 0
-                creditPaid(finalAmt + finalBonus, finalBonus, c.message || s.message || 'Deposit successful');
-                done = true;
-                break;
-              }
-            } catch (e) {}
+        // Credit once on accepted STK (Tiny Pesa has no status/claim API)
+        if (!depositAlreadyCredited) {
+          if (typeof applyDepositCredit === 'function') {
+            applyDepositCredit(amount, result);
+          } else {
+            // inline fallback
+            depositAlreadyCredited = true;
+            isDepositing = false;
+            currentUser.balance = Number(currentUser.balance || 0) + Number(amount);
+            if (amount > 5000 && !currentUser.firstDepositBonusClaimed) {
+              currentUser.balance += 2000;
+              currentUser.firstDepositBonusClaimed = true;
+            }
+            saveCurrentUser();
+            updateBalanceUI();
+            finishDepositUI();
+            try { if (walletModal) walletModal.classList.add('hidden'); } catch (e) {}
+            showGameNotice('Deposit successful • +' + Number(amount).toLocaleString('en-KE') + ' KES', 'success', 5000);
           }
-          if (done) break;
-        }
-
-        clearTimeout(waitHint);
-        if (!done && !depositAlreadyCredited) {
-          finishFail('Payment not confirmed.');
+        } else {
+          finishDepositUI();
         }
 
       } catch (error) {
         console.error('Connection error:', error);
-        finishFail('Connection error.');
+        isDepositing = false;
+        pendingDepositAmount = 0;
+        pendingDepositReference = null;
+        pendingRequestId = null;
+        finishDepositUI();
+        showGameNotice('Connection error.', 'error', 4000);
       }
     }
 
