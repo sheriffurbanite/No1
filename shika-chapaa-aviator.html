@@ -1132,8 +1132,9 @@
     .win-bubble .cashout-mult{
       font-size:22px;
       font-weight:900;
-      color:#ffffff;
+      color:#00b8d1; /* default low; JS sets cyan/purple/pink to match history */
       letter-spacing:-0.5px;
+      transition: color .15s ease;
     }
 
     .win-bubble .win-badge{
@@ -4258,6 +4259,19 @@
         // Save crash mult (up to 200 rounds, localStorage) + ribbon
         recordCrashMult(mult);
 
+        // Chat: bubble biggest wins this round
+        try {
+          const winners = (liveBoardPlayers || [])
+            .filter(p => p.cashed && p.win > 0)
+            .sort((a, b) => b.win - a.win)
+            .slice(0, 3);
+          winners.forEach((p, i) => {
+            setTimeout(() => {
+              try { if (typeof postChatBigWin === 'function') postChatBigWin(p); } catch (e) {}
+            }, 400 + i * 700);
+          });
+        } catch (e) {}
+
         // Clear live players for next round
         // Auto-clear this round's player list after the round ends
         liveBoardPlayers = [];
@@ -4529,15 +4543,46 @@
        WIN
     ========================================== */
 
+    function postChatBigWin(p){
+      try {
+        if (!p || !(p.win > 0)) return;
+        const mult = Number(p.mult || 1);
+        // Prefer notable wins for chat bubbles
+        if (mult < 2 && p.win < 3000) return;
+        const id = (p.name || ('u***' + Math.floor(Math.random()*90+10))).toString();
+        const msg = {
+          type: 'win',
+          id: id.length > 12 ? id.slice(0, 3) + '***' + id.slice(-2) : id,
+          avatar: p.avatarUrl || '',
+          time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          likes: Math.floor(Math.random() * 6),
+          mult: mult.toFixed(2),
+          win: Math.round(p.win),
+          round: mult.toFixed(2),
+          bet: Math.round(p.stake || 0)
+        };
+        // Chat module exposes window.__scChatPush when booted
+        if (typeof window.__scChatPush === 'function') {
+          window.__scChatPush(msg);
+        }
+      } catch (e) {}
+    }
+
     function showWinBubble(
       amount,
       multiplier
     ){
 
+      const m = Number(multiplier || currentMult || 1);
       const winMultEl = document.getElementById('winMult');
       if(winMultEl){
-        winMultEl.textContent =
-          Number(multiplier || currentMult).toFixed(2) + 'x';
+        winMultEl.textContent = m.toFixed(2) + 'x';
+        // Same colours as history ribbon: cyan / purple / pink
+        let col = '#00b8d1';
+        if (m >= 10) col = '#d826c0';
+        else if (m >= 2) col = '#9a35cf';
+        winMultEl.style.color = col;
+        winMultEl.style.textShadow = '0 0 12px ' + col + '88';
       }
 
       winAmountEl.textContent =
@@ -4891,52 +4936,61 @@
       tickBoardJoins();
       if (currentPhase !== 'running') return;
       const now = Date.now();
-      if (now - lastBoardCashoutCheck < 380) return;
+      if (now - lastBoardCashoutCheck < 700) return;
       lastBoardCashoutCheck = now;
 
       const mult = Math.max(1, currentMult || 1);
       let changed = false;
+      const stillIn = liveBoardPlayers.filter(p => !p.cashed);
+      if (!stillIn.length) return;
 
-      // Almost 5 cashouts before 1.5x
-      if (mult < 1.5 && earlyCashoutsDone < 5) {
-        const stillIn = liveBoardPlayers.filter(p => !p.cashed);
-        if (stillIn.length) {
-          stillIn.sort((a, b) => a.stake - b.stake);
-          const p = stillIn[0];
-          p.cashed = true;
-          earlyCashoutsDone++;
-          p.cashoutOrder = earlyCashoutsDone; // 1 = first on top
-          p.mult = Math.max(1.01, Math.min(1.48, 1.05 + Math.random() * 0.4));
-          p.win = p.stake * p.mult;
-          activePlayingCount = Math.max(0, activePlayingCount - 1);
-          onlinePlayersCount = Math.max(490, onlinePlayersCount - Math.floor(1 + Math.random() * 5));
-          if (!firstCashoutName) firstCashoutName = p.name;
-          topCashouts.push({
-            name: p.name, avatarUrl: p.avatarUrl,
-            stake: p.stake, mult: p.mult, win: p.win, ts: Date.now(), first: earlyCashoutsDone === 1
-          });
-          changed = true;
+      /*
+       * Players mostly HOLD for bigger odds.
+       * Early cashouts are rare; activity rises only on strong multipliers.
+       */
+      stillIn.forEach(p => {
+        if (p.cashed) return;
+        let chance = 0;
+
+        if (mult < 1.4) {
+          // Almost nobody cashes this early (max ~1 total via low roll)
+          chance = earlyCashoutsDone < 1 ? 0.004 : 0;
+        } else if (mult < 2) {
+          chance = earlyCashoutsDone < 2 ? 0.006 : 0.002;
+        } else if (mult < 3) {
+          // Still rare before 3x
+          chance = 0.01;
+        } else if (mult < 5) {
+          chance = 0.025;
+        } else if (mult < 10) {
+          chance = 0.05;
+        } else if (mult < 50) {
+          chance = 0.08;
+        } else {
+          chance = 0.12; // take profit on magic runs
         }
-      } else if (mult >= 1.5) {
-        liveBoardPlayers.forEach(p => {
-          if (p.cashed) return;
-          const chance = 0.05 + Math.min(0.14, (mult - 1.5) * 0.03);
-          if (Math.random() < chance) {
-            p.cashed = true;
-            earlyCashoutsDone++;
-            p.cashoutOrder = earlyCashoutsDone;
-            p.mult = Math.max(1.01, mult * (0.88 + Math.random() * 0.1));
-            p.win = p.stake * p.mult;
-            activePlayingCount = Math.max(0, activePlayingCount - 1);
-            onlinePlayersCount = Math.max(490, onlinePlayersCount - Math.floor(1 + Math.random() * 4));
-            topCashouts.push({
-              name: p.name, avatarUrl: p.avatarUrl,
-              stake: p.stake, mult: p.mult, win: p.win, ts: Date.now()
-            });
-            changed = true;
-          }
+
+        if (Math.random() >= chance) return;
+
+        p.cashed = true;
+        earlyCashoutsDone++;
+        p.cashoutOrder = earlyCashoutsDone;
+        p.mult = Math.max(1.01, mult * (0.94 + Math.random() * 0.05));
+        p.win = p.stake * p.mult;
+        activePlayingCount = Math.max(0, activePlayingCount - 1);
+        onlinePlayersCount = Math.max(490, onlinePlayersCount - Math.floor(1 + Math.random() * 3));
+        if (!firstCashoutName) firstCashoutName = p.name;
+        topCashouts.push({
+          name: p.name, avatarUrl: p.avatarUrl,
+          stake: p.stake, mult: p.mult, win: p.win, ts: Date.now(),
+          first: earlyCashoutsDone === 1
         });
-      }
+        // Big win bubbles in chat (per round cashouts that look strong)
+        try {
+          if (p.mult >= 2 && typeof postChatBigWin === 'function') postChatBigWin(p);
+        } catch (e) {}
+        changed = true;
+      });
 
       if (changed) {
         rankLiveBoard();
@@ -4948,6 +5002,7 @@
         renderBetsList();
       }
     }
+
 
     function seedPreviousMults(){
       loadPersistedBoards();
@@ -6139,35 +6194,35 @@
     }
 
     function generateOfflineCrash(mode){
-      // Match no-gen-server.js tricky distribution
-      // standard: ~65% <2x | ~18% 2-3x | ~17% 3x+
-      // happyHour: slightly friendlier
+      // Match no-gen-server: happy but tricky — ~55% <2x, ~25% 3x+
       const r = offlineRandomUnit();
       let value;
       if (mode === 'happyHour') {
-        if (r < 0.5) value = 1.01 + offlineRandomUnit() * 0.98;
-        else if (r < 0.72) value = 2 + offlineRandomUnit() * 0.99;
+        if (r < 0.42) value = 1.01 + offlineRandomUnit() * 0.98;
+        else if (r < 0.64) value = 2 + offlineRandomUnit() * 0.99;
         else {
           const r2 = offlineRandomUnit();
-          value = OFFLINE_RTP / Math.max(1e-12, 1 - r2);
-          value = Math.max(3, value);
-          if (r2 > 0.96) {
-            value = Math.exp(Math.log(20) + offlineRandomUnit() * (Math.log(OFFLINE_MAX_CRASH) - Math.log(20)));
-          }
+          if (r2 < 0.55) value = 3 + offlineRandomUnit() * 5;
+          else if (r2 < 0.82) value = 8 + offlineRandomUnit() * 17;
+          else if (r2 < 0.94) value = 25 + offlineRandomUnit() * 55;
+          else if (r2 < 0.99) value = Math.exp(Math.log(80) + offlineRandomUnit() * (Math.log(400) - Math.log(80)));
+          else value = Math.exp(Math.log(400) + offlineRandomUnit() * (Math.log(OFFLINE_MAX_CRASH) - Math.log(400)));
         }
       } else {
-        if (r < 0.65) {
-          if (r < 0.12) value = 1.01 + offlineRandomUnit() * 0.19;
-          else value = 1.01 + offlineRandomUnit() * 0.98;
-        } else if (r < 0.83) {
+        if (r < 0.55) {
+          if (r < 0.1) value = 1.01 + offlineRandomUnit() * 0.19;
+          else if (r < 0.28) value = 1.2 + offlineRandomUnit() * 0.35;
+          else value = 1.55 + offlineRandomUnit() * 0.44;
+        } else if (r < 0.75) {
           value = 2 + offlineRandomUnit() * 0.99;
         } else {
           const r2 = offlineRandomUnit();
-          value = OFFLINE_RTP / Math.max(1e-12, 1 - r2);
-          value = Math.max(3, value);
-          if (r2 > 0.985) {
-            value = Math.exp(Math.log(25) + offlineRandomUnit() * (Math.log(OFFLINE_MAX_CRASH) - Math.log(25)));
-          }
+          if (r2 < 0.5) value = 3 + offlineRandomUnit() * 3.5;
+          else if (r2 < 0.78) value = 6.5 + offlineRandomUnit() * 8.5;
+          else if (r2 < 0.92) value = 15 + offlineRandomUnit() * 35;
+          else if (r2 < 0.985) value = Math.exp(Math.log(50) + offlineRandomUnit() * (Math.log(200) - Math.log(50)));
+          else if (r2 < 0.998) value = Math.exp(Math.log(200) + offlineRandomUnit() * (Math.log(1000) - Math.log(200)));
+          else value = Math.exp(Math.log(1000) + offlineRandomUnit() * (Math.log(OFFLINE_MAX_CRASH) - Math.log(1000)));
         }
       }
       return Math.min(OFFLINE_MAX_CRASH, Math.max(1.01, Math.round(value * 100) / 100));
@@ -8468,9 +8523,10 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         }
         function multColor(m){
           var n = parseFloat(m);
-          if (n < 2) return '#34d399';
-          if (n < 10) return '#60a5fa';
-          return '#f472b6';
+          // Match history ribbon: cyan / purple / pink
+          if (n < 2) return '#00b8d1';
+          if (n < 10) return '#9a35cf';
+          return '#d826c0';
         }
 
         var myAvatar = localStorage.getItem('sc_avatar') || AVATARS[0];
@@ -8483,10 +8539,17 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           var id = maskId();
           var av = pick(AVATARS);
           if (isWin) {
-            var mult = (1.1 + Math.random() * 6).toFixed(2);
-            var bet = rand(50, 8000);
+            // Big win bubbles — favour meaningful cashouts
+            var multN;
+            var rr = Math.random();
+            if (rr < 0.45) multN = 2 + Math.random() * 4;       // 2-6x
+            else if (rr < 0.75) multN = 1.3 + Math.random() * 1.5; // smaller
+            else if (rr < 0.92) multN = 6 + Math.random() * 14;  // 6-20x
+            else multN = 20 + Math.random() * 80;               // rare big
+            var mult = multN.toFixed(2);
+            var bet = rand(100, 12000);
             var win = Math.round(bet * parseFloat(mult));
-            var round = (1.5 + Math.random() * 12).toFixed(2);
+            var round = mult;
             return {
               type: 'win', id: id, avatar: av, time: timeStr(), likes: rand(0, 8),
               mult: mult, win: win, round: round, bet: bet
@@ -8526,6 +8589,19 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
         // seed 28 messages
         for (var i = 0; i < 28; i++) messages.push(makeMsg(i % 7 === 0));
+        window.__scChatPush = function(msg){
+          try {
+            if (!msg) return;
+            messages.push(msg);
+            if (messages.length > 40) messages.shift();
+            if (chatList) {
+              chatList.insertAdjacentHTML('beforeend', rowHtml(msg));
+              while (chatList.children.length > 40) chatList.removeChild(chatList.firstChild);
+              if (stuckBottom) chatList.scrollTop = chatList.scrollHeight;
+              else if (chatNewPill) chatNewPill.classList.add('show');
+            }
+          } catch (e) {}
+        };
         renderAll();
         if (onlineEl) onlineEl.textContent = String(rand(4800, 9200));
 
