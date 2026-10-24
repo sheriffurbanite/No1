@@ -3862,7 +3862,71 @@
     };
     const PLANE_FACE_ANGLE = -PLANE_SPRITE.angleOffset;
     const PLANE_FLIGHT_SCALE = 1.45;
+    
     const PLANE_MIN_WIDTH_PX = 120; // fixed on-screen size — never shrink
+
+    /* Aviator-style Bezier path (curve structure + hover bob + tangent tilt) */
+    const AV_CURVE = {
+      GROWTH: 0.08,
+      RISE_SECS: 6,
+      HOVER_X: 0.70,
+      HOVER_Y: 0.55,
+      BOB_X: 6,
+      BOB_Y: 8,
+      MAX_TILT_DEG: 25,
+      CTRL: 0.6
+    };
+
+    function avCurveState(t, now, W, H) {
+      const x0 = 12, y0 = H - 16;
+      const k = Math.min(1, Math.max(0, t / AV_CURVE.RISE_SECS));
+      const ease = 1 - (1 - k) * (1 - k); // fast start, slow into hover
+      const bob = Math.min(1, Math.max(0, t - (AV_CURVE.RISE_SECS - 1)));
+      let bx = x0 + ease * (W * AV_CURVE.HOVER_X - x0) + Math.sin(now / 700) * AV_CURVE.BOB_X * bob;
+      let by = y0 - ease * (H * AV_CURVE.HOVER_Y) + Math.sin(now / 450) * AV_CURVE.BOB_Y * bob;
+      // Keep plane body on canvas
+      bx = Math.min(W - 40, Math.max(28, bx));
+      by = Math.min(H - 28, Math.max(32, by));
+      const cx = x0 + (bx - x0) * AV_CURVE.CTRL;
+      const cy = y0;
+      // Tilt follows end tangent, capped (nose not too high)
+      let angle = Math.atan2(by - cy, bx - cx) * 0.9 - 0.2;
+      const maxTilt = (AV_CURVE.MAX_TILT_DEG * Math.PI) / 180;
+      angle = Math.max(-maxTilt, Math.min(maxTilt * 0.35, angle));
+      return { x0, y0, bx, by, cx, cy, angle };
+    }
+
+    function drawAvCurve(ctx, s) {
+      ctx.beginPath();
+      ctx.moveTo(s.x0, s.y0);
+      ctx.quadraticCurveTo(s.cx, s.cy, s.bx, s.by);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.lineTo(s.bx, s.y0);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(239,68,68,0.28)';
+      ctx.fill();
+    }
+
+    function drawAvRays(ctx, W, H, now) {
+      ctx.save();
+      ctx.translate(12, H - 16);
+      ctx.rotate(now / 9000);
+      const n = 14, R = Math.hypot(W, H) * 1.2;
+      for (let i = 0; i < n; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, R, (i * 2 * Math.PI) / n, ((i + 1) * 2 * Math.PI) / n);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,255,255,0.045)';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
 
 
     let planeImage = null;
@@ -3871,6 +3935,7 @@
     let smoothHeadY = null;
     let flightT = 0;
     let flightStartMs = 0;
+    let crashStartMs = 0;
 
     (function loadPlaneSprite(){
       planeImage = new Image();
@@ -4055,7 +4120,6 @@
     }
 
     function drawScene(){
-      // Reliable CSS pixel size (must match setTransform dpr)
       const dpr = window.__avDpr || Math.min(window.devicePixelRatio || 1, 2);
       let w = Number(window.__avCssW) || parseFloat(canvas.style.width) || 0;
       let h = Number(window.__avCssH) || parseFloat(canvas.style.height) || 0;
@@ -4072,18 +4136,15 @@
 
       ctx.clearRect(0, 0, w + 2, h + 2);
 
+      // Waiting / countdown — plane at takeoff, no curve yet
       if (currentPhase === 'waiting' || currentPhase === 'countdown') {
         flightT = 0;
         flightStartMs = 0;
         hoverStartedAt = 0;
         smoothHeadY = null;
-        try {
-          const start = waitPlanePose(w, h);
-          drawPlaneAt(start.x, start.y, start.angle, 1, PLANE_FLIGHT_SCALE);
-        } catch (e) {
-          // last-resort visible plane
-          try { drawPlaneAt(48, h - 40, PLANE_FACE_ANGLE, 1, PLANE_FLIGHT_SCALE); } catch (e2) {}
-        }
+        drawAvRays(ctx, w, h, now);
+        const s0 = avCurveState(0, now, w, h);
+        drawPlaneAt(s0.x0 + 8, s0.y0 - 6, 0, 1, PLANE_FLIGHT_SCALE);
         return;
       }
 
@@ -4091,66 +4152,39 @@
 
       if (!flightStartMs && currentPhase === 'running') flightStartMs = now;
 
-      const smoothMult = Math.max(1, currentMult || 1);
-      const progress = Math.min(1, Math.log(smoothMult) / Math.log(PLANE_VISUAL_REF_MULT));
-      const planeCap = maxPlaneProgress(w, h);
-      const hovering = currentPhase === 'running' && progress >= planeCap;
-      const visualProgress = Math.min(progress, planeCap);
-
-      let headY = null;
-      if (hovering) {
-        const peakPt = curvePoint(planeCap, w, h);
-        const floor = curveBaselineY(h);
-        // Stay well above the bottom edge
-        const low = Math.min(peakPt.y + 18, floor - Math.max(PLANE_FLOOR_CLEARANCE, 48));
-        const target = Math.min(low, hoverDipTarget(now, peakPt.y, low));
-        if (smoothHeadY == null) smoothHeadY = peakPt.y;
-        smoothHeadY += (target - smoothHeadY) * 0.045;
-        headY = smoothHeadY;
-      } else {
-        hoverStartedAt = 0;
-        if (currentPhase !== 'crashed') smoothHeadY = null;
+      // Time since takeoff (for path). Multiplier still drives game logic separately.
+      let t = (now - (flightStartMs || now)) / 1000;
+      if (currentPhase === 'crashed') {
+        t = ((crashStartMs || now) - (flightStartMs || now)) / 1000;
+        if (t < 0) t = AV_CURVE.RISE_SECS;
       }
 
+      drawAvRays(ctx, w, h, now);
+      const s = avCurveState(t, now, w, h);
+      drawAvCurve(ctx, s);
+
+      let px = s.bx, py = s.by, angle = s.angle, alpha = 1;
+
+      if (currentPhase === 'crashed') {
+        // Fly away upper-right + fade (from reference behaviour)
+        const d = (now - (crashStartMs || now)) / 1000;
+        px += d * 600;
+        py -= d * 200;
+        alpha = Math.max(0, 1 - d * 1.2);
+        angle = s.angle - d * 0.35;
+      }
+
+      // Keep on-screen while flying (before crash exit)
       if (currentPhase === 'running') {
-        drawCenterGlow(w, h);
-        // Curve path unchanged — only the plane sprite is adjusted near the stretch limit
-        drawCurveFill(visualProgress, w, h, headY);
-        let planePt = headY != null
-          ? hosePoint(visualProgress, w, h, visualProgress, headY)
-          : curvePoint(visualProgress, w, h);
+        px = Math.min(w - 36, Math.max(24, px));
+        py = Math.min(h - 28, Math.max(28, py));
+      }
 
-        // How close we are to the stretch limit (0 = early flight, 1 = at/over cap)
-        const limitT = planeCap > 0.001
-          ? Math.max(0, Math.min(1, (visualProgress - planeCap * 0.72) / (planeCap * 0.28)))
-          : 0;
-        const nearLimit = limitT > 0.05 || headY != null;
-
-        // At stretch limit: nose-down ~15° from the normal face angle (curve structure untouched)
-        const PITCH_DOWN_15 = (15 * Math.PI) / 180;
-        let planeAngle = PLANE_FACE_ANGLE;
-        let swayY = 0;
-        if (nearLimit) {
-          planeAngle = PLANE_FACE_ANGLE - PITCH_DOWN_15 * limitT;
-          // Up/down sway only near the stretch limit
-          const swayT = now / 1000;
-          const amp = 5.5 * limitT; // grows as we approach the limit
-          swayY = (Math.sin(swayT * 2.4) * amp) + (Math.sin(swayT * 3.7) * amp * 0.45);
-          // Extra gentle bob when fully hovering at cap
-          if (headY != null) {
-            swayY += Math.sin(swayT * 1.8) * 3.2;
-          }
-        }
-
-        planePt = {
-          x: Math.min(w - 36, Math.max(24, planePt.x)),
-          y: Math.min(h - 28, Math.max(28, planePt.y + swayY))
-        };
-        drawPlaneAt(planePt.x, planePt.y, planeAngle, 1, PLANE_FLIGHT_SCALE);
-      } else if (currentPhase === 'crashed') {
-        drawCurveFill(Math.min(visualProgress || 0.4, planeCap), w, h, headY);
+      if (alpha > 0.02) {
+        drawPlaneAt(px, py, angle, alpha, PLANE_FLIGHT_SCALE);
       }
     }
+
 
 
     /* ==========================================
@@ -4295,6 +4329,8 @@
         if (typeof playLossSound === 'function') {
           playLossSound();
         }
+
+        crashStartMs = Date.now();
 
         // Save crash mult (up to 200 rounds, localStorage) + ribbon
         recordCrashMult(mult);
