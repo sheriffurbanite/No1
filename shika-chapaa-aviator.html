@@ -4255,14 +4255,10 @@
           playLossSound();
         }
 
-        pushHistory(
-          mult
-        );
+        // Save crash mult (up to 200 rounds, localStorage) + ribbon
+        recordCrashMult(mult);
 
-        // Save crash mult into previous list (1h TTL) + clear live players
-        previousRoundMults = loadHourStore(LS_PREV);
-        previousRoundMults = [mult, ...previousRoundMults].slice(0, 20);
-        saveHourStore(LS_PREV, previousRoundMults);
+        // Clear live players for next round
         // Auto-clear this round's player list after the round ends
         liveBoardPlayers = [];
         activePlayingCount = 0;
@@ -4762,8 +4758,47 @@
       } catch(e){}
     }
 
+    /* Multiplier history: keep up to 200 rounds in localStorage (survives login) */
+    const MULT_HISTORY_MAX = 200;
+    const LS_MULT_HISTORY = 'shikachapaa_mult_history_v1';
+
+    function loadMultHistory(){
+      try {
+        const raw = localStorage.getItem(LS_MULT_HISTORY);
+        if (!raw) {
+          const oldItems = loadHourStore(LS_PREV);
+          if (oldItems && oldItems.length) {
+            const migrated = oldItems.slice(0, MULT_HISTORY_MAX);
+            localStorage.setItem(LS_MULT_HISTORY, JSON.stringify(migrated));
+            return migrated;
+          }
+          return [];
+        }
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) return data.slice(0, MULT_HISTORY_MAX);
+        if (data && Array.isArray(data.items)) return data.items.slice(0, MULT_HISTORY_MAX);
+        return [];
+      } catch (e) { return []; }
+    }
+
+    function saveMultHistory(items){
+      try {
+        localStorage.setItem(LS_MULT_HISTORY, JSON.stringify((items || []).slice(0, MULT_HISTORY_MAX)));
+      } catch (e) {}
+    }
+
+    function recordCrashMult(mult){
+      const m = Math.round(Number(mult) * 100) / 100;
+      if (!(m >= 1)) return;
+      previousRoundMults = [m, ...loadMultHistory()].slice(0, MULT_HISTORY_MAX);
+      saveMultHistory(previousRoundMults);
+      try {
+        if (typeof pushHistory === 'function') pushHistory(m);
+      } catch (e) {}
+    }
+
     function loadPersistedBoards(){
-      previousRoundMults = loadHourStore(LS_PREV);
+      previousRoundMults = loadMultHistory();
       topCashouts = loadHourStore(LS_TOP);
     }
 
@@ -4916,14 +4951,36 @@
 
     function seedPreviousMults(){
       loadPersistedBoards();
-      if (previousRoundMults.length) return;
-      previousRoundMults = Array.from({ length: 10 }, () => {
+      if (previousRoundMults.length) {
+        // Rebuild ribbon from stored history (no wipe on login)
+        try {
+          if (typeof history !== 'undefined' && Array.isArray(history) && !history.length) {
+            previousRoundMults.slice(0, 35).forEach(m => {
+              if (typeof pushHistory === 'function') { /* already stored */ }
+            });
+            // fill in-memory ribbon history once
+            history.length = 0;
+            previousRoundMults.slice(0, 35).forEach(v => history.push(Number(v)));
+            if (typeof multRibbon !== 'undefined' && multRibbon) {
+              multRibbon.innerHTML = history.map(v => {
+                let c = 'low';
+                if (v >= 10) c = 'high';
+                else if (v >= 2) c = 'mid';
+                return '<div class="mult-pill ' + c + '">' + Number(v).toFixed(2) + 'x</div>';
+              }).join('');
+            }
+          }
+        } catch (e) {}
+        return;
+      }
+      // First-ever visit only: small seed then persist
+      previousRoundMults = Array.from({ length: 12 }, () => {
         const r = Math.random();
-        if (r < 0.5) return 1 + Math.random() * 1.5;
-        if (r < 0.85) return 2 + Math.random() * 6;
-        return 8 + Math.random() * 40;
+        let value = 0.97 / Math.max(1e-9, (1 - r));
+        value = Math.min(10000, Math.max(1.01, Math.round(value * 100) / 100));
+        return value;
       });
-      saveHourStore(LS_PREV, previousRoundMults);
+      saveMultHistory(previousRoundMults);
     }
 
     function renderBetsList(){
@@ -4942,7 +4999,7 @@
 
       // Previous: straight list of multipliers only (no bubbles), 1h data
       if (activeBetFilter === 'previous') {
-        const items = loadHourStore(LS_PREV);
+        const items = loadMultHistory();
         previousRoundMults = items.length ? items : previousRoundMults;
         if (!previousRoundMults.length) {
           betsList.innerHTML = '<div class="empty-bets">No previous multipliers yet</div>';
@@ -6050,81 +6107,180 @@
 
 
     
-    /* Local flight if signal host is silent — keeps plane animation alive */
+    
+    /* ==========================================
+       OFFLINE SIGNALS (same math as no-gen server)
+       Runs when Socket.IO to no-gen.bonto.run is down.
+       Switches off automatically when live signals resume.
+    ========================================== */
+    const OFFLINE_RTP = 0.97;
+    const OFFLINE_MAX_CRASH = 10000;
+    const OFFLINE_MAX_ANIM_SEC = 90;
+    const OFFLINE_K = Math.log(OFFLINE_MAX_CRASH) / OFFLINE_MAX_ANIM_SEC;
+    const OFFLINE_COUNTDOWN_SEC = 5;
+    const OFFLINE_PAUSE_MS = 3500;
+    const OFFLINE_NEXT_MS = 1500;
+
     let localSimOn = false;
     let localSimTimer = null;
     let localCrashAt = 2;
     let localFlightStart = 0;
+    let offlineActive = false;
+
+    function offlineRandomUnit(){
+      try {
+        if (window.crypto && crypto.getRandomValues) {
+          const a = new Uint32Array(1);
+          crypto.getRandomValues(a);
+          return a[0] / 4294967296;
+        }
+      } catch (e) {}
+      return Math.random();
+    }
+
+    function generateOfflineCrash(mode){
+      const r = offlineRandomUnit();
+      let value;
+      if (mode === 'happyHour') {
+        const adjustedR = Math.pow(r, 0.85);
+        value = OFFLINE_RTP / Math.max(1e-12, (1 - adjustedR));
+        if (r > 0.97) {
+          const r2 = offlineRandomUnit();
+          value = Math.exp(Math.log(20) + r2 * (Math.log(OFFLINE_MAX_CRASH) - Math.log(20)));
+        }
+      } else {
+        value = OFFLINE_RTP / Math.max(1e-12, (1 - r));
+        if (r < 0.01) value = 1.01 + offlineRandomUnit() * 0.09;
+      }
+      return Math.min(OFFLINE_MAX_CRASH, Math.max(1.01, Math.round(value * 100) / 100));
+    }
+
+    function offlineAnimDuration(target){
+      const safe = Math.max(1.01, Math.min(OFFLINE_MAX_CRASH, target));
+      return Math.log(safe) / OFFLINE_K;
+    }
+
+    function offlineMultiplier(elapsed, target, duration){
+      if (elapsed <= 0) return 1;
+      if (elapsed >= duration) return target;
+      const raw = Math.exp(OFFLINE_K * elapsed);
+      return Math.round(Math.min(target, raw) * 100) / 100;
+    }
+
+    function signalsAreLive(){
+      return !!(socket && socket.connected && (Date.now() - (window.__lastSignalAt || 0) < 10000));
+    }
 
     function startLocalFlightSim(){
       if (localSimOn) return;
       localSimOn = true;
-      let waitMs = 4500;
-      const cycle = () => {
-        if (!gameView || gameView.classList.contains('hidden')) {
-          localSimTimer = setTimeout(cycle, 2000);
-          return;
-        }
-        // only drive when no live signal recently
-        if (socket && socket.connected && (Date.now() - (window.__lastSignalAt || 0) < 8000)) {
-          localSimTimer = setTimeout(cycle, 2000);
-          return;
-        }
-        setPhase('waiting');
-        let t0 = Date.now();
-        const waitTick = () => {
-          const p = Math.min(100, ((Date.now() - t0) / waitMs) * 100);
-          try { countdownBar.style.width = (100 - p) + '%'; } catch (e) {}
-          if (Date.now() - t0 < waitMs) {
-            requestAnimationFrame(waitTick);
+      offlineActive = false;
+
+      const schedule = (fn, ms) => {
+        if (localSimTimer) clearTimeout(localSimTimer);
+        localSimTimer = setTimeout(fn, ms);
+      };
+
+      const runCycle = () => {
+        try {
+          if (!gameView || gameView.classList.contains('hidden')) {
+            schedule(runCycle, 2000);
             return;
           }
-          // fly
-          localCrashAt = Math.max(1.01, Math.min(50, Math.pow(1 - Math.random() * 0.97, -0.04)));
-          localFlightStart = Date.now();
-          setPhase('running', 1);
-          const fly = () => {
-            if (currentPhase !== 'running') return;
-            const elapsed = (Date.now() - localFlightStart) / 1000;
-            const mult = Math.min(localCrashAt, Math.pow(Math.E, 0.06 * elapsed));
-            setPhase('running', mult);
-            try {
-              if (liveMultEl) liveMultEl.textContent = mult.toFixed(2) + 'x';
-            } catch (e) {}
-            if (mult >= localCrashAt - 0.001) {
-              setPhase('crashed', localCrashAt);
-              try {
-                if (crashMultEl) crashMultEl.textContent = localCrashAt.toFixed(2) + 'x';
-                if (typeof playLossSound === 'function') playLossSound();
-              } catch (e) {}
-              // history
-              try {
-                if (typeof history !== 'undefined' && Array.isArray(history)) {
-                  // history may be multiplier history array name conflict - skip
-                }
-                if (typeof seedPreviousMults === 'function') {}
-                if (typeof updateRibbon === 'function') {}
-                // push to mult ribbon if exists
-                const ribbon = document.getElementById('multRibbon');
-                if (ribbon) {
-                  const cls = localCrashAt < 2 ? 'low' : localCrashAt < 10 ? 'mid' : 'high';
-                  ribbon.insertAdjacentHTML('afterbegin',
-                    '<span class="mult-pill ' + cls + '">' + localCrashAt.toFixed(2) + 'x</span>');
-                }
-              } catch (e) {}
-              setTimeout(cycle, 2800);
-              return;
+        } catch (e) {
+          schedule(runCycle, 2000);
+          return;
+        }
+
+        // Live socket driving the game → stay idle
+        if (signalsAreLive()) {
+          offlineActive = false;
+          schedule(runCycle, 2000);
+          return;
+        }
+
+        offlineActive = true;
+        // Countdown / waiting
+        setPhase('waiting');
+        let seconds = OFFLINE_COUNTDOWN_SEC;
+        try {
+          if (countdownBar) countdownBar.style.width = '100%';
+        } catch (e) {}
+
+        const tickCountdown = () => {
+          if (signalsAreLive()) {
+            offlineActive = false;
+            schedule(runCycle, 1500);
+            return;
+          }
+          if (seconds <= 0) {
+            beginOfflineFlight();
+            return;
+          }
+          setPhase('countdown');
+          try {
+            if (countdownBar) {
+              countdownBar.style.width = ((seconds / OFFLINE_COUNTDOWN_SEC) * 100) + '%';
             }
-            requestAnimationFrame(fly);
-          };
+          } catch (e) {}
+          seconds -= 1;
+          schedule(tickCountdown, 1000);
+        };
+
+        schedule(tickCountdown, 200);
+      };
+
+      const beginOfflineFlight = () => {
+        if (signalsAreLive()) {
+          offlineActive = false;
+          schedule(runCycle, 1500);
+          return;
+        }
+        // ~every 20 rounds mild happy hour (3 rounds) — approximate
+        const mode = (Math.floor(Date.now() / 1000) % 23 < 3) ? 'happyHour' : 'standard';
+        localCrashAt = generateOfflineCrash(mode);
+        localFlightStart = Date.now();
+        const duration = offlineAnimDuration(localCrashAt);
+        setPhase('running', 1);
+        try {
+          if (liveMultEl) liveMultEl.textContent = '1.00x';
+        } catch (e) {}
+
+        const fly = () => {
+          if (signalsAreLive()) {
+            offlineActive = false;
+            schedule(runCycle, 1500);
+            return;
+          }
+          if (currentPhase !== 'running') {
+            schedule(runCycle, OFFLINE_NEXT_MS);
+            return;
+          }
+          const elapsed = (Date.now() - localFlightStart) / 1000;
+          const mult = offlineMultiplier(elapsed, localCrashAt, duration);
+          setPhase('running', mult);
+          try {
+            if (liveMultEl) liveMultEl.textContent = mult.toFixed(2) + 'x';
+          } catch (e) {}
+
+          if (elapsed >= duration || mult >= localCrashAt - 0.001) {
+            setPhase('crashed', localCrashAt);
+            try {
+              if (crashMultEl) crashMultEl.textContent = localCrashAt.toFixed(2) + 'x';
+            } catch (e) {}
+            // recordCrashMult is called inside setPhase('crashed')
+            offlineActive = false;
+            schedule(runCycle, OFFLINE_PAUSE_MS + OFFLINE_NEXT_MS);
+            return;
+          }
           requestAnimationFrame(fly);
         };
-        requestAnimationFrame(waitTick);
+        requestAnimationFrame(fly);
       };
-      localSimTimer = setTimeout(cycle, 1500);
+
+      schedule(runCycle, 1200);
     }
 
-    // Patch handleSignal to mark last signal time
 
     function handleSignal(
       data
