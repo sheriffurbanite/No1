@@ -2098,7 +2098,105 @@
   .chat-toolbar{display:flex!important;gap:8px;padding:8px 10px;border-top:1px solid rgba(255,255,255,.08);background:#0f141c;flex-shrink:0}
 .chat-tool-btn{border:0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;background:#1c2433;color:#e5e7eb}
 .chat-tool-btn.primary{background:#3b3f8f;color:#fff}
-</style>
+
+    /* Betika-style settings menu */
+    .sc-menu-btn{
+      height:28px;width:28px;border:0;border-radius:8px;background:transparent;
+      color:#cfcfd2;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+    }
+    .sc-menu-btn svg{width:20px;height:20px}
+    .sc-menu-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;
+    }
+    .sc-menu-backdrop.show{display:block}
+    .sc-menu-panel{
+      position:fixed;top:48px;right:8px;width:min(300px,92vw);max-height:min(78vh,560px);
+      overflow:auto;background:#1c1d21;border-radius:14px;z-index:210;
+      box-shadow:0 16px 48px rgba(0,0,0,.55);display:none;padding:0 0 8px;
+    }
+    .sc-menu-panel.show{display:block}
+    .sc-menu-head{
+      display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid #2c2d31;
+    }
+    .sc-menu-head .av{
+      width:40px;height:40px;border-radius:50%;background:#2c2d31;display:grid;place-items:center;
+      font-size:18px;overflow:hidden;
+    }
+    .sc-menu-head .av img{width:100%;height:100%;object-fit:cover}
+    .sc-menu-head .uid{flex:1;font-size:13px;font-weight:700;color:#e8e8e8;word-break:break-all}
+    .sc-menu-head .chg{
+      border:1px solid #3a3b40;border-radius:16px;padding:6px 10px;font-size:11px;color:#cfcfd2;background:#26282e;cursor:pointer;
+    }
+    .sc-menu-row{
+      display:flex;align-items:center;gap:12px;padding:12px 16px;color:#d6d9d6;font-size:14px;cursor:pointer;
+    }
+    .sc-menu-row:hover{background:#25262a}
+    .sc-menu-row .ic{width:22px;text-align:center;opacity:.85}
+    .sc-menu-row .lab{flex:1}
+    .sc-tog{
+      width:44px;height:26px;border-radius:13px;background:#141517;position:relative;flex-shrink:0;
+    }
+    .sc-tog:after{
+      content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#3a3b3f;transition:.2s;
+    }
+    .sc-tog.on{background:#28a809}
+    .sc-tog.on:after{left:21px;background:#fff}
+    .sc-menu-div{height:1px;background:#2c2d31;margin:4px 0}
+    .sc-menu-home{
+      margin:8px 12px 4px;height:42px;border-radius:12px;background:#25262a;display:flex;align-items:center;
+      justify-content:center;gap:8px;color:#cfcfd2;font-size:14px;font-weight:600;cursor:pointer;
+    }
+
+    /* Round history popup */
+    .sc-hist-pop{
+      position:absolute;left:8px;right:8px;top:36px;z-index:60;
+      background:#1b1c1e;border:1px solid #2c2d31;border-radius:14px;padding:12px 14px;
+      display:none;box-shadow:0 12px 40px #000c;max-height:200px;overflow:auto;
+    }
+    .sc-hist-pop.show{display:block}
+    .sc-hist-pop h4{font-size:13px;color:#cfcfd2;margin:0 0 10px;font-weight:600}
+    .sc-hist-pop .g{display:flex;flex-wrap:wrap;gap:8px 12px}
+    .sc-hist-pop .g span{font-size:12px;font-weight:700}
+    .sc-hist-x{position:absolute;right:10px;top:8px;border:0;background:transparent;color:#8c8e92;font-size:18px;cursor:pointer}
+
+    /* My bet history modal */
+    .sc-bh-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:220;display:none}
+    .sc-bh-backdrop.show{display:block}
+    .sc-bh-modal{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,94vw);
+      max-height:80vh;overflow:auto;background:#1a1b1f;border-radius:16px;z-index:230;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);display:none;
+    }
+    .sc-bh-modal.show{display:block}
+    .sc-bh-modal h3{
+      margin:0;padding:14px 16px;font-size:14px;letter-spacing:.4px;color:#e8e8e8;
+      border-bottom:1px solid #2c2d31;display:flex;align-items:center;justify-content:space-between;
+    }
+    .sc-bh-modal h3 button{border:0;background:transparent;color:#8c8e92;font-size:20px;cursor:pointer}
+    .sc-bh-cols{
+      display:grid;grid-template-columns:1.1fr .7fr .7fr 1fr;gap:4px;padding:8px 12px;
+      font-size:11px;color:#8c8e92;border-bottom:1px solid #2a2b30;
+    }
+    .sc-bh-row{
+      display:grid;grid-template-columns:1.1fr .7fr .7fr 1fr;gap:4px;padding:10px 12px;
+      font-size:12px;align-items:center;border-bottom:1px solid #222328;
+    }
+    .sc-bh-row.win{background:#1a3a12}
+    .sc-bh-row .x{
+      display:inline-block;padding:2px 8px;border-radius:10px;font-weight:800;font-size:11px;color:#fff;
+    }
+    .sc-bh-row .x.low{background:#1e3a5f;color:#60a5fa}
+    .sc-bh-row .x.mid{background:#3b1f5e;color:#c084fc}
+    .sc-bh-row .x.high{background:#5b1a4a;color:#f472b6}
+    .sc-bh-row .cash{color:#20b90a;font-weight:700}
+    .sc-bh-row .ico{display:flex;gap:6px;justify-content:flex-end;color:#8c8e92}
+    .sc-bh-load{
+      margin:12px auto 16px;display:block;padding:8px 20px;border-radius:16px;border:0;
+      background:#2c2d31;color:#cfcfd2;font-size:13px;cursor:pointer;
+    }
+    .speaker-btn{display:none!important}
+
+  </style>
 </head>
 
 <body>
@@ -2362,22 +2460,16 @@
       </div>
 
       <div class="nav-actions">
-<button
-          class="speaker-btn"
-          id="speakerBtn"
-          title="Toggle music"
-          type="button"
-        >
-          🔊
-        </button>
-
-        <span class="balance-amount" id="balanceDisplayWrap">
+<span class="balance-amount" id="balanceDisplayWrap">
           
           <span id="balanceDisplay">0.00 KES</span>
         </span>
 
         
 
+        <button type="button" class="sc-menu-btn" id="scMenuBtn" title="Menu" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <button
           class="chat-btn"
           id="chatToggleBtn"
@@ -4070,6 +4162,9 @@
     }
 
     function drawScene(){
+      if (window.__scAnimOn === false) {
+        /* static frame still draws plane at rest via normal path */
+      }
       /* Canvas size in CSS pixels — matches demo W/H after resize */
       let W = Number(window.__avCssW) || 0;
       let H = Number(window.__avCssH) || 0;
@@ -4636,6 +4731,7 @@
       amount,
       multiplier
     ){
+      try { if (typeof window.__scRecordCashout === 'function') window.__scRecordCashout(0, multiplier, amount); } catch(e){}
       try {
         window.__scLastWin = {
           mult: Number(multiplier || currentMult || 1),
@@ -8224,8 +8320,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
       try {
         var db = document.getElementById('depositBtn');
         if (db) { db.style.display = 'none'; db.onclick = function(e){ e && e.preventDefault(); return false; }; }
-        var bt = document.getElementById('betsTabs');
-        if (bt) bt.style.display = 'none';
+        /* keep All/Previous/Top tabs visible */
       } catch (e) {}
 
 
@@ -9068,6 +9163,260 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
     init();
 
     
+    
+    /* ===== Betika menu + history + mute ===== */
+    window.__scAnimOn = true;
+    window.__scSoundOn = true; // SFX
+    // musicOn already exists for bed music
+
+    function scOpenMenu(){
+      try {
+        var uid = (currentUser && currentUser.phone) ? currentUser.phone : 'Player';
+        var el = document.getElementById('scMenuUid');
+        if (el) el.textContent = uid;
+        var av = document.getElementById('scMenuAv');
+        if (av && typeof myAvatar !== 'undefined' && myAvatar) {
+          if (String(myAvatar).indexOf('http') === 0) av.innerHTML = '<img src="'+myAvatar+'" alt="">';
+          else av.textContent = myAvatar;
+        }
+        var tm = document.getElementById('togMusic');
+        if (tm) tm.classList.toggle('on', !!musicOn);
+        var ts = document.getElementById('togSound');
+        if (ts) ts.classList.toggle('on', !!window.__scSoundOn);
+        var ta = document.getElementById('togAnim');
+        if (ta) ta.classList.toggle('on', !!window.__scAnimOn);
+      } catch(e){}
+      document.getElementById('scMenuBackdrop').classList.add('show');
+      document.getElementById('scMenuPanel').classList.add('show');
+    }
+    function scCloseMenu(){
+      document.getElementById('scMenuBackdrop').classList.remove('show');
+      document.getElementById('scMenuPanel').classList.remove('show');
+    }
+
+    function scApplyMusicMute(on){
+      musicOn = !!on;
+      try { if (typeof scMusicOn !== 'undefined') scMusicOn = musicOn; } catch(e){}
+      if (!musicOn) {
+        try { if (bgMusic) bgMusic.pause(); } catch(e){}
+        try { if (typeof scStopMusic === 'function') scStopMusic(); } catch(e){}
+        try { clearMediaSession(); } catch(e){}
+      } else {
+        try { restartMusicForRound(); } catch(e){ try { tryPlayMusic(); } catch(e2){} }
+        try { clearMediaSession(); } catch(e){}
+      }
+    }
+
+    function scShowRoundHistory(){
+      var grid = document.getElementById('scHistGrid');
+      if (!grid) return;
+      var list = [];
+      try {
+        if (typeof loadMultHistory === 'function') list = loadMultHistory() || [];
+        else if (typeof multHistory !== 'undefined') list = multHistory || [];
+      } catch(e){}
+      if (!list.length) {
+        try {
+          var raw = localStorage.getItem('shikachapaa_mult_history') || localStorage.getItem('sc_mult_hist');
+          if (raw) list = JSON.parse(raw) || [];
+        } catch(e){}
+      }
+      grid.innerHTML = (list.slice(0, 40).map(function(v){
+        var n = Number(v);
+        var col = n < 2 ? '#2f95e8' : n < 10 ? '#913ef8' : '#c01cb0';
+        return '<span style="color:'+col+'">'+n.toFixed(2)+'x</span>';
+      }).join('') || '<span style="color:#8c8e92">No history yet</span>');
+      document.getElementById('scHistPop').classList.add('show');
+    }
+
+    var __scBhPage = 1;
+    function scOpenBetHistory(){
+      scCloseMenu();
+      __scBhPage = 1;
+      scRenderBetHistory();
+      document.getElementById('scBhBackdrop').classList.add('show');
+      document.getElementById('scBhModal').classList.add('show');
+    }
+    function scCloseBetHistory(){
+      document.getElementById('scBhBackdrop').classList.remove('show');
+      document.getElementById('scBhModal').classList.remove('show');
+    }
+    function scGetMyBets(){
+      try {
+        var key = 'shikachapaa_my_bets';
+        var arr = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch(e){ return []; }
+    }
+    function scSaveMyBet(entry){
+      try {
+        var arr = scGetMyBets();
+        arr.unshift(entry);
+        if (arr.length > 200) arr = arr.slice(0, 200);
+        localStorage.setItem('shikachapaa_my_bets', JSON.stringify(arr));
+      } catch(e){}
+    }
+    function scRenderBetHistory(){
+      var list = scGetMyBets().slice(0, __scBhPage * 12);
+      var box = document.getElementById('scBhList');
+      if (!box) return;
+      if (!list.length) {
+        box.innerHTML = '<div style="padding:24px;text-align:center;color:#8c8e92;font-size:13px">No bets yet</div>';
+        return;
+      }
+      box.innerHTML = list.map(function(b){
+        var n = Number(b.mult || 0);
+        var xc = n < 2 ? 'low' : n < 10 ? 'mid' : 'high';
+        var won = Number(b.win || 0) > 0;
+        var cash = won ? Number(b.win).toFixed(2) : '';
+        var d = b.date || '';
+        return '<div class="sc-bh-row'+(won?' win':'')+'">'+
+          '<span>'+d+'</span>'+
+          '<span>'+Number(b.bet||0).toFixed(2)+'</span>'+
+          '<span><span class="x '+xc+'">'+n.toFixed(2)+'x</span></span>'+
+          '<span class="cash">'+(cash || '')+' <span class="ico">🛡️ 💬</span></span></div>';
+      }).join('');
+    }
+
+    // Record bet results for history
+    window.__scRecordCashout = function(bet, mult, win){
+      try {
+        var now = new Date();
+        var ds = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + '<br>' +
+          now.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
+        // simple text date for storage
+        var dplain = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' ' +
+          now.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'});
+        scSaveMyBet({ date: dplain, bet: bet, mult: mult, win: win });
+      } catch(e){}
+    };
+
+    // Chat like on win row → also ensure share posts to chat (already data-like)
+    // When user taps 💬 on bet history win, post to chat
+    document.addEventListener('click', function(e){
+      var shareChat = e.target.closest('.sc-bh-row .ico');
+      if (shareChat) {
+        var row = e.target.closest('.sc-bh-row');
+        if (!row) return;
+        // parse from siblings roughly via history
+        try {
+          if (typeof shareLatestWin === 'function') shareLatestWin();
+          else if (window.__scLastWin && typeof postChatBigWin === 'function') {
+            postChatBigWin({ name: 'You', mult: window.__scLastWin.mult, win: window.__scLastWin.win, avatarUrl: '' });
+          }
+        } catch(err){}
+      }
+    });
+
+    function scWireMenu(){
+      var btn = document.getElementById('scMenuBtn');
+      if (btn && !btn._wired) {
+        btn._wired = true;
+        btn.addEventListener('click', function(e){ e.stopPropagation(); scOpenMenu(); });
+      }
+      var bd = document.getElementById('scMenuBackdrop');
+      if (bd && !bd._wired) {
+        bd._wired = true;
+        bd.addEventListener('click', scCloseMenu);
+      }
+      document.querySelectorAll('.sc-menu-row[data-tog]').forEach(function(row){
+        if (row._wired) return;
+        row._wired = true;
+        row.addEventListener('click', function(){
+          var k = row.getAttribute('data-tog');
+          var tog = row.querySelector('.sc-tog');
+          if (!tog) return;
+          if (k === 'music') {
+            scApplyMusicMute(!musicOn);
+            tog.classList.toggle('on', !!musicOn);
+          } else if (k === 'sound') {
+            window.__scSoundOn = !window.__scSoundOn;
+            tog.classList.toggle('on', !!window.__scSoundOn);
+            if (!window.__scSoundOn) {
+              try { if (lossSound) { lossSound.pause(); lossSound.currentTime = 0; } } catch(e){}
+            }
+            try { clearMediaSession(); } catch(e){}
+          } else if (k === 'anim') {
+            window.__scAnimOn = !window.__scAnimOn;
+            tog.classList.toggle('on', !!window.__scAnimOn);
+          }
+        });
+      });
+      var chg = document.getElementById('scMenuChangeAv');
+      if (chg && !chg._wired) {
+        chg._wired = true;
+        chg.addEventListener('click', function(){
+          scCloseMenu();
+          try {
+            var b = document.getElementById('chatAvatarBtn');
+            if (b) b.click();
+            else if (typeof openAvatar === 'function') openAvatar();
+          } catch(e){}
+        });
+      }
+      var bh = document.getElementById('scMenuBetHist');
+      if (bh && !bh._wired) { bh._wired = true; bh.addEventListener('click', scOpenBetHistory); }
+      var home = document.getElementById('scMenuHome');
+      if (home && !home._wired) {
+        home._wired = true;
+        home.addEventListener('click', function(){
+          scCloseMenu();
+          try {
+            if (window.parent && window.parent !== window) window.parent.postMessage('shika-close-aviator', '*');
+            else window.location.href = 'shika-chapaa-home.html#/home';
+          } catch(e){ history.back(); }
+        });
+      }
+      ['scMenuFree','scMenuLimits','scMenuHow','scMenuRules','scMenuFair','scMenuRoom'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el && !el._wired) {
+          el._wired = true;
+          el.addEventListener('click', function(){
+            scCloseMenu();
+            var msg = {
+              scMenuFree: 'No free bets available right now.',
+              scMenuLimits: 'Min bet 10 KES · Max bet 25,000 KES · Min deposit 100 KES',
+              scMenuHow: 'Place a bet before takeoff. Cash out before the plane flies away.',
+              scMenuRules: 'Must be 18+. Play responsibly. Outcomes are random each round.',
+              scMenuFair: 'Provably fair — crash points from game server / offline seed.',
+              scMenuRoom: 'Game Room: Room #1'
+            }[id] || '';
+            try { if (typeof showGameNotice === 'function') showGameNotice(msg, 'info', 3200); } catch(e){ alert(msg); }
+          });
+        }
+      });
+      var hc = document.getElementById('scHistClose');
+      if (hc && !hc._wired) {
+        hc._wired = true;
+        hc.addEventListener('click', function(){ document.getElementById('scHistPop').classList.remove('show'); });
+      }
+      var ribbon = document.getElementById('multRibbon');
+      if (ribbon && !ribbon._histWired) {
+        ribbon._histWired = true;
+        ribbon.addEventListener('click', function(e){
+          // three dots / any ribbon click opens full history
+          scShowRoundHistory();
+        });
+      }
+      var bhc = document.getElementById('scBhClose');
+      if (bhc && !bhc._wired) { bhc._wired = true; bhc.addEventListener('click', scCloseBetHistory); }
+      var bhb = document.getElementById('scBhBackdrop');
+      if (bhb && !bhb._wired) { bhb._wired = true; bhb.addEventListener('click', scCloseBetHistory); }
+      var more = document.getElementById('scBhMore');
+      if (more && !more._wired) {
+        more._wired = true;
+        more.addEventListener('click', function(){ __scBhPage++; scRenderBetHistory(); });
+      }
+    }
+
+    // Hook cashout to record history + chat share already exists via postChatBigWin
+    (function hookCashoutRecord(){
+      var _show = window.showWinBubble;
+      if (typeof showWinBubble === 'function') {
+        // wrap after definition - called at end of init
+      }
+    })();
+
     (function wireSpeakerMute(){
       var btn = document.getElementById('speakerBtn');
       if (!btn || btn._muteWired) return;
@@ -9105,7 +9454,41 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
 
   <!-- Terms & Conditions -->
   
-  <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
+  
+<div class="sc-menu-backdrop" id="scMenuBackdrop"></div>
+<div class="sc-menu-panel" id="scMenuPanel" role="dialog">
+  <div class="sc-menu-head">
+    <div class="av" id="scMenuAv">😎</div>
+    <div class="uid" id="scMenuUid">Player</div>
+    <button type="button" class="chg" id="scMenuChangeAv">Change Avatar</button>
+  </div>
+  <div class="sc-menu-row" data-tog="sound"><span class="ic">🔊</span><span class="lab">Sound</span><span class="sc-tog" id="togSound"></span></div>
+  <div class="sc-menu-row" data-tog="music"><span class="ic">🎵</span><span class="lab">Music</span><span class="sc-tog" id="togMusic"></span></div>
+  <div class="sc-menu-row" data-tog="anim"><span class="ic">✨</span><span class="lab">Animation</span><span class="sc-tog on" id="togAnim"></span></div>
+  <div class="sc-menu-div"></div>
+  <div class="sc-menu-row" id="scMenuFree"><span class="ic">⭐</span><span class="lab">Free Bets</span></div>
+  <div class="sc-menu-row" id="scMenuBetHist"><span class="ic">🕐</span><span class="lab">My Bet History</span></div>
+  <div class="sc-menu-row" id="scMenuLimits"><span class="ic">🎛️</span><span class="lab">Game Limits</span></div>
+  <div class="sc-menu-row" id="scMenuHow"><span class="ic">❓</span><span class="lab">How To Play</span></div>
+  <div class="sc-menu-row" id="scMenuRules"><span class="ic">📜</span><span class="lab">Game Rules</span></div>
+  <div class="sc-menu-row" id="scMenuFair"><span class="ic">🛡️</span><span class="lab">Provably Fair Settings</span></div>
+  <div class="sc-menu-row" id="scMenuRoom"><span class="ic">📋</span><span class="lab">Game Room: Room #1</span></div>
+  <div class="sc-menu-home" id="scMenuHome">🏠 Home</div>
+</div>
+<div class="sc-hist-pop" id="scHistPop">
+  <button type="button" class="sc-hist-x" id="scHistClose">×</button>
+  <h4>Round History</h4>
+  <div class="g" id="scHistGrid"></div>
+</div>
+<div class="sc-bh-backdrop" id="scBhBackdrop"></div>
+<div class="sc-bh-modal" id="scBhModal">
+  <h3>MY BET HISTORY <button type="button" id="scBhClose">×</button></h3>
+  <div class="sc-bh-cols"><span>Date</span><span>Bet KES</span><span>X</span><span>Cash out KES</span></div>
+  <div id="scBhList"></div>
+  <button type="button" class="sc-bh-load" id="scBhMore">Load more</button>
+</div>
+
+<div id="chatPanel" class="chat-panel hidden" aria-live="polite">
     <div class="chat-panel-head">
       <div class="chat-head-left">
         <button type="button" class="chat-info-btn" id="chatAvatarBtn" title="Avatar">😊</button>
