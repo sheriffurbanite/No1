@@ -202,8 +202,29 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
 #loginGate button{width:100%;height:44px;border:0;border-radius:12px;background:#28a809;color:#fff;font-weight:700;font-size:15px;cursor:pointer;margin-top:0}
 #loginGate .back{margin-top:10px;background:#2c2d31}
 </style>
-</head>
+<style>
+#scSplash{position:fixed;inset:0;z-index:6000;background:#0a0a0b;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .35s}
+#scSplash.hidden{display:none!important}
+#scSplash.fade{opacity:0;pointer-events:none}
+#scSplash .sp-logo{font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;margin-bottom:18px}
+#scSplash .sp-logo span{color:#fdb913}
+#scSplash .sp-bar{width:180px;height:4px;background:#1c1d20;border-radius:2px;overflow:hidden}
+#scSplash .sp-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#e8083e,#fdb913);border-radius:2px;animation:scLoad 1.4s ease forwards}
+#scSplash .sp-txt{margin-top:12px;font-size:12px;color:#8c8e92}
+@keyframes scLoad{from{width:0%}to{width:100%}}
+/* Pre-round wait overlay enhancement */
+#roundWait{position:absolute;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:5;pointer-events:none}
+#roundWait.show{display:flex}
+#roundWait .rw-title{color:#fff;font-weight:700;font-size:14px;margin-bottom:10px;text-shadow:0 2px 8px #000}
+#roundWait .rw-track{width:160px;height:6px;background:#1c1d20;border-radius:3px;overflow:hidden}
+#roundWait .rw-fill{height:100%;background:#e8083e;width:100%;transform-origin:left center}
+</style></head>
 <body>
+<div id="scSplash" class="hidden">
+  <div class="sp-logo">SHIKA <span>CHAPAA</span></div>
+  <div class="sp-bar"><i></i></div>
+  <div class="sp-txt" id="scSplashTxt">Connection...</div>
+</div>
 <div id="loginGate" class="hidden">
   <div class="card">
     <h1>Log in only</h1>
@@ -247,9 +268,37 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
       ps.push({id:'2***'+Math.floor(Math.random()*10),bet:BETS[Math.min(BETS.length-1,Math.floor(Math.pow(Math.random(),.6)*BETS.length))],em:EM[i%EM.length],c:COL[i%COL.length],tgt:tgt,x:null,win:0});
     }
     ps.sort(function(a,b){return b.bet-a.bet});
-    S.players=ps;S.total=5000+Math.floor(Math.random()*2000);S.m=1;S.phase='wait';S.wt=Date.now();if(window.CD)CD.forEach(function(c){c.nx=false});
+    S.players=ps;S.total=5000+Math.floor(Math.random()*2000);S.m=1;S.phase='wait';S.wt=Date.now();if(typeof CD!=='undefined'&&CD)CD.forEach(function(c){c.nx=false});
   }
-  function tick(){
+  
+  var CD = []; // auto cash slots
+  function autoCash(){
+    try {
+      if (!CD || !CD.length) return;
+      CD.forEach(function(c){
+        if (!c || c.nx || !c.on) return;
+        var tgt = Number(c.x || c.target || 0);
+        if (tgt > 1 && S.m >= tgt) {
+          c.nx = true;
+          // visual only in this shell
+        }
+      });
+    } catch (e) {}
+  }
+  function onFly(){
+    try {
+      if (typeof restartMusicForRound === 'function') restartMusicForRound();
+      else if (typeof tryPlayMusic === 'function') tryPlayMusic();
+    } catch (e) {}
+  }
+  function onCrash(){
+    try {
+      // brief pause then music can resume on wait
+      if (window.__scSoundOn === false) return;
+    } catch (e) {}
+  }
+
+function tick(){
     var now=Date.now(),L=$('lv');
     if(S.phase==='wait'){
       L.classList.remove('c');$('mult').textContent='wait '+Math.max(0,5-(now-S.wt)/1000).toFixed(0)+'s';
@@ -370,7 +419,24 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
   $('sheet').onclick=function(e){if(e.target.id==='sx')$('sheet').classList.remove('show');if(e.target.id==='df'){setBal(BAL+1000);toast('Demo funds added',true);$('sheet').classList.remove('show')}};
   // ---- chat
   var NC=['#73b551','#d63cff','#3ec6e0','#e0a43c','#ff6a8a'],HEART='<svg viewBox="0 0 24 24" width="38" height="38"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z" fill="currentColor"/></svg>',SHLD='<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="#1fa24a"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2" fill="none"/></svg>';
-  var NM=['2***1','2***0','2***4','2***6','2***7','2***9','2***3','2***8'],TX=['nice one','x2 is enough \u{1F602}','flew too early','who is in this round?','big win!','cash out early next time','good luck everyone','\u{1F525}\u{1F525}\u{1F525}'];
+  var NM=['2***1','2***0','2***4','2***6','2***7','2***9','2***3','2***8'],TX=[
+    'Wueh, hii game leo imenipeleka mbio proper. Unadhani umeiva, alafu ndege inakataa kubeba mzigo \u{1F602}',
+    'Nimeona multiplier ikipanda nikasema leo ni yangu, kumbe nilikuwa najiconvince tu. Hii mambo ni noma.',
+    'Aki nilikuwa nangoja ipande kidogo tu, ghafla ndege imeenda. Sasa nimebaki kuangalia screen kama mjinga.',
+    'Leo nimepata ka-win kidogo, lakini losses zingine bado zinanichezea akili. Hii game inataka discipline maze.',
+    'Msee, unakaa hapo ukisema next round itakuwa poa, alafu inakushangaza tena. Lazima mtu ajue wakati wa kuacha.',
+    'Hii ndege haina huruma bana. Inapanda polepole ukianza kuamini, inakata safari ghafla.',
+    'Nilikuwa nimejipanga vizuri leo, lakini mambo yamechange haraka kuliko nilivyokuwa nimeexpect. Wueh!',
+    'Kuna round niliona ikipanda nikashangaa, nikasema kumbe leo kuna kitu. Lakini si kila round unaweza kushinda.',
+    'Aki hii game ni patience na bahati, lakini usijipe pressure ya kurudisha pesa ulizopoteza.',
+    'Nimecheka lakini ndani najua nimeumia \u{1F602} Hii round imenifunza si kila opportunity ni ya kushika.',
+    'Msee, ile feeling ya kuona ndege imeenda kabla hujatoa pesa ni noma.',
+    'Leo nimeamua hakuna kufuata losses. Kama mambo haiko sawa, ni sawa kuclose game.',
+    'Niliona multiplier imeanza kupanda nikapata ka-hope, lakini ikaishia mapema.',
+    'Wasee, msichukulie kila round kama lazima mlipize ya previous. Pesa ikienda, imeenda.',
+    'Hii Aviator inaweza kukupa furaha na frustration ndani ya dakika mbili.',
+    'good luck everyone \u{1F525}','cash out early next time','who is in this round?','x2 is enough \u{1F602}','flew too early'
+  ];
   function ncol(n){var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);return NC[h%NC.length]}
   function clock(){return[new Date().getHours(),new Date().getMinutes(),new Date().getSeconds()].map(function(v){return(v<10?'0':'')+v}).join(':')}
   function esc(v){return v.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
@@ -382,14 +448,15 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
   }
   function txt(n,t){return '<div class="mh2"><span style="color:'+ncol(n)+'">'+n+'</span><small>'+clock()+'</small></div>'+t}
   function wcard(n,e,x,w,b,r){
+    var mc=Number(x)<2?'#00b8d1':Number(x)<10?'#9a35cf':'#d826c0';
     return '<div class="wh"><span style="color:'+ncol(n)+'">'+n+'</span><small>'+clock()+'</small></div><div class="wi"><div class="wp"><i class="av2" style="background:#3a3a46">'+e+'</i><b>'+n+'</b>'+SHLD+'</div>'+
-      '<div class="wg"><div><small>Cashed out:</small><b class="pu">'+x+'x</b></div><div><small>Win:</small><b class="gr">'+w+' KES</b></div></div>'+
+      '<div class="wg"><div><small>Cashed out:</small><b style="color:'+mc+'">'+x+'x</b></div><div><small>Win:</small><b class="gr">'+w+' KES</b></div></div>'+
       '<div class="wd"><s></s><img src="'+IB.src+'"><s></s></div><div class="wg"><div><small>Round:</small><b>'+r+'x</b></div><div><small>Bet:</small><b>'+b+' KES</b></div></div></div>';
   }
   function botMsg(){var i=Math.floor(Math.random()*NM.length);addMsg(EM[i],COL[i%COL.length],txt(NM[i],TX[Math.floor(Math.random()*TX.length)]),'',Math.floor(Math.random()*3))}
   function botWin(){var i=Math.floor(Math.random()*NM.length),x=1.2+Math.random()*5,b=[10,20,50,100][Math.floor(Math.random()*4)];
     addMsg(EM[i],COL[i%COL.length],wcard(NM[i],EM[i],x.toFixed(2),fmt(b*x),fmt(b),(x+Math.random()*2).toFixed(2)),' wcb',Math.floor(Math.random()*3))}
-  setTimeout(function(){for(var q=0;q<4;q++)botMsg();botWin();botMsg()},0);
+  setTimeout(function(){for(var q=0;q<6;q++)botMsg();botWin();botMsg();botWin();botMsg()},0);
   setInterval(botMsg,7000);setInterval(botWin,19000);
   setInterval(function(){var e=$('co');e.textContent=7000+Math.floor(Math.random()*420)},4000);
   function chatShow(v){$('chat').classList.toggle('show',v);document.documentElement.style.overflow=v?'hidden':'';if(v){window.scrollTo(0,0);$('chat').style.height=Math.max(1316,Math.ceil(window.innerHeight/(+$('app').style.zoom||1)))+'px';$('cm').scrollTop=1e6}}
@@ -481,6 +548,7 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
     cx.font='700 118px Roboto,Arial,sans-serif';cx.fillText(m.toFixed(2)+'x',W/2,332);cx.shadowBlur=0;
     if(ph==='crash'){cx.fillStyle='#e8083e';cx.font='700 34px Roboto,Arial,sans-serif';cx.fillText('FLEW AWAY!',W/2,218)}
   }
+  function paint(){}
   function loop(t){draw(t);requestAnimationFrame(loop);}
   requestAnimationFrame(loop);
 
@@ -581,7 +649,23 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
   function startApp(){
     if(!loadSession()){var g=document.getElementById('loginGate');if(g)g.classList.remove('hidden');return;}
     var g=document.getElementById('loginGate');if(g)g.classList.add('hidden');
-    updateBalUI();connectSignals();tryPlayMusic();
+    var sp=document.getElementById('scSplash');
+    if(sp){
+      sp.classList.remove('hidden','fade');
+      var bar=sp.querySelector('.sp-bar i');
+      if(bar){bar.style.animation='none';void bar.offsetWidth;bar.style.animation='scLoad 1.4s ease forwards';}
+      var tx=document.getElementById('scSplashTxt');
+      if(tx)tx.textContent='Connection...';
+      setTimeout(function(){if(tx)tx.textContent='Loading game...';},500);
+      setTimeout(function(){
+        sp.classList.add('fade');
+        setTimeout(function(){sp.classList.add('hidden');},350);
+        updateBalUI();connectSignals();tryPlayMusic();
+      },1500);
+    } else {
+      updateBalUI();connectSignals();tryPlayMusic();
+    }
+
     setTimeout(function(){
       try{
         // Hook menu toggles from buildMenu sheets
@@ -597,6 +681,18 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
     if(e.target.closest('.ib.i1, [data-share-win], .share-win')){
       try{if(typeof shareWin==='function')shareWin();}catch(err){}
     }
+  });
+
+  
+  function unlockAudioOnce(){
+    try {
+      if (window.__audioUnlocked) return;
+      window.__audioUnlocked = true;
+      if (typeof tryPlayMusic === 'function') tryPlayMusic();
+    } catch(e) {}
+  }
+  ['pointerdown','touchstart','click'].forEach(function(ev){
+    document.addEventListener(ev, unlockAudioOnce, {once:true, passive:true});
   });
 
   buildCards();hist();newRound();tick();setInterval(tick,100);startApp();
