@@ -2196,6 +2196,15 @@
     }
     .speaker-btn{display:none!important}
 
+  
+    .sc-menu-backdrop.show{display:block!important;z-index:9998!important}
+    .sc-menu-panel.show{display:block!important;z-index:9999!important;visibility:visible!important;opacity:1!important}
+    .sc-menu-btn{display:flex!important;visibility:visible!important;z-index:40}
+    .sc-hist-pop.show{display:block!important;z-index:80!important}
+    .sc-bh-backdrop.show{display:block!important;z-index:9998!important}
+    .sc-bh-modal.show{display:block!important;z-index:9999!important}
+    #betsTabs.bets-tabs,.bets-tabs{display:flex!important}
+
   </style>
 </head>
 
@@ -2467,7 +2476,7 @@
 
         
 
-        <button type="button" class="sc-menu-btn" id="scMenuBtn" title="Menu" aria-label="Menu">
+        <button type="button" class="sc-menu-btn" id="scMenuBtn" title="Menu" aria-label="Menu" onclick="try{scOpenMenu()}catch(e){console&&console.error(e)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
         <button
@@ -7220,6 +7229,7 @@
     ========================================== */
 
     function showGame(){
+      try { setTimeout(function(){ if (typeof scWireMenu==='function') scWireMenu(); }, 80); } catch(e) {}
 
       setAppRoute('#/aviator');
 
@@ -9189,6 +9199,8 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
       document.getElementById('scMenuBackdrop').classList.add('show');
       document.getElementById('scMenuPanel').classList.add('show');
     }
+    window.scOpenMenu = scOpenMenu;
+    window.scCloseMenu = scCloseMenu;
     function scCloseMenu(){
       document.getElementById('scMenuBackdrop').classList.remove('show');
       document.getElementById('scMenuPanel').classList.remove('show');
@@ -9308,6 +9320,9 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
       }
     });
 
+    window.scOpenMenu = scOpenMenu;
+    window.scCloseMenu = scCloseMenu;
+    window.scWireMenu = scWireMenu;
     function scWireMenu(){
       var btn = document.getElementById('scMenuBtn');
       if (btn && !btn._wired) {
@@ -9455,39 +9470,6 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
   <!-- Terms & Conditions -->
   
   
-<div class="sc-menu-backdrop" id="scMenuBackdrop"></div>
-<div class="sc-menu-panel" id="scMenuPanel" role="dialog">
-  <div class="sc-menu-head">
-    <div class="av" id="scMenuAv">😎</div>
-    <div class="uid" id="scMenuUid">Player</div>
-    <button type="button" class="chg" id="scMenuChangeAv">Change Avatar</button>
-  </div>
-  <div class="sc-menu-row" data-tog="sound"><span class="ic">🔊</span><span class="lab">Sound</span><span class="sc-tog" id="togSound"></span></div>
-  <div class="sc-menu-row" data-tog="music"><span class="ic">🎵</span><span class="lab">Music</span><span class="sc-tog" id="togMusic"></span></div>
-  <div class="sc-menu-row" data-tog="anim"><span class="ic">✨</span><span class="lab">Animation</span><span class="sc-tog on" id="togAnim"></span></div>
-  <div class="sc-menu-div"></div>
-  <div class="sc-menu-row" id="scMenuFree"><span class="ic">⭐</span><span class="lab">Free Bets</span></div>
-  <div class="sc-menu-row" id="scMenuBetHist"><span class="ic">🕐</span><span class="lab">My Bet History</span></div>
-  <div class="sc-menu-row" id="scMenuLimits"><span class="ic">🎛️</span><span class="lab">Game Limits</span></div>
-  <div class="sc-menu-row" id="scMenuHow"><span class="ic">❓</span><span class="lab">How To Play</span></div>
-  <div class="sc-menu-row" id="scMenuRules"><span class="ic">📜</span><span class="lab">Game Rules</span></div>
-  <div class="sc-menu-row" id="scMenuFair"><span class="ic">🛡️</span><span class="lab">Provably Fair Settings</span></div>
-  <div class="sc-menu-row" id="scMenuRoom"><span class="ic">📋</span><span class="lab">Game Room: Room #1</span></div>
-  <div class="sc-menu-home" id="scMenuHome">🏠 Home</div>
-</div>
-<div class="sc-hist-pop" id="scHistPop">
-  <button type="button" class="sc-hist-x" id="scHistClose">×</button>
-  <h4>Round History</h4>
-  <div class="g" id="scHistGrid"></div>
-</div>
-<div class="sc-bh-backdrop" id="scBhBackdrop"></div>
-<div class="sc-bh-modal" id="scBhModal">
-  <h3>MY BET HISTORY <button type="button" id="scBhClose">×</button></h3>
-  <div class="sc-bh-cols"><span>Date</span><span>Bet KES</span><span>X</span><span>Cash out KES</span></div>
-  <div id="scBhList"></div>
-  <button type="button" class="sc-bh-load" id="scBhMore">Load more</button>
-</div>
-
 <div id="chatPanel" class="chat-panel hidden" aria-live="polite">
     <div class="chat-panel-head">
       <div class="chat-head-left">
@@ -9546,6 +9528,72 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
       <button type="button" id="closeDownloadBtn" class="modal-btn cancel" style="width:100%;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#1c2230;color:#fff;font-weight:700;cursor:pointer">Close</button>
     </div>
   </div>
+
+<div class="sc-menu-backdrop" id="scMenuBackdrop"></div>
+<div class="sc-menu-panel" id="scMenuPanel" role="dialog">
+  <div class="sc-menu-head">
+    <div class="av" id="scMenuAv">😎</div>
+    <div class="uid" id="scMenuUid">Player</div>
+    <button type="button" class="chg" id="scMenuChangeAv">Change Avatar</button>
+  </div>
+  <div class="sc-menu-row" data-tog="sound"><span class="ic">🔊</span><span class="lab">Sound</span><span class="sc-tog" id="togSound"></span></div>
+  <div class="sc-menu-row" data-tog="music"><span class="ic">🎵</span><span class="lab">Music</span><span class="sc-tog" id="togMusic"></span></div>
+  <div class="sc-menu-row" data-tog="anim"><span class="ic">✨</span><span class="lab">Animation</span><span class="sc-tog on" id="togAnim"></span></div>
+  <div class="sc-menu-div"></div>
+  <div class="sc-menu-row" id="scMenuFree"><span class="ic">⭐</span><span class="lab">Free Bets</span></div>
+  <div class="sc-menu-row" id="scMenuBetHist"><span class="ic">🕐</span><span class="lab">My Bet History</span></div>
+  <div class="sc-menu-row" id="scMenuLimits"><span class="ic">🎛️</span><span class="lab">Game Limits</span></div>
+  <div class="sc-menu-row" id="scMenuHow"><span class="ic">❓</span><span class="lab">How To Play</span></div>
+  <div class="sc-menu-row" id="scMenuRules"><span class="ic">📜</span><span class="lab">Game Rules</span></div>
+  <div class="sc-menu-row" id="scMenuFair"><span class="ic">🛡️</span><span class="lab">Provably Fair Settings</span></div>
+  <div class="sc-menu-row" id="scMenuRoom"><span class="ic">📋</span><span class="lab">Game Room: Room #1</span></div>
+  <div class="sc-menu-home" id="scMenuHome">🏠 Home</div>
+</div>
+<div class="sc-hist-pop" id="scHistPop">
+  <button type="button" class="sc-hist-x" id="scHistClose">×</button>
+  <h4>Round History</h4>
+  <div class="g" id="scHistGrid"></div>
+</div>
+<div class="sc-bh-backdrop" id="scBhBackdrop"></div>
+<div class="sc-bh-modal" id="scBhModal">
+  <h3>MY BET HISTORY <button type="button" id="scBhClose">×</button></h3>
+  <div class="sc-bh-cols"><span>Date</span><span>Bet KES</span><span>X</span><span>Cash out KES</span></div>
+  <div id="scBhList"></div>
+  <button type="button" class="sc-bh-load" id="scBhMore">Load more</button>
+</div>
+
+
+
+<script>
+(function(){
+  function ready(fn){
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+  ready(function(){
+    setTimeout(function(){
+      try { if (typeof scWireMenu === 'function') scWireMenu(); } catch(e) {}
+      try { if (typeof scOpenMenu !== 'function') {
+        // minimal fallback open
+        window.scOpenMenu = function(){
+          var p = document.getElementById('scMenuPanel');
+          var b = document.getElementById('scMenuBackdrop');
+          if (p) p.classList.add('show');
+          if (b) b.classList.add('show');
+        };
+        window.scCloseMenu = function(){
+          var p = document.getElementById('scMenuPanel');
+          var b = document.getElementById('scMenuBackdrop');
+          if (p) p.classList.remove('show');
+          if (b) b.classList.remove('show');
+        };
+        var bd = document.getElementById('scMenuBackdrop');
+        if (bd) bd.onclick = function(){ scCloseMenu(); };
+      }} catch(e) {}
+    }, 100);
+  });
+})();
+</script>
 
 </body>
 </html>
