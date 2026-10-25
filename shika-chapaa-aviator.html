@@ -2084,6 +2084,22 @@
     .chat-win-plane,.win-card-top{display:none!important}
     .chat-share-hint{display:none!important}
 
+    
+    .wb-like, .chat-likes{
+      color:#6c6c6c;font-size:12px;cursor:pointer;user-select:none;text-align:center;
+      min-width:32px;flex-shrink:0;
+    }
+    .wb-like svg, .chat-likes svg{
+      width:22px;height:20px;display:block;margin:0 auto 2px;
+      fill:none;stroke:#777;stroke-width:1.8;stroke-linejoin:round;
+      transition: fill .15s, stroke .15s;
+    }
+    .wb-like.liked, .chat-likes.liked{color:#e11d48}
+    .wb-like.liked svg, .chat-likes.liked svg{
+      fill:#e11d48;stroke:#e11d48;
+    }
+    .wb-like .like-n, .chat-likes .like-n{font-size:11px;line-height:1.2}
+
     /* KILL deposit and tabs */
     #depositBtn, .wallet-route-btn, #betsTabs, .bets-tabs { display: none !important; height: 0 !important; overflow: hidden !important; }
     .chat-win-amt { color: #4ade80 !important; }
@@ -2092,7 +2108,10 @@
     .mult-badge.low { color: #00b8d1 !important; background: transparent !important; }
     .mult-badge.mid { color: #9a35cf !important; background: transparent !important; }
     .mult-badge.high { color: #d826c0 !important; background: transparent !important; }
-  </style>
+  .chat-toolbar{display:flex!important;gap:8px;padding:8px 10px;border-top:1px solid rgba(255,255,255,.08);background:#0f141c;flex-shrink:0}
+.chat-tool-btn{border:0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;background:#1c2433;color:#e5e7eb}
+.chat-tool-btn.primary{background:#3b3f8f;color:#fff}
+</style>
 </head>
 
 <body>
@@ -8469,17 +8488,31 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     function scPlayMusic(){
       try {
         scInitAudio();
-        scLoadMusic();
-        if (!scBuffer || scSource || !scMusicOn) return;
+        if (!scMusicOn) return;
+        // Already playing — keep continuous, do not restart/cut
+        if (scSource) {
+          try { scAudioCtx.resume(); } catch (e0) {}
+          return;
+        }
+        if (!scBuffer) {
+          scLoadMusic();
+          // retry shortly when buffer arrives
+          setTimeout(function(){ if (scBuffer && !scSource && scMusicOn) scPlayMusic(); }, 400);
+          return;
+        }
         scAudioCtx.resume();
         scSource = scAudioCtx.createBufferSource();
         scSource.buffer = scBuffer;
         scSource.loop = true;
         scSource.connect(scGain);
+        scSource.onended = function(){ scSource = null; };
         scSource.start(0);
         if ("mediaSession" in navigator) {
           navigator.mediaSession.metadata = null;
           navigator.mediaSession.playbackState = "none";
+          ["play","pause","seekbackward","seekforward","previoustrack","nexttrack","stop"].forEach(function (a) {
+            try { navigator.mediaSession.setActionHandler(a, null); } catch (e) {}
+          });
         }
       } catch (e) {}
     }
@@ -8492,7 +8525,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
 
     function tryPlayMusic(){
-      try { if (scBuffer) { scPlayMusic(); return; } } catch (e) {}
+      try { scPlayMusic(); if (scSource || scBuffer) return; } catch (e) {}
       if(!bgMusic || !musicOn || !inGameAudio) return;
       // Stop loss SFX if still playing
       try {
@@ -8512,6 +8545,15 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
     // Main track restarts when the next round begins
     function restartMusicForRound(){
+      // Web Audio bed stays continuous — do not stop/restart it each round
+      try {
+        if (typeof scPlayMusic === 'function' && (scBuffer || scSource)) {
+          scMusicOn = true;
+          scPlayMusic();
+          if (lossSound) { try { lossSound.pause(); lossSound.currentTime = 0; } catch(e){} }
+          return;
+        }
+      } catch (e) {}
       if(!bgMusic || !musicOn || !inGameAudio) return;
       lockAudioToGameOnly();
       try {
@@ -8519,10 +8561,15 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           lossSound.pause();
           lossSound.currentTime = 0;
         }
-        bgMusic.pause();
-        bgMusic.currentTime = 0;
+        // Keep continuous: only resume if paused, do not seek to 0
+        if (bgMusic.paused) {
+          const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){}
+        } else {
+          try{ clearMediaSession(); }catch(e){}
+          return;
+        }
       } catch(e){}
-      const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){};
+      const p = (bgMusic.paused ? bgMusic.play() : null); try{ clearMediaSession(); }catch(e){};
       if(p && typeof p.catch === 'function'){
         p.catch(() => {});
       }
@@ -8914,6 +8961,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
             var el = e.target.closest('[data-like]');
             if (!el) return;
             e.preventDefault();
+            e.stopPropagation();
             var mid = el.getAttribute('data-mid');
             var msg = null;
             for (var li = 0; li < messages.length; li++) {
@@ -8922,12 +8970,16 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
               if (id === mid) { msg = mm; break; }
             }
             if (!msg) return;
-            if (msg._liked) { msg._liked = false; msg.likes = Math.max(0, (msg.likes||1) - 1); }
-            else { msg._liked = true; msg.likes = (msg.likes||0) + 1; }
+            if (msg._liked) {
+              msg._liked = false;
+              msg.likes = Math.max(0, (msg.likes||1) - 1);
+            } else {
+              msg._liked = true;
+              msg.likes = (msg.likes||0) + 1;
+            }
+            el.classList.toggle('liked', !!msg._liked);
             var n = el.querySelector('.like-n');
             if (n) n.textContent = String(msg.likes);
-            el.classList.toggle('liked', !!msg._liked);
-            el.innerHTML = (msg._liked ? '♥' : '♡') + ' <span class="like-n">' + (msg.likes||0) + '</span>';
           });
         }
         function shareLatestWin(){
