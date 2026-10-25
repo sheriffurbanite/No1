@@ -5226,55 +5226,62 @@
         totalEl.textContent = String(onlinePlayersCount);
       }
 
-      // Previous: straight list of multipliers only (no bubbles), 1h data
+      // Previous: last finished round result + player list (demo layout)
       if (activeBetFilter === 'previous') {
-        const items = loadMultHistory();
-        previousRoundMults = items.length ? items : previousRoundMults;
-        if (!previousRoundMults.length) {
-          betsList.innerHTML = '<div class="empty-bets">No previous multipliers yet</div>';
-          return;
-        }
-        betsList.innerHTML = previousRoundMults.map(m => {
-          const c = multClass(m);
-          const color = c === 'high' ? '#d826c0' : c === 'mid' ? '#9a35cf' : '#00b8d1';
-          return `
-            <div class="bet-row" style="grid-template-columns:1fr;background:transparent;border:0;padding:4px 6px">
-              <span style="font-weight:800;font-size:12px;color:${color}">${Number(m).toFixed(2)}x</span>
-            </div>`;
+        var lastCrash = 0;
+        try {
+          var hist = (typeof loadMultHistory === 'function') ? loadMultHistory() : [];
+          if (hist && hist.length) lastCrash = Number(hist[0]) || 0;
+        } catch (e) {}
+        var list = (liveBoardPlayers || []).slice().sort(function(a,b){ return Number(b.stake||0)-Number(a.stake||0); });
+        var head = lastCrash > 0
+          ? '<div class="round-result-box"><span>Round Result</span><b>' + lastCrash.toFixed(2) + 'x</b></div>'
+          : '<div class="empty-bets">No finished round yet</div>';
+        var cols = '<div class="bets-cols"><span>Player</span><span>Bet KES</span><span>X</span><span>Win KES</span></div>';
+        var rows = list.map(function(p){
+          var cashed = !!p.cashed && p.mult != null;
+          var c = cashed ? multClass(p.mult) : '';
+          var xHtml = cashed ? '<span class="mult-badge ' + c + '">' + Number(p.mult).toFixed(2) + 'x</span>' : '';
+          var wHtml = cashed ? Number(p.win||0).toFixed(2) : '0.00';
+          return '<div class="bet-row' + (cashed ? ' cashed' : '') + '">' +
+            '<div class="bet-avatar">' + (p.avatarUrl ? '<img src="' + p.avatarUrl + '" onerror="this.remove()">' : '👤') + '</div>' +
+            '<span class="bet-name">' + (p.name || 'Player') + '</span>' +
+            '<span class="bet-stake">' + Number(p.stake||0).toFixed(2) + '</span>' +
+            '<span>' + xHtml + '</span>' +
+            '<span class="bet-win">' + wHtml + '</span></div>';
         }).join('');
+        betsList.innerHTML = head + cols + rows;
         return;
       }
 
-      // TOP: top cashouts only (all players), reset after 1 hour
+      // TOP: demo-style cards
       if (activeBetFilter === 'top') {
         topCashouts = loadHourStore(LS_TOP)
           .filter(x => Date.now() - (x.ts || 0) < HOUR_MS)
           .sort((a, b) => Number(b.win || 0) - Number(a.win || 0));
-
         if (!topCashouts.length) {
           betsList.innerHTML = '<div class="empty-bets">Top cashouts appear here</div>';
           return;
         }
-
-        betsList.innerHTML = topCashouts.slice(0, 21).map(p => {
-          const c = multClass(p.mult);
-          const multHtml = p.mult != null
-            ? `<span class="mult-badge ${c}">${Number(p.mult).toFixed(2)}x</span>`
-            : '<span style="color:#6b7280">-</span>';
-          return `
-            <div class="bet-row cashed">
-              <div class="bet-user">
-                <div class="bet-avatar">
-                  <img src="${p.avatarUrl || ''}" alt=""
-                    onerror="this.style.display='none';this.parentNode.textContent='👤'">
-                </div>
-                <span class="bet-name">${p.name || 'Player'}</span>
-              </div>
-              <div class="bet-amount">${Number(p.stake || 0).toFixed(2)}</div>
-              <div style="text-align:center">${multHtml}</div>
-              <div class="bet-win">${Number(p.win || 0).toFixed(2)}</div>
-            </div>`;
+        var sub = '<div class="top-sub-tabs">' +
+          '<button type="button" class="on">X</button><button type="button">Win</button><button type="button">Rounds</button>' +
+          '<button type="button" class="on">Day</button><button type="button">Month</button><button type="button">Year</button></div>';
+        var cards = topCashouts.slice(0, 12).map(function(p){
+          var m = Number(p.mult || 0);
+          var b = Number(p.stake || p.bet || 0);
+          var w = Number(p.win || 0);
+          var nm = p.name || '2***' + Math.floor(Math.random()*10);
+          return '<div class="top-card"><div class="tc-top">' +
+            '<div class="tc-av" style="background:#3a7ac0">👤</div>' +
+            '<div><div class="tc-nm">' + nm + '</div><div class="tc-dt">today</div></div></div>' +
+            '<div class="tc-grid">' +
+            '<div><span>Bet KES</span><br><strong>' + b.toFixed(2) + '</strong></div>' +
+            '<div><span>Result</span><br><strong class="m">' + m.toFixed(2) + 'x</strong></div>' +
+            '<div><span>Win KES</span><br><strong style="color:#20b90a">' + w.toFixed(2) + '</strong></div>' +
+            '<div><span>Round max.</span><br><strong class="m">' + Math.max(m, m*1.1).toFixed(2) + 'x</strong></div>' +
+            '</div></div>';
         }).join('');
+        betsList.innerHTML = sub + cards + '<div class="provably-fair-ft">🛡 Provably Fair Game</div>';
         return;
       }
 
@@ -5287,7 +5294,7 @@
           : '<span style="color:#6b7280;text-align:center">-</span>';
         const winHtml = p.cashed ? p.win.toFixed(2) : '-';
         html += `
-          <div class="bet-row cashed">
+          <div class="bet-row ${p.cashed ? 'cashed' : ''}">
             <div class="bet-user">
               <div class="bet-avatar">
                 <img src="${p.avatarUrl}" alt="" width="22" height="22"
@@ -5307,6 +5314,8 @@
         return;
       }
 
+      html = '<div class="bets-meta" style="padding:8px 12px 0">ALL BETS<br><span style="font-weight:800">' + (onlinePlayersCount||liveBoardPlayers.length) + '</span></div>' +
+        '<div class="bets-cols"><span>Player</span><span>Bet KES</span><span>X</span><span>Win KES</span></div>' + html;
       betsList.innerHTML = html;
     }
 
@@ -7229,6 +7238,7 @@
     ========================================== */
 
     function showGame(){
+      try { setTimeout(scEnsureHistDots, 120); } catch(e) {}
       try { setTimeout(function(){ if (typeof scWireMenu==='function') scWireMenu(); }, 80); } catch(e) {}
 
       setAppRoute('#/aviator');
@@ -9179,6 +9189,23 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
     window.__scSoundOn = true; // SFX
     // musicOn already exists for bed music
 
+    
+    function scEnsureHistDots(){
+      try {
+        var rib = document.getElementById('multRibbon');
+        if (!rib) return;
+        if (!rib.querySelector('.hist-dots')) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'hist-dots';
+          b.setAttribute('aria-label', 'Round history');
+          b.innerHTML = '&middot;&middot;&middot;';
+          b.onclick = function(e){ e.stopPropagation(); try{ scShowRoundHistory(); }catch(err){} };
+          rib.appendChild(b);
+        }
+      } catch(e){}
+    }
+
     function scOpenMenu(){
       try {
         var uid = (currentUser && currentUser.phone) ? currentUser.phone : 'Player';
@@ -9323,6 +9350,7 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
     window.scOpenMenu = scOpenMenu;
     window.scCloseMenu = scCloseMenu;
     window.scWireMenu = scWireMenu;
+    try { scEnsureHistDots(); } catch(e){}
     function scWireMenu(){
       var btn = document.getElementById('scMenuBtn');
       if (btn && !btn._wired) {
