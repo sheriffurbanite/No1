@@ -345,7 +345,7 @@ footer.tf{margin-top:24px;padding:24px 20px;background:linear-gradient(180deg,#1
         <label>M-Pesa number</label><input id="depPhone" readonly>
         <button class="b b-p" id="depBtn">Deposit via M-Pesa</button>
         <div id="depMsg"></div>
-        <div class="al w">Min deposit KES 100, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
+        <div class="al w">Min deposit KES 500, max KES 25,000.<br>🎁 Deposit more than KES 5,000 and get a KES 2,000 promo bonus!</div>
         <button class="b b-x back">‹ Back</button>
       </div>
       <div id="depLoadingArea" class="hidden dep-load">
@@ -425,7 +425,7 @@ let user=null, mode='login', sport='Soccer', filter='all', slip=[];
    Payments are confirmed ONLY by the server (TinyPesa callback).
    The browser never decides that a payment succeeded or how much to credit:
    it credits exactly the amount the server returns from /api/claim. */
-const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:120000, MIN:100, MAX:25000};
+const DEPOSIT={API:'https://my-server1.bonto.run', TIMEOUT_MS:120000, MIN:500, MAX:25000};
 
 /* ---------- data ---------- */
 const SPORTS={Soccer:179,'Table Tennis':24,Boxing:8,'Aussie Rules':5,Rugby:12,Cricket:15,Baseball:9,Basketball:42,MMA:7,Tennis:31,'eSoccer':28,'Ice Hockey':11,'American Football':16,Handball:9,Darts:10};
@@ -615,7 +615,7 @@ async function requestDeposit(amount,phone){
 }
 $('depBtn').onclick=async()=>{
   const amt=num($('depAmt').value),btn=$('depBtn'),out=$('depMsg');
-  if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 100.','e');
+  if(amt<DEPOSIT.MIN)return msg(out,'Minimum deposit is KES 500.','e');
   if(amt>DEPOSIT.MAX)return msg(out,'Maximum deposit is KES 25,000.','e');
 
   const form=$('depFormArea'), load=$('depLoadingArea');
@@ -958,7 +958,7 @@ document.addEventListener('visibilitychange',()=>{
     },
     faq: {
       title: "FAQ &amp; Help Center",
-      html: `<h3>How do I deposit?</h3><p>Use M-Pesa deposit on Home or in Aviator. Enter amount (min KSh 100) and confirm the STK prompt on your phone.</p>
+      html: `<h3>How do I deposit?</h3><p>Use M-Pesa deposit on Home or in Aviator. Enter amount (min KSh 500) and confirm the STK prompt on your phone.</p>
         <h3>When is my balance updated?</h3><p>After M-Pesa payment is confirmed by our payment provider.</p>
         <h3>How do I withdraw?</h3><p>Use Withdraw on the home wallet. Amounts from KSh 100,000 are processed to M-Pesa subject to checks.</p>
         <h3>Support</h3><p>0731125008 · sheriffurbanite@gmail.com</p>`
