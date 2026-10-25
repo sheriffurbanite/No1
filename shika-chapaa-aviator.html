@@ -492,7 +492,7 @@
     }
     .nav-menu-item:hover{background:#1c2433}
     .nav-menu-item.danger{color:#f87171}
-    .nav-menu-wrap{position:relative}
+    .nav-menu-wrap{display:none!important}
 
     .speaker-btn{
       height:24px;
@@ -2016,50 +2016,69 @@
 
   
     
-    /* Betika-style win bubble (from provided template) */
-    .chat-win-wrap{display:flex;align-items:flex-start;gap:8px;max-width:92%;flex:1;min-width:0}
+    
+    /* EXACT win bubble palette from user template */
+    :root{
+      --wb-bubble:#262463;
+      --wb-card:#07074a;
+      --wb-muted:#8d90c8;
+      --wb-green:#3ddc6b;
+      --wb-red:#ff4d5a;
+      --wb-blue:#2f7df6;
+    }
+    .chat-row{display:flex;align-items:flex-start;gap:8px;margin:10px 0;padding:0 8px}
+    .chat-row > .chat-avatar,
+    .chat-row > .chat-avatar-fallback{
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;
+      margin-top:auto;align-self:flex-end;
+    }
+    .chat-avatar-fallback{
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;
+      background:radial-gradient(circle at 38% 32%,#fff1a0,#e2a900 45%,#6e4a00);border:2px solid #2d2400;
+    }
+    .chat-win-wrap{display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0}
     .chat-win-card{
-      flex:1;min-width:0;background:#262463;border-radius:14px 14px 14px 4px;
-      padding:8px 10px 10px;border:none;box-shadow:none;position:relative;
+      flex:1;min-width:0;max-width:280px;
+      background:var(--wb-bubble);border-radius:14px 14px 14px 0;padding:10px 10px 12px;
+      border:none;box-shadow:none;position:relative;
     }
-    .chat-win-card .wb-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;font-size:12px}
-    .chat-win-card .wb-head .u{color:#ff4d5a;font-weight:700}
-    .chat-win-card .wb-head .t{color:#8d90c8}
+    .chat-win-card .wb-head{
+      display:flex;align-items:center;gap:16px;margin:0 0 8px 2px;font-size:13px;line-height:1.2;
+    }
+    .chat-win-card .wb-head .u{color:var(--wb-red);font-weight:700}
+    .chat-win-card .wb-head .t{color:var(--wb-muted);font-weight:500}
     .chat-win-inner{
-      background:#07074a;border-radius:14px;padding:10px 12px 12px;position:relative;overflow:hidden;
+      background:var(--wb-card);border-radius:14px;padding:12px 12px 14px;position:relative;overflow:hidden;
     }
-    .chat-win-inner .wb-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .chat-win-inner .wb-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
     .chat-win-inner .wb-coin{
-      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;
       background:radial-gradient(circle at 38% 32%,#fff1a0,#e2a900 45%,#6e4a00);
-      border:1px solid #2d2400;
+      border:2px solid #2d2400;
     }
-    .chat-win-inner .wb-name{font-size:14px;font-weight:700;color:#fff;flex:1}
-    .chat-win-inner .wb-shield{width:18px;height:20px;flex-shrink:0}
-    .chat-win-grid{
-      display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:0;
-    }
-    .chat-win-grid span{display:block;font-size:11px;color:#8d90c8;margin-bottom:2px}
-    .chat-win-grid strong{font-size:13px;font-weight:700}
-    .chat-win-mult{color:#2f7df6!important}
-    .chat-win-amt{color:#3ddc6b!important}
+    .chat-win-inner .wb-name{font-size:15px;font-weight:600;color:#fff;flex:1;line-height:1.2}
+    .chat-win-inner .wb-shield{width:20px;height:22px;flex-shrink:0}
+    .chat-win-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0}
+    .chat-win-grid span{display:block;font-size:12px;color:var(--wb-muted);margin-bottom:2px;line-height:1.2}
+    .chat-win-grid strong{font-size:14px;font-weight:600;line-height:1.2}
+    .chat-win-mult{color:var(--wb-blue)!important}
+    .chat-win-amt{color:var(--wb-green)!important}
     .chat-win-round,.chat-win-bet{color:#fff;font-weight:500}
     .chat-win-divider{
-      display:flex;align-items:center;gap:8px;margin:10px 0 8px;
+      display:flex;align-items:center;gap:6px;margin:12px 0 10px;position:relative;
     }
     .chat-win-divider .ln{flex:1;height:1.5px;background:#3d3f86}
-    .chat-win-divider svg{width:28px;height:16px;opacity:.55;flex-shrink:0}
+    .chat-win-divider svg{width:32px;height:18px;flex-shrink:0;opacity:.55}
     .chat-win-plane{display:none!important}
     .win-card-top{display:none!important}
-    .chat-likes{margin-left:4px;color:#6c6c6c;font-size:12px;cursor:pointer;flex-shrink:0;text-align:center;min-width:28px}
-    .chat-likes.liked{color:#f472b6}
-    .chat-share-hint{display:none!important}
-    .chat-toolbar{display:flex;gap:8px;padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);background:#0f141c}
-    .chat-tool-btn{
-      border:0;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;
-      background:#1c2433;color:#e5e7eb
+    .chat-likes{
+      margin-left:2px;color:#6c6c6c;font-size:12px;cursor:pointer;flex-shrink:0;
+      text-align:center;min-width:32px;align-self:center;user-select:none;
     }
-    .chat-tool-btn.primary{background:#3b3f8f;color:#fff}
+    .chat-likes svg{width:22px;height:20px;fill:#777;display:block;margin:0 auto 2px}
+    .chat-likes.liked{color:#f472b6}
+    .chat-likes.liked svg{fill:#f472b6}
+    .chat-share-hint{display:none!important}
 
     /* KILL deposit and tabs */
     #depositBtn, .wallet-route-btn, #betsTabs, .bets-tabs { display: none !important; height: 0 !important; overflow: hidden !important; }
@@ -2348,24 +2367,6 @@
         </span>
 
         
-
-        <div class="nav-menu-wrap">
-          <button
-            class="menu-btn"
-            id="navMenuBtn"
-            type="button"
-            title="Account menu"
-            aria-label="Account menu"
-          >
-            <span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span>
-          </button>
-          <div id="navMenuDrop" class="nav-menu-drop hidden">
-            <button type="button" class="nav-menu-item" id="menuDepositBtn" style="display:none" style="display:none">Deposit</button><!-- game deposit disabled -->
-            <button type="button" class="nav-menu-item" id="menuWithdrawBtn">Withdraw</button>
-            <button type="button" class="nav-menu-item" id="menuAccountBtn">Account</button>
-            <button type="button" class="nav-menu-item danger hidden" style="display:none!important" id="menuLogoutBtn">Logout</button>
-          </div>
-        </div>
 
         <button
           class="chat-btn"
@@ -8652,26 +8653,26 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         ];
         var COLORS = ['#3b82f6','#22c55e','#eab308','#a855f7','#ef4444','#06b6d4','#f97316','#ec4899','#64748b'];
         var MSGS = [
-          'Wueeeh wasee 😂🔥 leo chat iko na moto! Hiyo ndege ikianza kupaa kila mtu anasahau alikuwa anasema nini! ✈️',
-          'Aki hii Aviator inajua kuweka watu kwa tension 😂😭 unakaa ukifuatilia ndege na moyo iko mbio mbio!',
-          'Eeeh bana, Nairobi hadi ushago leo ni rada ya ndege 😂 chat imewaka proper! Hii suspense ni noma sana!',
-          'Wasee wa Kenya mko wapi? 🇰🇪 Nataka kuona kama ni mimi tu nimekaa hapa nikishangaa kila round!',
-          'Aaaaaai 😂 hiyo takeoff imekuja na confidence! Ndege imeamua kwenda juu bila notice! ✈️',
-          'Bana hii suspense ni kama final ya ligi 😂 kila mtu anangoja kuona round itaishia wapi!',
-          'Wueh! Hata wale walikuwa kimya sasa wameamka! Comments zinaanza kumwaga kama mvua ya Nairobi!',
-          'Aki maze 😂 hii ndege haina brakes ama ni imagination yangu? Inapanda tu na kutia maswali!',
-          'Bana wasee hii ni noma! Kila round inakuja na surprise. Unadhani umezoea halafu AIIIII!',
-          'Ati nilikuwa nasema nitacheki dakika mbili 😂 sasa nimefuatilia rounds kadhaa! Muda hukimbia!',
-          'Kenya ni Kenya bana 😂 hata chat ikianza serious lazima mtu aingize utani ufanye kila mtu acheke!',
-          'Eeeh hiyo finish imekuja ghafla! 😭 Hakuna anajua next round itakuwaje. Kila mtu na reaction yake!',
-          'Sasa wasee wa Nai, Mombasa, Kisumu, Eldoret — kila mtu na reaction yake 🇰🇪 Chat imejaa energy!',
-          'Wasee msichukulie kila round kama guarantee 😂 Hii ni game ya chance. Furahieni vibes bila pressure!',
-          'Mwisho wa siku ni game tu 😂 Kicheko, suspense na Sheng ndizo zinafanya chat iwe lively! Jitunze!',
-          'Shika Chapaa iko fair wasee — kila round ni yake, usilie after red early 🔥',
-          'Nilishinda kidogo niko poa, next round si lazima nishike greed 🤝',
-          'Hii game feel iko sweet leo, plane iko smooth — tuko pamoja kila round!',
-          'Fair play wasee, usichukue pressure. Small stake big brain ndio vibe 🔥',
-          'Won amount iko poa lakini si kila time — respect the crash, cashout smart!'
+          'Aviator stage iko live — plane iko ready ✈️',
+          'Hii round multiplier inaweza kuwa anything wasee',
+          'Cashout smart, usishike greed kwenye stage',
+          'Fair crash wasee — kila round ni independent',
+          'Ndege ikipaa tension inaingia 😂🚀',
+          'Bet small, watch the stage, cash out clean',
+          'Shika Chapaa Aviator — stage iko smooth leo',
+          'Red early? Next round tuko tena 🔥',
+          'Won amount iko poa lakini si kila round',
+          'Auto cashout saved me on that crash',
+          'Multiplier ribbon iko hot — check history',
+          'Plane iko mid-air, hold or cash? 👀',
+          'Gambling ni chance — weka limit yako',
+          'Stage glow + plane path iko clean leo',
+          'Big win bubble inakuja for someone 💰',
+          'Aviator si predict — play responsible',
+          'Cashed at 2x safe, next flight ni yako',
+          'Live bets board iko busy wasee',
+          'Crash came early — respect the game',
+          'Kenya on Aviator stage 🇰🇪 tuko pamoja'
         ];
 
         function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
@@ -8724,10 +8725,10 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         function rowHtml(m){
           var mid = m.uid || (m.id + '_' + (m.time||'') + '_' + (m.mult||m.text||'').toString().slice(0,12));
           var avHtml = m.avatar
-            ? '<img class="chat-avatar" src="' + m.avatar + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"><div class="chat-avatar-fallback" style="display:none;background:' + pick(COLORS) + '">' + (m.id||'?').charAt(0) + '</div>'
-            : '<div class="chat-avatar-fallback" style="background:' + pick(COLORS) + '">' + (m.id||'?').charAt(0) + '</div>';
+            ? '<img class="chat-avatar" src="' + m.avatar + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"><div class="chat-avatar-fallback" style="display:none">' + (m.id||'?').charAt(0) + '</div>'
+            : '<div class="chat-avatar-fallback">' + (m.id||'?').charAt(0) + '</div>';
           var likeCls = m._liked ? 'chat-likes liked' : 'chat-likes';
-          var heart = m._liked ? '♥' : '♡';
+          var heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg>';
           var f = function(n){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
           if (m.type === 'win') {
             var cash = parseFloat(m.mult)||0;
@@ -8751,12 +8752,12 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
               '<div><span>Round:</span><strong class="chat-win-round">' + parseFloat(rnd).toFixed(2) + 'x</strong></div>' +
               '<div><span>Bet:</span><strong class="chat-win-bet">' + f(betAmt) + ' KES</strong></div>' +
               '</div></div></div>' +
-              '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heart + '<div class="like-n">' + (m.likes||0) + '</div></div></div></div>';
+              '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heartSvg + '<div class="like-n">' + (m.likes||0) + '</div></div></div></div>';
           }
           return '<div class="chat-row" data-mid="' + mid + '">' + avHtml +
             '<div class="chat-bubble"><div class="chat-meta"><span class="chat-name">' + m.id + '</span><span class="chat-time">' + m.time + '</span></div>' +
             '<div class="chat-text">' + m.text + '</div></div>' +
-            '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heart + '<div class="like-n">' + (m.likes||0) + '</div></div></div>';
+            '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heartSvg + '<div class="like-n">' + (m.likes||0) + '</div></div></div>';
         }
 
         function renderAll(){
@@ -8841,14 +8842,42 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         }
         function shareLatestWin(){
           try {
-            var last = window.__scLastWin || { mult: '2.15', win: 2150, bet: 1000, round: '2.15' };
-            var msg = {
-              type: 'win', id: 'You', uid: 'you_' + Date.now(), avatar: myAvatar, time: timeStr(), likes: 0,
-              mult: String(last.mult), win: Number(last.win), round: String(last.round || last.mult), bet: Number(last.bet || 0)
-            };
-            messages.push(msg);
-            if (messages.length > 50) messages = messages.slice(-50);
-            chatList.insertAdjacentHTML('beforeend', rowHtml(msg));
+            var list = [];
+            try {
+              if (typeof loadHourStore === 'function' && typeof LS_TOP !== 'undefined') {
+                list = loadHourStore(LS_TOP) || [];
+              }
+            } catch (e1) {}
+            if (!list.length && typeof topCashouts !== 'undefined' && topCashouts && topCashouts.length) {
+              list = topCashouts.slice();
+            }
+            list = (list || []).slice().sort(function(a,b){ return Number(b.win||0) - Number(a.win||0); }).slice(0, 16);
+            if (!list.length && window.__scLastWin) {
+              list = [window.__scLastWin];
+            }
+            if (!list.length) return;
+            list.forEach(function(p, idx){
+              var mult = p.mult != null ? p.mult : 1;
+              var win = Number(p.win || 0);
+              var bet = Number(p.bet || p.stake || 0);
+              if (!bet && mult > 0) bet = Math.round(win / mult);
+              var msg = {
+                type: 'win',
+                id: (p.name || p.id || ('2***' + (idx % 9 + 1))).toString().slice(0, 12),
+                uid: 'hist_' + Date.now() + '_' + idx,
+                avatar: p.avatarUrl || p.avatar || '',
+                time: timeStr(),
+                likes: Math.floor(Math.random() * 6),
+                mult: String(Number(mult).toFixed(2)),
+                win: win,
+                round: String(Number(p.round != null ? p.round : mult).toFixed(2)),
+                bet: bet
+              };
+              messages.push(msg);
+              chatList.insertAdjacentHTML('beforeend', rowHtml(msg));
+            });
+            if (messages.length > 60) messages = messages.slice(-60);
+            while (chatList.children.length > 60) chatList.removeChild(chatList.firstChild);
             stuckBottom = true;
             chatList.scrollTop = chatList.scrollHeight;
           } catch (err) {}
