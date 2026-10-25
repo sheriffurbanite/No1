@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Bets panel (simulated)</title>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<title>Shika-Chapaa Aviator (Bets Panel)</title>
 <style>
 :root{color-scheme:dark}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:#0e0e0e;color:#bbc2bb;font-family:Roboto,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+html,body{background:#0e0e0e;color:#bbc2bb;font-family:Roboto,Inter,system-ui,-apple-system,"Segoe UI",sans-serif;height:100%;overflow:hidden}
 body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer}
-/* all sizes below are in the screenshot's 720px-wide pixel space; JS zooms to fit */
-#app{width:720px;margin:0 auto;position:relative}
+#app{width:720px;margin:0 auto;position:relative;transform-origin:top center}
+
+/* ===== original second-file styles (kept) ===== */
 .nav{height:71px;background:#16202c;display:flex;align-items:center;justify-content:space-between;padding:0 15px;color:#fff;font-size:20px;font-weight:500}
 .nav .lv{font-size:18px;color:#8fa0b4;font-weight:400}.nav .lv.c{color:#e0405a}
 .nav svg{vertical-align:middle;margin-left:8px}
@@ -62,7 +62,6 @@ button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer
 .tc .v{line-height:28px;right:356px;color:#bbc2bb}.tc .m{right:13px;line-height:28px;color:#a3209a}
 .ft{height:50px;display:flex;align-items:center;padding-left:30px;gap:12px;font-size:17px;color:#8c8e92}
 .hint{font-size:15px;color:#6f7074;text-align:center;padding:14px 0 18px}
-
 .bn{margin:14px 8px 0;height:66px;border-radius:33px;padding:3px;background:linear-gradient(90deg,#d6532b,#7b4ad0 40%,#2f95e8 75%,#d6a02b)}
 .bi{height:60px;border-radius:30px;background:#17181b;display:flex;align-items:center;padding:0 5px 0 10px}
 .lvp{width:104px;height:44px;border-radius:22px;background:#26282e;display:flex;align-items:center;gap:10px;padding-left:12px;font-size:19px;color:#cfcfd2}
@@ -99,7 +98,6 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
 .av{top:3px!important;width:22px;height:22px;font-size:13px}.n{left:34px}
 .ch{font-size:13px;height:16px;margin-bottom:8px}
 .hs .dt{cursor:pointer}
-
 #hp{position:absolute;left:8px;right:8px;top:226px;height:178px;background:#1b1c1e;border:1px solid #232427;border-radius:20px;z-index:15;display:none;flex-direction:column;box-shadow:0 10px 30px #000b}
 #hp.show{display:flex}.hh{height:48px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 18px;font-size:19px;color:#9c9da2}
 .hh i{width:36px;height:36px;border-radius:50%;background:#2c2d31;display:grid;place-items:center;font-style:normal;font-size:17px;color:#cfcfd2;cursor:pointer}
@@ -120,7 +118,6 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
 #sheet table{width:100%;border-collapse:collapse}#sheet td{padding:7px 0;border-bottom:1px solid #2a2b2e}#sheet td:last-child{text-align:right;color:#fff}
 #sheet button{margin-top:16px;height:48px;width:100%;border-radius:24px;background:#2c2d31;color:#e6e6e8;font-size:19px}
 .hs .dt,#mb,#cb{cursor:pointer}
-
 .lvp.off i{border-color:#8c8e92}.lvp.off i:after{border-left-color:#8c8e92}.lvp.off{color:#8c8e92}.bn{cursor:pointer}
 .go.cn{background:#c9293b;border-color:#ee6a7c}.go.co{background:#d98300;border-color:#f6ad3b}.go small{text-align:center}
 #toast.ok{border-color:#2f7a1a;background:rgba(18,48,14,.94)}
@@ -138,16 +135,113 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
 .lh{color:#7c7c7c;font-size:13px;height:26px}.lr{background:#101113;margin-bottom:3px}.lr.me{background:#21320e}
 .lr em,.lh em,.lr u,.lh u{text-align:right;font-style:normal;text-decoration:none}.lr u{color:#fdb913}.lr b{color:#9c9da2}.tnote{margin-top:12px;font-size:13px;color:#6f7074}
 
-#chat{position:absolute;left:0;right:0;top:0;height:1316px;background:#1a1a1a;z-index:25;display:none}#chat.show{display:block}
+/* ===== EXTRACTED FROM FIRST FILE: Splash / UFC loading ===== */
+.splash{
+  position:fixed;inset:0;z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#07080c;transition:opacity .35s ease
+}
+.splash.hidden{display:none!important}
+.splash.fade-out{opacity:0;pointer-events:none}
+.spribe-load{display:flex;flex-direction:column;align-items:center;gap:22px}
+.splash-brand{
+  font-family:Georgia,serif;font-style:italic;font-weight:800;
+  font-size:42px;color:#ed0a45;letter-spacing:.5px
+}
+.spribe-dots{
+  position:relative;width:56px;height:56px;
+  animation:spribe-spin 1.1s linear infinite
+}
+.spribe-dots i{
+  position:absolute;top:50%;left:50%;
+  width:9px;height:9px;margin:-4.5px;border-radius:50%;
+  background:#e10600;box-shadow:0 0 8px rgba(225,6,0,.55)
+}
+.spribe-dots i:nth-child(1){transform:rotate(0deg) translateY(-22px);opacity:1}
+.spribe-dots i:nth-child(2){transform:rotate(45deg) translateY(-22px);opacity:.9}
+.spribe-dots i:nth-child(3){transform:rotate(90deg) translateY(-22px);opacity:.8}
+.spribe-dots i:nth-child(4){transform:rotate(135deg) translateY(-22px);opacity:.7}
+.spribe-dots i:nth-child(5){transform:rotate(180deg) translateY(-22px);opacity:.6}
+.spribe-dots i:nth-child(6){transform:rotate(225deg) translateY(-22px);opacity:.5}
+.spribe-dots i:nth-child(7){transform:rotate(270deg) translateY(-22px);opacity:.4}
+.spribe-dots i:nth-child(8){transform:rotate(315deg) translateY(-22px);opacity:.3}
+@keyframes spribe-spin{to{transform:rotate(360deg)}}
+.splash-connection-block{margin-top:28px;text-align:center}
+.splash-site-title{font-weight:800;font-size:13px;letter-spacing:2px;color:#e5e7eb;margin-bottom:6px}
+.splash-connection{font-size:12px;color:#9ca3af;font-weight:600}
+
+/* Partner branding (UFC style) overlay */
+.partner-branding-box{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;pointer-events:none;z-index:5
+}
+.ufc-partner-badge{
+  display:flex;align-items:center;gap:10px;
+  font-size:clamp(28px,6vw,52px);font-weight:900
+}
+.ufc-title{color:#e10c2d;font-style:italic}
+.divider{color:#e5e5e5;font-weight:200}
+.aviator-title{color:#ed1744;font-family:Georgia,serif;font-size:.64em;font-style:italic}
+.partner-subtitle{color:#f7f7f7;font-size:clamp(11px,1.8vw,18px);font-weight:900;letter-spacing:.8px}
+.red-line-countdown-wrap{
+  width:min(120px,30vw);height:4px;margin:8px auto;
+  background:#ed004240;border-radius:2px;overflow:hidden
+}
+.red-line-countdown{
+  height:100%;background:linear-gradient(90deg,#ff1744,#ed0042);
+  border-radius:2px;box-shadow:0 0 10px #ed0042;transition:width .05s linear
+}
+
+/* ===== EXTRACTED FROM FIRST FILE: Win bubble ===== */
+.win-bubble{
+  position:absolute;z-index:50;left:50%;top:8%;
+  transform:translateX(-50%) translateY(-20px);opacity:0;
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(90deg,#0d3b12 0%,#14591a 100%);
+  border:1.5px solid #2ecc40;border-radius:40px;
+  padding:8px 10px 8px 18px;pointer-events:none;
+  box-shadow:0 0 24px rgba(46,204,64,.45),0 4px 16px rgba(0,0,0,.5);
+  transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .25s ease;
+  white-space:nowrap;max-width:92%
+}
+.win-bubble.show{transform:translateX(-50%) translateY(0);opacity:1}
+.win-bubble .cashout-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.win-bubble .cashout-label{font-size:11px;font-weight:600;color:#a8e6a8}
+.win-bubble .cashout-mult{
+  font-size:22px;font-weight:900;color:#b8f0c0;letter-spacing:-0.5px;
+  text-shadow:0 0 10px rgba(46,204,64,0.35)
+}
+.win-bubble .win-badge{
+  background:linear-gradient(180deg,#2ecc40 0%,#27ae60 100%);
+  border-radius:28px;padding:7px 16px;
+  display:flex;flex-direction:column;align-items:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);min-width:110px
+}
+.win-bubble .win-badge-label{font-size:10px;font-weight:700;color:#e8ffe8;letter-spacing:0.3px}
+.win-bubble .win-badge-amount{font-size:16px;font-weight:900;color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+
+/* Speaker button */
+.speaker-btn{
+  height:36px;width:42px;padding:0;border:1px solid #3a4250;border-radius:8px;
+  background:#1c2230;color:#e9edf1;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1;margin-left:8px
+}
+.speaker-btn.muted{opacity:.55}
+
+/* Chat (kept + messages from first file) */
+#chat{position:absolute;left:0;right:0;top:0;height:1316px;background:#1a1a1a;z-index:25;display:none}
+#chat.show{display:block}
 .ch2{position:absolute;left:13px;right:12px;top:13px;height:75px;background:#242424;border:1px solid #3a3a3a;border-radius:26px;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#8b8b8b;font-size:23px}
 .ch2 b{color:#5fd13a;font-weight:700}
-.inf,.cx2{width:46px;height:46px;border-radius:50%;background:#3b3b3b;display:grid;place-items:center;font-style:normal;cursor:pointer}.inf{color:#8b8b8b;font-weight:700;font-size:24px}.cx2{color:#e8e8e8;font-size:22px}
+.inf,.cx2{width:46px;height:46px;border-radius:50%;background:#3b3b3b;display:grid;place-items:center;font-style:normal;cursor:pointer}
+.inf{color:#8b8b8b;font-weight:700;font-size:24px}.cx2{color:#e8e8e8;font-size:22px}
 #cm{position:absolute;left:0;right:0;top:62px;bottom:140px;overflow-y:auto;padding:36px 0 12px}
 .msg{position:relative;display:flex;align-items:flex-end;gap:13px;padding:0 12px;margin-bottom:14px}
 .av2{width:57px;height:57px;border-radius:50%;display:grid;place-items:center;font-size:30px;flex:none;font-style:normal}
 .bb{background:#242424;border-radius:24px;padding:12px 16px 14px;max-width:526px;font-size:21px;line-height:33px;color:#f2f2f2;word-break:break-word}
 .mh2{font-size:18px;line-height:26px}.mh2 span{margin-right:14px}.mh2 small{color:#767676;font-size:18px}
-.hr{position:absolute;right:10px;top:50%;margin-top:-34px;width:40px;text-align:center;color:#525252;cursor:pointer}.hr svg{display:block;margin:0 auto}.hr small{font-size:17px;color:#525252}.hr.on,.hr.on small{color:#e0405a}
+.hr{position:absolute;right:10px;top:50%;margin-top:-34px;width:40px;text-align:center;color:#525252;cursor:pointer}
+.hr svg{display:block;margin:0 auto}.hr small{font-size:17px;color:#525252}.hr.on,.hr.on small{color:#e0405a}
 .bb.wcb{background:#2d1c50;padding:14px;width:418px;border-radius:26px}
 .wh{font-size:18px;line-height:24px;margin-bottom:10px}.wh span{margin-right:14px}.wh small{color:#8d86a8;font-size:18px}
 .wi{background:#201537;border-radius:20px;padding:12px 11px 16px;position:relative}
@@ -159,544 +253,636 @@ html,body{overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webki
 .cin2 textarea{width:100%;height:46px;background:none;border:0;outline:0;color:#fff;font-size:22px;resize:none;font-family:inherit;padding:0}.cin2 textarea::placeholder{color:#909090}
 .cbt{position:absolute;left:245px;right:26px;bottom:14px;display:flex;justify-content:space-between;align-items:center;color:#909090;font-size:22px}.cbt u{text-decoration:none;font-size:17px;margin-right:8px}
 .cbt svg{cursor:pointer}
-
-.lvp{width:auto;min-width:104px;padding-right:16px}
-.lvp.min{color:#ff5a52;background:#2a1e20}.lvp.min i{border-color:#ff5a52}.lvp.min i:after{content:"!";border:0;left:7px;top:0;width:auto;height:auto;color:#ff5a52;font-size:15px;font-weight:700;line-height:18px;font-style:normal}
-#tb{position:absolute;left:0;right:0;top:0;height:1316px;background:rgba(0,0,0,.55);z-index:23;display:none}#tb.show{display:block}
-#tm{position:absolute;left:92px;width:537px;top:85px;max-height:1228px;overflow-y:auto;border-radius:30px;background:linear-gradient(180deg,#45215f 0,#2d2142 230px,#232327 380px);z-index:24;display:none;color:#e9e9ec;padding-bottom:28px;scrollbar-width:thin}#tm.show{display:block}
-.tmt{display:flex;align-items:center;gap:14px;padding:14px 24px 0 26px}
-.chip{height:46px;border-radius:23px;background:rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;padding:0 20px 0 16px;font-size:20px;color:#eee}.chip.red{color:#ff5a52;background:rgba(255,80,70,.13)}
-.tmx{margin-left:auto;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;font-style:normal;font-size:24px;cursor:pointer}
-.tlogo{text-align:center;margin-top:10px;height:92px}.tlogo span{display:inline-block;margin-top:14px;padding:8px 26px;font:italic 800 36px/1 'Arial Narrow',Arial,sans-serif;color:#fff;border:3px solid #e0213a;transform:skewX(-12deg);letter-spacing:1px}
-.ttl{font-size:31px;font-weight:500;text-align:center;margin:4px 0 14px;color:#fff}
-#tjn{display:block;margin:0 auto;width:250px;height:75px;border-radius:38px;background:linear-gradient(#ffe066,#ffc93a);color:#1a1a1a;font-size:27px;font-weight:700;cursor:pointer}
-.tend{text-align:center;color:#9a9aa1;font-size:20px;margin:18px 0 14px}
-.cds{display:flex;justify-content:center;align-items:center;gap:12px}.cds b{width:75px;height:75px;border-radius:14px;background:#2b2c30;display:grid;place-items:center;font-size:48px;color:#c9c9ce;font-weight:700}.cds i{font-style:normal;font-size:34px;color:#7c7c82}
-.twarn{margin:16px 30px 0;padding:14px 12px;border-radius:14px;background:rgba(160,40,40,.13);color:#e4453f;text-align:center;font-size:20px;line-height:25px}
-.tcard{margin:22px 25px 0;background:#2b2c30;border-radius:20px;padding:18px}
-.trow{display:flex;justify-content:space-between;font-size:20px;color:#e6e6e9}.trow a{color:#ffcb3d;font-weight:700;font-size:19px;cursor:pointer}
-.tdes{display:flex;gap:16px;margin-top:14px;font-size:21px;line-height:24px;color:#9b9ba1;align-items:flex-start}.tdes i{font-style:normal;font-size:44px;line-height:48px}
-.tstat{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #3a3b40;border-bottom:1px solid #3a3b40;margin:14px -18px 0;padding:10px 18px}.tstat>div{display:flex;gap:16px;align-items:center;font-size:20px;color:#9b9ba1}.tstat>div+div{border-left:1px solid #3a3b40;padding-left:20px}.tstat b{display:block;font-size:32px;color:#fff;line-height:38px}
-.plb{margin-top:20px;font-size:20px}
-.pz{display:flex;align-items:center;justify-content:space-between;margin-top:6px}.lau{width:60px}.lau.fl{transform:scaleX(-1)}.pc{text-align:center}.pam{font-size:23px;font-weight:700;color:#fff;margin-top:6px}
-.ppl{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:#3a3b40;border-radius:25px;padding:6px 18px 6px 8px;font-size:21px}.ppl i{min-width:30px;height:30px;border-radius:15px;background:#f2b21f;color:#4a3000;font-style:normal;display:grid;place-items:center;font-size:17px;font-weight:700;padding:0 6px}
-.dots{display:flex;gap:12px;justify-content:center;margin-top:14px}.dots b{width:13px;height:13px;border-radius:50%;background:#3d3e43;cursor:pointer}.dots b.on{background:#ffcb3d}
-.tdiv{border-top:1px solid #3d3e43;margin:18px -2px 0;padding-top:18px;text-align:center;font-weight:700;color:#ffcb3d;font-size:20px;cursor:pointer}
-.oi{margin:22px 25px 0;background:#2b2c30;border-radius:20px;overflow:hidden}.oi .h{display:flex;justify-content:space-between;align-items:center;height:62px;padding:0 20px 0 18px;font-size:21px;cursor:pointer}
-.oi .r2{display:flex;align-items:center;gap:18px;height:64px;padding:0 24px 0 28px;font-size:22px;color:#9b9ba1;border-top:1px solid #36373b}.oi .r2 span{flex:1}.oi .r2 b{color:#fff;font-weight:400}
-.tfoot{text-align:center;color:#8d8d94;font-size:19px;margin-top:36px;line-height:28px}.tfoot a{color:#ffcb3d;font-weight:700;font-size:20px;cursor:pointer;display:block;margin-top:4px}
-.lbh{display:flex;align-items:center;gap:14px;padding:18px 24px 8px;font-size:26px;color:#fff}.lbh i{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;font-style:normal;cursor:pointer;font-size:26px}.lbh span{margin-left:auto;font-size:17px;color:#9b9ba1}
-.lbc,.lbr{display:grid;grid-template-columns:54px 1fr 108px 116px;align-items:center}.lbc{padding:0 30px 0 34px;height:32px;color:#80808a;font-size:15px}.lbc em,.lbc u,.lbr em,.lbr u{font-style:normal;text-decoration:none;text-align:right}
-.lbr{margin:0 20px 5px;height:52px;background:#2b2c30;border-radius:14px;padding:0 10px 0 14px;font-size:19px}.lbr.you{background:#3a2d12;border:1px solid #6e5518}.lbr b{color:#ffcb3d}.lbr u{color:#f2b21f}
 </style>
-
-<style>
-.wb-v.mc-low,.chat-win-mult.low{color:#00b8d1!important}
-.wb-v.mc-mid,.chat-win-mult.mid{color:#9a35cf!important}
-.wb-v.mc-high,.chat-win-mult.high{color:#d826c0!important}
-#loginGate{position:fixed;inset:0;z-index:5000;background:#0e0e0e;display:flex;align-items:center;justify-content:center;padding:20px}
-#loginGate.hidden{display:none!important}
-#loginGate .card{background:#1b1c1e;border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center}
-#loginGate h1{font-size:18px;color:#fff;margin:0 0 8px}
-#loginGate p{color:#8c8e92;font-size:13px;margin:0 0 16px}
-#loginGate button{width:100%;height:44px;border:0;border-radius:12px;background:#28a809;color:#fff;font-weight:700;font-size:15px;cursor:pointer;margin-top:0}
-#loginGate .back{margin-top:10px;background:#2c2d31}
-</style>
-<style>
-#scSplash{position:fixed;inset:0;z-index:6000;background:#0a0a0b;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .35s}
-#scSplash.hidden{display:none!important}
-#scSplash.fade{opacity:0;pointer-events:none}
-#scSplash .sp-logo{font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;margin-bottom:18px}
-#scSplash .sp-logo span{color:#fdb913}
-#scSplash .sp-bar{width:180px;height:4px;background:#1c1d20;border-radius:2px;overflow:hidden}
-#scSplash .sp-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#e8083e,#fdb913);border-radius:2px;animation:scLoad 1.4s ease forwards}
-#scSplash .sp-txt{margin-top:12px;font-size:12px;color:#8c8e92}
-@keyframes scLoad{from{width:0%}to{width:100%}}
-/* Pre-round wait overlay enhancement */
-#roundWait{position:absolute;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:5;pointer-events:none}
-#roundWait.show{display:flex}
-#roundWait .rw-title{color:#fff;font-weight:700;font-size:14px;margin-bottom:10px;text-shadow:0 2px 8px #000}
-#roundWait .rw-track{width:160px;height:6px;background:#1c1d20;border-radius:3px;overflow:hidden}
-#roundWait .rw-fill{height:100%;background:#e8083e;width:100%;transform-origin:left center}
-</style></head>
+</head>
 <body>
-<div id="scSplash" class="hidden">
-  <div class="sp-logo">SHIKA <span>CHAPAA</span></div>
-  <div class="sp-bar"><i></i></div>
-  <div class="sp-txt" id="scSplashTxt">Connection...</div>
-</div>
-<div id="loginGate" class="hidden">
-  <div class="card">
-    <h1>Log in only</h1>
-    <p>Open the home page and log in first. Same session is used here.</p>
-    <button type="button" id="gateHomeBtn">Go to Home</button>
-    <button type="button" class="back" id="gateBackBtn">‹ Go Back</button>
+<!-- SPLASH (UFC / Spribe style from first file) -->
+<div id="splash" class="splash">
+  <div class="spribe-load">
+    <div class="splash-brand">AVIATOR</div>
+    <div class="spribe-dots">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="splash-connection-block">
+      <div class="splash-site-title">SHIKA-CHAPAA</div>
+      <div class="splash-connection">Connecting to game server…</div>
+    </div>
   </div>
 </div>
-<div id="app"><div id="hp"></div><div id="menu"></div><div id="sheet"></div><div id="tb"></div><div id="tm"></div><div id="chat"><div class="ch2"><i class="inf" id="cinfo">i</i><span>Online: <b id="co">7217</b></span><i class="cx2" id="cc2">&#10005;</i></div><div id="cm"></div><div class="cin2"><textarea id="ci" placeholder="Your message..." maxlength="160" rows="1"></textarea><div class="cbt"><span id="cn"><u>AA</u>160</span><svg id="cs" viewBox="0 0 24 24" width="40" height="40" fill="#6a6a6a"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div></div></div><div id="toast">Not enough balance<b id="tx">&#10005;</b></div>
-  <div class="nav"><span>&#10094; Go Back</span><span id="lv" hidden><b id="mult"></b></span>
-    <span>View Fullscreen<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.4"><path d="M2 9V2h7M17 2h7v7M24 17v7h-7M9 24H2v-7"/></svg></span></div>
-  <div class="bal"><div class="a"><b id="bal">0.00</b>KES</div>
+
+<div id="app">
+  <div id="hp"></div>
+  <div id="menu"></div>
+  <div id="sheet"></div>
+  <div id="tb"></div>
+  <div id="tm"></div>
+  <div id="chat">
+    <div class="ch2">
+      <i class="inf" id="cinfo">i</i>
+      <span>Online: <b id="co">7217</b></span>
+      <i class="cx2" id="cc2">✕</i>
+    </div>
+    <div id="cm"></div>
+    <div class="cin2">
+      <textarea id="ci" placeholder="Your message..." maxlength="160" rows="1"></textarea>
+      <div class="cbt">
+        <span id="cn"><u>AA</u>160</span>
+        <svg id="cs" viewBox="0 0 24 24" width="40" height="40" fill="#6a6a6a"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Not enough balance<b id="tx">✕</b></div>
+
+  <div class="nav">
+    <span>‹ Go Back</span>
+    <span id="lv" hidden><b id="mult"></b></span>
+    <span style="display:flex;align-items:center;gap:8px">
+      View Fullscreen
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.4"><path d="M2 9V2h7M17 2h7v7M24 17v7h-7M9 24H2v-7"/></svg>
+      <button type="button" class="speaker-btn" id="speakerBtn" title="Mute music">🔊</button>
+    </span>
+  </div>
+
+  <div class="bal">
+    <div class="a"><b id="bal">0.00</b> KES</div>
     <svg id="mb" width="26" height="22" viewBox="0 0 26 22" stroke="#a3a3a5" stroke-width="2.4"><path d="M2 3h22M2 11h22M2 19h22"/></svg>
-    <svg id="cb" width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="#a3a3a5" stroke-width="2.4"><path d="M13 3C7 3 2 6.6 2 11c0 2.3 1.2 4.3 3.2 5.7L4 21l5-2.4c1.2.3 2.6.4 4 .4 6.5 0 11-3.6 11-8s-4.5-8-11-8z"/></svg></div>
-  <div class="bn"><div class="bi"><div class="lvp" id="lvp"><i></i><span id="lvt">LIVE</span></div><div class="bt" id="bt">Daily Crown &middot; KES 400,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
-  <div class="hs" id="hs"></div>
-  <div class="gm"><canvas id="cv"></canvas></div>
-  <div id="cards"></div>
-  <div class="panel">
-    <div class="tabs" id="tabs"><button class="on" data-t="all">All Bets</button><button data-t="prev">Previous</button><button data-t="top">Top</button></div>
-    <div id="view"></div>
-    <div class="ft"><svg width="18" height="20" viewBox="0 0 18 20" fill="#8c8e92"><path d="M9 0l8 3v6c0 5-3.5 9-8 11C4.5 18 1 14 1 9V3z"/></svg>Provably Fair Game</div>
-    <div class="hint">Shika Chapaa · Play responsibly · 18+</div>
+    <svg id="cb" width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="#a3a3a5" stroke-width="2.4"><path d="M13 3C7 3 2 6.6 2 11c0 2.3 1.2 4.3 3.2 5.7L4 21l5-2.4c1.2.3 2.6.4 4 .4 6.5 0 11-3.6 11-8s-4.5-8-11-8z"/></svg>
+  </div>
+
+  <div class="bn">
+    <div class="bi">
+      <div class="lvp" id="lvp"><i></i><span id="lvt">LIVE</span></div>
+      <div class="bt" id="bt">Daily Crown · KES 400,000</div>
+      <div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Game canvas area -->
+  <div class="gm" id="gameArea">
+    <canvas id="c" width="704" height="551"></canvas>
+    <!-- Partner branding overlay (UFC style) -->
+    <div class="partner-branding-box" id="partnerBrand">
+      <div class="ufc-partner-badge">
+        <span class="ufc-title">UFC</span>
+        <span class="divider">|</span>
+        <span class="aviator-title">Aviator</span>
+      </div>
+      <div class="partner-subtitle">WAITING FOR NEXT ROUND</div>
+      <div class="red-line-countdown-wrap"><div class="red-line-countdown" id="cdLine" style="width:100%"></div></div>
+    </div>
+    <!-- Win bubble (exact from first file) -->
+    <div class="win-bubble" id="winBubble">
+      <div class="cashout-text">
+        <span class="cashout-label">Cashed out</span>
+        <span class="cashout-mult" id="wbMult">1.00x</span>
+      </div>
+      <div class="win-badge">
+        <span class="win-badge-label">You won</span>
+        <span class="win-badge-amount" id="wbAmt">0.00 KES</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bet card (simplified from second file) -->
+  <div class="card" id="betCard">
+    <div class="mode">
+      <span class="on">Bet</span>
+      <span>Auto</span>
+    </div>
+    <div class="amb">
+      <div class="c pl" id="minus"></div>
+      <div class="v" id="stakeVal">100</div>
+      <div class="c" id="plus" style="right:11px"></div>
+      <div class="q">
+        <button data-v="100">100</button>
+        <button data-v="200">200</button>
+        <button data-v="500">500</button>
+        <button data-v="1000">1K</button>
+      </div>
+    </div>
+    <div class="go" id="betBtn"><span>BET</span><small><i id="betAmt">100</i> KES</small></div>
   </div>
 </div>
+
+<!-- Exact audio elements from first file -->
+<audio id="bgMusic" loop preload="auto" playsinline webkit-playsinline
+  controls="false" controlslist="nodownload nofullscreen noremoteplayback" disablepictureinpicture
+  style="display:none!important;visibility:hidden!important;opacity:0;width:0;height:0;position:fixed;left:-9999px;top:-9999px;pointer-events:none;z-index:-1">
+  <source src="https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/Aviator_-_Music_1080p.mp3" type="audio/mpeg">
+</audio>
+<audio id="lossSound" preload="auto" playsinline webkit-playsinline
+  controls="false" controlslist="nodownload nofullscreen noremoteplayback" disablepictureinpicture
+  style="display:none!important;visibility:hidden!important;opacity:0;width:0;height:0;position:fixed;left:-9999px;top:-9999px;pointer-events:none;z-index:-1">
+  <source src="https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/VID-20261006-WA0001.mp3" type="audio/mpeg">
+  <source src="https://res.cloudinary.com/qegjv5mo/video/upload/VID-20261006-WA0001.mp4" type="video/mp4">
+</audio>
+
 <script>
+/* ========== SOUND SYSTEM (exact logic from first file) ========== */
+const bgMusic = document.getElementById('bgMusic');
+const lossSound = document.getElementById('lossSound');
+const speakerBtn = document.getElementById('speakerBtn');
+let musicOn = true;
+let inGameAudio = false;
+let lossResumeTimer = null;
 
-(function(){
-  var EM=['🐥','🐱','🌴','🍍','😎','🎲','🍃','🌉','🐶','🚗','🦊','🐼'],COL=['#e8a317','#5a5d62','#3a7a4a','#d49a2a','#7a3a6a','#a02030','#6a9a6a','#3a7ac0','#8a6a3a','#5a2a2a'];
-  var BETS=[25000,25000,10000,7000,6000,4000,2250,2000,2000,1750,1000,500,250,100,50,10];
-  var S={anim:true,hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
-  var $=function(i){return document.getElementById(i)};
-  function fit(){$('app').style.zoom=Math.min(window.innerWidth,520)/720}
-  fit();window.addEventListener('resize',fit);
-  function fmt(n){return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
-  function newRound(){
-    S.crash=Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100);
-    var ps=[];
-    for(var i=0;i<120;i++){
-      var tgt=Math.random()<.35?null:+(1.2+Math.pow(Math.random(),2.2)*8).toFixed(2);
-      ps.push({id:'2***'+Math.floor(Math.random()*10),bet:BETS[Math.min(BETS.length-1,Math.floor(Math.pow(Math.random(),.6)*BETS.length))],em:EM[i%EM.length],c:COL[i%COL.length],tgt:tgt,x:null,win:0});
-    }
-    ps.sort(function(a,b){return b.bet-a.bet});
-    S.players=ps;S.total=5000+Math.floor(Math.random()*2000);S.m=1;S.phase='wait';S.wt=Date.now();if(typeof CD!=='undefined'&&CD)CD.forEach(function(c){c.nx=false});
-  }
-  
-  var CD = []; // auto cash slots
-  function autoCash(){
-    try {
-      if (!CD || !CD.length) return;
-      CD.forEach(function(c){
-        if (!c || c.nx || !c.on) return;
-        var tgt = Number(c.x || c.target || 0);
-        if (tgt > 1 && S.m >= tgt) {
-          c.nx = true;
-          // visual only in this shell
-        }
+var SC_MUSIC_URL = 'https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/Aviator_-_Music_1080p.mp3';
+var scAudioCtx = null, scGain = null, scBuffer = null, scSource = null, scMusicOn = true;
+
+function hideAudioEl(el){
+  if(!el) return;
+  el.controls = false;
+  el.removeAttribute('controls');
+  el.setAttribute('controlslist','nodownload nofullscreen noremoteplayback');
+  el.setAttribute('disablepictureinpicture','');
+  el.style.cssText = 'display:none!important;visibility:hidden!important;opacity:0;width:0;height:0;position:fixed;left:-9999px;top:-9999px;pointer-events:none;z-index:-1';
+}
+function lockAudioToGameOnly(){
+  hideAudioEl(bgMusic); hideAudioEl(lossSound);
+  try{
+    if(navigator.mediaSession){
+      navigator.mediaSession.metadata = new MediaMetadata({title:' ',artist:' ',album:' '});
+      ['play','pause','seekbackward','seekforward','previoustrack','nexttrack','stop'].forEach(a=>{
+        try{navigator.mediaSession.setActionHandler(a,()=>{});}catch(e){}
       });
-    } catch (e) {}
-  }
-  function onFly(){
-    try {
-      if (typeof restartMusicForRound === 'function') restartMusicForRound();
-      else if (typeof tryPlayMusic === 'function') tryPlayMusic();
-    } catch (e) {}
-  }
-  function onCrash(){
-    try {
-      // brief pause then music can resume on wait
-      if (window.__scSoundOn === false) return;
-    } catch (e) {}
-  }
-
-function tick(){
-    var now=Date.now(),L=$('lv');
-    if(S.phase==='wait'){
-      L.classList.remove('c');$('mult').textContent='wait '+Math.max(0,5-(now-S.wt)/1000).toFixed(0)+'s';
-      if(now-S.wt>=5000){S.phase='fly';S.t0=now;onFly()}
-    }else if(S.phase==='fly'){
-      S.m=Math.exp(0.00009*(now-S.t0));
-      if(S.m>=S.crash){S.m=S.crash;S.phase='crash';S.ct=now;S.prev={res:S.crash,list:S.players.slice()};L.classList.add('c');S.hist.unshift(S.crash);S.hist.length=100;hist();onCrash()}
-      else{autoCash();S.players.forEach(function(p){if(p.x===null&&p.tgt&&S.m>=p.tgt){p.x=p.tgt;p.win=p.bet*p.tgt}})}
-      $('mult').textContent=S.m.toFixed(2)+'x';
-    }else if(now-S.ct>3500){newRound()}
-    paint();render();
-  }
-  function row(p,z){
-    var w=p.x!==null;
-    return '<div class="r'+(w?' w':'')+'"><i class="av" style="background:'+p.c+'">'+p.em+'</i><span class="n">'+p.id+'</span><span class="b">'+fmt(p.bet)+'</span><span class="x">'+(w?p.x.toFixed(2)+'x':'')+'</span><span class="wn">'+(w?fmt(p.win):(z?'0.00':''))+'</span></div>';
-  }
-  var cols='<div class="ch"><span style="left:13px">Player</span><span style="right:352px">Bet KES</span><span style="right:181px">X</span><span style="right:12px">Win KES</span></div>';
-  var TOP=[[1207.73,10,2066.39],[1093.23,250,2066.39],[1057.53,10,1065.01],[1048.79,10,1190.12],[1031.53,10,1065.01],[1020.10,10,1065.01]];
-  var ICB='<span class="ib i1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a3a3a5" stroke-width="2"><path d="M12 3C6.5 3 2 6.5 2 11c0 2 1 3.8 2.7 5.2L3.5 21l4.8-2.2c1.2.4 2.4.5 3.7.5 5.5 0 10-3.5 10-8s-4.5-8-10-8z"/></svg></span><span class="ib i2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a3a3a5" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M8.5 12l2.5 2.5 5-5"/></svg></span>';
-  function top(){
-    var h='<div class="sub">'+[['x','X'],['win','Win'],['rounds','Rounds']].map(function(a){return '<button data-s="'+a[0]+'" class="'+(S.sub===a[0]?'on':'')+'">'+a[1]+'</button>'}).join('')+
-      [['day','Day'],['month','Month'],['year','Year']].map(function(a){return '<button data-p="'+a[0]+'" class="'+(S.per===a[0]?'on':'')+'">'+a[1]+'</button>'}).join('')+'</div><div class="tl">';
-    var k=(S.sub.length*3+S.per.length)%7;
-    for(var i=0;i<6;i++){
-      var m=TOP[i][0]*(1+k*.02*(i%2?1:-1)),b=TOP[i][1];
-      h+='<div class="tc" data-n="2***'+((i*3+k)%10)+'" data-w="'+fmt(m*b)+'" data-x="'+fmt(m)+'" data-b="'+fmt(b)+'" data-r="'+fmt(TOP[i][2])+'" data-e="'+EM[(i+k)%EM.length]+'"><i class="av" style="background:'+COL[(i+k)%COL.length]+'">'+EM[(i+k)%EM.length]+'</i><span class="nm">2***'+((i*3+k)%10)+'</span><span class="dt">25.10.26</span>'+ICB+
-        '<span class="l" style="top:74px">Bet KES</span><span class="v" style="top:74px">'+fmt(b)+'</span><span class="l l2" style="top:74px">Result</span><span class="m" style="top:74px">'+fmt(m)+'x</span>'+
-        '<span class="l" style="top:102px">Win KES</span><span class="v" style="top:102px">'+fmt(m*b)+'</span><span class="l l2" style="top:102px">Round max.</span><span class="m" style="top:102px">'+fmt(TOP[i][2])+'x</span></div>';
     }
-    return h+'</div>';
-  }
-  function render(){
-    if(S.tab==='top'){if(!S.topDone){$('view').innerHTML=top();S.topDone=1}return}
-    var h;
-    if(S.tab==='all'){h='<div class="hd">ALL BETS<br>'+S.total+'</div>'+cols+S.players.map(function(p){return row(p,false)}).join('')}
-    else if(!S.prev){h='<div class="hint">No finished round yet.</div>'}
-    else{var l=S.prev.list.slice().sort(function(a,b){return b.bet-a.bet});
-      h='<div class="res"><span>Round Result</span><b>'+S.prev.res.toFixed(2)+'x</b></div>'+cols+l.map(function(p){return row(p,true)}).join('')}
-    $('view').innerHTML=h;
-  }
-  $('tabs').onclick=function(e){var t=e.target.dataset.t;if(!t)return;S.tab=t;S.topDone=0;[].forEach.call($('tabs').children,function(b){b.classList.toggle('on',b.dataset.t===t)});render()};
-  $('view').onclick=function(e){var i1=e.target.closest('.i1');if(i1){shareWin(i1.closest('.tc'));return}if(e.target.closest('.i2')){sheet('fair');return}var d=e.target.dataset;if(d.s){S.sub=d.s;S.topDone=0;render()}if(d.p){S.per=d.p;S.topDone=0;render()}};
-  var cv=$('cv'),cx=cv.getContext('2d'),W=704,H=551,DPR=1;
-  function size(){DPR=Math.min(3,(window.devicePixelRatio||1)*(+$('app').style.zoom||1));cv.width=W*DPR;cv.height=H*DPR}
-  size();window.addEventListener('resize',size);
-  function buildCards(){
-    var q='<div class="q"><button data-a="100">100</button><button data-a="250">250</button><button data-a="1000">1,000</button><button data-a="25000">25,000</button></div>';
-    function c(){return '<div class="card"><div class="mode"><span class="on">Bet</span><span>Auto</span></div><i class="ib2"></i>'+
-      '<div class="amb"><i class="c mn" style="left:7px"></i><i class="c pl" style="left:176px"></i><div class="v amt">10.00</div>'+q+'</div><button class="go">Bet<small><span class="amt">10.00</span> <i>KES</i></small></button>'+
-      '<div class="ar2"><span style="left:76px">Auto bet</span><i class="tg" style="left:164px"></i><span style="left:296px">Auto Cash Out</span><i class="tg k2" style="left:449px"></i><span class="ci" contenteditable="true" inputmode="decimal">1.10</span><span class="cx">&#10005;</span></div></div>';}
-    $('cards').innerHTML=c(0)+c(1);
-  }
-  function hcol(v){return v<2?'#2f95e8':v<10?'#913ef8':'#c01cb0'}
-  function hist(){
-    var it=S.hist.map(function(v){return '<span style="color:'+hcol(v)+'">'+v.toFixed(2)+'x</span>'}).join('');
-    $('hs').innerHTML=S.hist.slice(0,14).map(function(v){return '<span style="color:'+hcol(v)+'">'+v.toFixed(2)+'x</span>'}).join('')+'<span class="dt">&middot;&middot;&middot;</span>';
-    $('hp').innerHTML='<div class="hh"><span>Round History</span><i id="hx">&#10005;</i></div><div class="hg">'+it+'</div>';
-  }
-  $('hs').onclick=function(e){if(e.target.closest('.dt'))$('hp').classList.toggle('show')};
-  $('hp').onclick=function(e){if(e.target.closest('#hx'))$('hp').classList.remove('show')};
-  document.addEventListener('click',function(e){
-    var t=e.target;
-    if(!t.closest('#hp')&&!t.closest('.dt'))$('hp').classList.remove('show');
-    if(!t.closest('#menu')&&!t.closest('#mb'))$('menu').classList.remove('show');
-    if(!t.closest('#sheet')&&!t.closest('#menu')&&!t.closest('.i2')&&!t.closest('#cinfo')&&!t.closest('.shx'))$('sheet').classList.remove('show');
-  });
-  ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()})});
-  document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
-  // ---- hamburger menu
-  var AV=['\u{1F6E9}\u{FE0F}','\u{1F981}','\u{1F43C}','\u{1F98A}','\u{1F431}','\u{1F436}'],avi=0,P_='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9b9b9e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';
-  var IC={
-    sound:'<path d="M4 9v6h4l5 4V5L8 9H4zM16 9.5c1.5 1.5 1.5 3.5 0 5"/>',
-    music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
-    anim:'<path d="M12 12C10 8 10 4 12 3c2 1 2 5 0 9zM12 12c4-2 8-2 9 0-1 2-5 2-9 0zM12 12c-4-2-8-2-9 0 1 2 5 2 9 0zM12 12v9"/>',
-    free:'<path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.8 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z"/>',
-    hist:'<path d="M4 12a8 8 0 108-8 8 8 0 00-6 2.7M4 4v4h4M12 8v5l3 2"/>',
-    lim:'<rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v.01M18 14v.01"/>',
-    how:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 115 0c0 1.5-2.5 2-2.5 4M12 17v.01"/>',
-    rules:'<path d="M6 4h11v13H8a2 2 0 01-2-2V4zM9 8h5M9 11h5M9 14h3M17 17v2H8a2 2 0 01-2-2"/>',
-    fair:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
-    room:'<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7v.01M7 17v.01"/>',
-    home:'<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',
-    user:'<circle cx="12" cy="9" r="3.5"/><path d="M5 20c1-4 4-5 7-5s6 1 7 5"/><circle cx="12" cy="12" r="10"/>'};
-  function mrow(k,label,tog){return '<div class="mr" data-k="'+k+'">'+P_+IC[k]+'</svg><span>'+label+'</span>'+(tog?'<i class="mt'+(tog==2?' on':'')+'" data-t="'+k+'"></i>':'')+'</div>'}
-  function buildMenu(){
-    $('menu').innerHTML='<div class="mh"><i class="mav" id="mav">'+AV[avi]+'</i><b>254797XXX175</b><button id="cav">'+P_+IC.user+'</svg><span>Change<br>Avatar</span></button></div>'+
-      mrow('sound','Sound',1)+mrow('music','Music',1)+mrow('anim','Animation',2)+'<div class="msep"></div>'+
-      mrow('free','Free Bets')+mrow('hist','My Bet History')+mrow('lim','Game Limits')+mrow('how','How To Play')+mrow('rules','Game Rules')+mrow('fair','Provably Fair Settings')+mrow('room','Game Room: Room #1')+
-      '<div class="mhome" data-k="home">'+P_+IC.home+'</svg>Home</div>';
-  }
-  var SH={
-    free:['Free Bets','You have no free bets right now. For this simulation you can add demo funds so the Bet button works.<button id="df">Add demo funds KES 1,000</button>'],
-    hist:['My Bet History','<table><tr><td>Date</td><td>Bet KES</td><td>X</td><td>Win KES</td></tr></table><p style="margin-top:10px;color:#8c8e92">No bets placed yet.</p>'],
-    lim:['Game Limits','<table><tr><td>Min bet</td><td>10.00 KES</td></tr><tr><td>Max bet</td><td>25,000.00 KES</td></tr><tr><td>Max win per bet</td><td>1,000,000.00 KES</td></tr></table><p style="margin-top:8px;color:#8c8e92">Demo values for this simulation.</p>'],
-    how:['How To Play','1. Choose your stake and tap Bet before the round starts.<br>2. Watch the plane climb: the multiplier grows each moment.<br>3. Tap Cash Out before the plane flies away. Your stake times the multiplier is your win.<br>4. Use Auto to place bets and cash out automatically.'],
-    rules:['Game Rules','Each round has a random crash multiplier. If you cash out before the plane flies away you win; if not, the bet is lost. This page is a simulation with fake players and no real money.'],
-    chat:['Chat rules','Be respectful. No spam or links. Messages are limited to 160 characters. Tap the chat bubble on a Top card to share a win here.'],
-    room:['Game Room','You are in Room #1. Rooms #2, #3 and #4 are available in the full game.']
-  };
-  function hex(n){var r='';for(var i=0;i<n;i++)r+='0123456789abcdef'[Math.floor(Math.random()*16)];return r}
-  function sheet(k){
-    var d=SH[k];
-    if(k==='fair')d=['Provably Fair Settings','<table><tr><td>Client seed</td><td>'+hex(8)+'</td></tr><tr><td>Server seed hash</td><td>'+hex(12)+'...</td></tr><tr><td>Round hash</td><td>'+hex(12)+'...</td></tr></table><p style="margin-top:8px;color:#8c8e92">Simulated values for the demo.</p>'];
-    $('sheet').innerHTML='<h3>'+d[0]+'</h3>'+d[1]+'<button id="sx">Close</button>';$('sheet').classList.add('show');
-  }
-  buildMenu();
-  $('mb').onclick=function(){$('menu').classList.toggle('show');$('chat').classList.remove('show')};
-  $('menu').onclick=function(e){
-    var t=e.target;
-    if(t.closest('#cav')){avi=(avi+1)%AV.length;$('mav').textContent=AV[avi];return}
-    var tg=t.closest('.mt');
-    if(tg){tg.classList.toggle('on');if(tg.dataset.t==='anim')S.anim=tg.classList.contains('on');return}
-    var r=t.closest('.mr,.mhome');if(!r)return;var k=r.dataset.k;
-    if(k==='home'){$('menu').classList.remove('show');return}
-    if(k==='sound'||k==='music'||k==='anim'){r.querySelector('.mt').click();return}
-    $('menu').classList.remove('show');sheet(k);
-  };
-  $('sheet').onclick=function(e){if(e.target.id==='sx')$('sheet').classList.remove('show');if(e.target.id==='df'){setBal(BAL+1000);toast('Demo funds added',true);$('sheet').classList.remove('show')}};
-  // ---- chat
-  var NC=['#73b551','#d63cff','#3ec6e0','#e0a43c','#ff6a8a'],HEART='<svg viewBox="0 0 24 24" width="38" height="38"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z" fill="currentColor"/></svg>',SHLD='<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="#1fa24a"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2" fill="none"/></svg>';
-  var NM=['2***1','2***0','2***4','2***6','2***7','2***9','2***3','2***8'],TX=[
-    'Wueh, hii game leo imenipeleka mbio proper. Unadhani umeiva, alafu ndege inakataa kubeba mzigo \u{1F602}',
-    'Nimeona multiplier ikipanda nikasema leo ni yangu, kumbe nilikuwa najiconvince tu. Hii mambo ni noma.',
-    'Aki nilikuwa nangoja ipande kidogo tu, ghafla ndege imeenda. Sasa nimebaki kuangalia screen kama mjinga.',
-    'Leo nimepata ka-win kidogo, lakini losses zingine bado zinanichezea akili. Hii game inataka discipline maze.',
-    'Msee, unakaa hapo ukisema next round itakuwa poa, alafu inakushangaza tena. Lazima mtu ajue wakati wa kuacha.',
-    'Hii ndege haina huruma bana. Inapanda polepole ukianza kuamini, inakata safari ghafla.',
-    'Nilikuwa nimejipanga vizuri leo, lakini mambo yamechange haraka kuliko nilivyokuwa nimeexpect. Wueh!',
-    'Kuna round niliona ikipanda nikashangaa, nikasema kumbe leo kuna kitu. Lakini si kila round unaweza kushinda.',
-    'Aki hii game ni patience na bahati, lakini usijipe pressure ya kurudisha pesa ulizopoteza.',
-    'Nimecheka lakini ndani najua nimeumia \u{1F602} Hii round imenifunza si kila opportunity ni ya kushika.',
-    'Msee, ile feeling ya kuona ndege imeenda kabla hujatoa pesa ni noma.',
-    'Leo nimeamua hakuna kufuata losses. Kama mambo haiko sawa, ni sawa kuclose game.',
-    'Niliona multiplier imeanza kupanda nikapata ka-hope, lakini ikaishia mapema.',
-    'Wasee, msichukulie kila round kama lazima mlipize ya previous. Pesa ikienda, imeenda.',
-    'Hii Aviator inaweza kukupa furaha na frustration ndani ya dakika mbili.',
-    'good luck everyone \u{1F525}','cash out early next time','who is in this round?','x2 is enough \u{1F602}','flew too early'
-  ];
-  function ncol(n){var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);return NC[h%NC.length]}
-  function clock(){return[new Date().getHours(),new Date().getMinutes(),new Date().getSeconds()].map(function(v){return(v<10?'0':'')+v}).join(':')}
-  function esc(v){return v.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
-  function addMsg(em,col,body,cls,likes){
-    var d=document.createElement('div'),near=$('cm').scrollHeight-$('cm').scrollTop-$('cm').clientHeight<260;d.className='msg';
-    d.innerHTML='<i class="av2" style="background:'+col+'">'+em+'</i><div class="bb'+(cls||'')+'">'+body+'</div><div class="hr" data-l="'+(likes||0)+'">'+HEART+'<small>'+(likes||'')+'</small></div>';
-    $('cm').appendChild(d);while($('cm').children.length>80)$('cm').removeChild($('cm').firstChild);
-    if(near||cls)$('cm').scrollTop=1e6;
-  }
-  function txt(n,t){return '<div class="mh2"><span style="color:'+ncol(n)+'">'+n+'</span><small>'+clock()+'</small></div>'+t}
-  function wcard(n,e,x,w,b,r){
-    var mc=Number(x)<2?'#00b8d1':Number(x)<10?'#9a35cf':'#d826c0';
-    return '<div class="wh"><span style="color:'+ncol(n)+'">'+n+'</span><small>'+clock()+'</small></div><div class="wi"><div class="wp"><i class="av2" style="background:#3a3a46">'+e+'</i><b>'+n+'</b>'+SHLD+'</div>'+
-      '<div class="wg"><div><small>Cashed out:</small><b style="color:'+mc+'">'+x+'x</b></div><div><small>Win:</small><b class="gr">'+w+' KES</b></div></div>'+
-      '<div class="wd"><s></s><img src="'+IB.src+'"><s></s></div><div class="wg"><div><small>Round:</small><b>'+r+'x</b></div><div><small>Bet:</small><b>'+b+' KES</b></div></div></div>';
-  }
-  function botMsg(){var i=Math.floor(Math.random()*NM.length);addMsg(EM[i],COL[i%COL.length],txt(NM[i],TX[Math.floor(Math.random()*TX.length)]),'',Math.floor(Math.random()*3))}
-  function botWin(){var i=Math.floor(Math.random()*NM.length),x=1.2+Math.random()*5,b=[10,20,50,100][Math.floor(Math.random()*4)];
-    addMsg(EM[i],COL[i%COL.length],wcard(NM[i],EM[i],x.toFixed(2),fmt(b*x),fmt(b),(x+Math.random()*2).toFixed(2)),' wcb',Math.floor(Math.random()*3))}
-  setTimeout(function(){for(var q=0;q<6;q++)botMsg();botWin();botMsg();botWin();botMsg()},0);
-  setInterval(botMsg,7000);setInterval(botWin,19000);
-  setInterval(function(){var e=$('co');e.textContent=7000+Math.floor(Math.random()*420)},4000);
-  function chatShow(v){$('chat').classList.toggle('show',v);document.documentElement.style.overflow=v?'hidden':'';if(v){window.scrollTo(0,0);$('chat').style.height=Math.max(1316,Math.ceil(window.innerHeight/(+$('app').style.zoom||1)))+'px';$('cm').scrollTop=1e6}}
-  $('cb').onclick=function(){$('menu').classList.remove('show');chatShow(!$('chat').classList.contains('show'))};
-  $('cc2').onclick=function(){chatShow(false)};
-  $('cinfo').onclick=function(){sheet('chat')};
-  $('cm').onclick=function(e){var h=e.target.closest('.hr');if(!h)return;var on=h.classList.toggle('on'),n=(+h.dataset.l||0)+(on?1:0);h.querySelector('small').textContent=n||''};
-  function cnt(){var n=160-$('ci').value.length;$('cn').innerHTML='<u>AA</u>'+n;$('cs').setAttribute('fill',$('ci').value.trim()?'#cfcfcf':'#6a6a6a')}
-  function send(){var v=$('ci').value.trim();if(!v)return;$('ci').value='';cnt();addMsg(AV[avi],'#3a7a4a',txt('2***5',esc(v)),'')}
-  $('ci').oninput=cnt;$('cs').onclick=send;$('ci').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
-  function shareWin(c){
-    addMsg(AV[avi],'#3a7a4a',wcard(c.dataset.n,c.dataset.e,c.dataset.x,c.dataset.w,c.dataset.b,c.dataset.r),' wcb',0);
-    $('menu').classList.remove('show');chatShow(true);
-  }
-  var tt;function toast(m,ok){var t=$('toast');t.firstChild.nodeValue=m||'Not enough balance';t.classList.toggle('ok',!!ok);t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},3000)}
-  $('tx').onclick=function(){$('toast').classList.remove('show')};
-  function setAmt(v){S.amt=Math.max(10,Math.min(25000,v));[].forEach.call(document.querySelectorAll('.amt'),function(e){e.textContent=fmt(S.amt)})}
-  $('cards').onclick=function(e){
-    var t=e.target,a=t.dataset.a;
-    if(a)setAmt(+a);
-    else if(t.classList.contains('mn'))setAmt(S.amt-10);
-    else if(t.classList.contains('pl'))setAmt(S.amt+10);
-    else if(t.closest('.go'))betClick(Array.prototype.indexOf.call($('cards').children,t.closest('.card')));
-    else if(t.classList.contains('cx')){var ar=t.parentNode;ar.classList.remove('cc');ar.querySelector('.k2').classList.remove('on')}
-    else if(t.classList.contains('tg')){t.classList.toggle('on');if(t.classList.contains('k2'))t.parentNode.classList.toggle('cc',t.classList.contains('on'))}
-    else if(t.parentNode.classList.contains('mode')){[].forEach.call(t.parentNode.children,function(x){x.classList.toggle('on',x===t)});t.closest('.card').classList.toggle('auto',t.textContent==='Auto')}
-  };
-  function clamp(v){return Math.max(0,Math.min(1,v))}
-  
-  /* ===== Canvas / plane / loop ===== */
-  var cv=$('cv'),cx=cv.getContext('2d'),W=704,H=551,DPR=1;
-  function size(){
-    DPR=Math.min(3,(window.devicePixelRatio||1)*(parseFloat($('app').style.zoom)||1));
-    cv.width=W*DPR;cv.height=H*DPR;
-  }
-  size();window.addEventListener('resize',function(){fit();size();});
-
-  function drawPlaneSprite(t,sp){
-    var R='#e8073c',D='#6b0a20';
-    cx.save();cx.scale(.25,.25);cx.translate(-110,-306);
-    cx.fillStyle=R;
-    cx.beginPath();cx.moveTo(60,212);cx.quadraticCurveTo(82,188,128,192);cx.quadraticCurveTo(162,206,152,238);cx.lineTo(168,274);cx.lineTo(118,262);cx.quadraticCurveTo(92,250,90,226);cx.quadraticCurveTo(72,226,60,212);cx.fill();
-    cx.beginPath();cx.moveTo(196,157);cx.lineTo(252,146);cx.lineTo(452,228);cx.lineTo(408,244);cx.lineTo(270,268);cx.lineTo(172,276);cx.lineTo(248,240);cx.lineTo(214,202);cx.fill();
-    cx.beginPath();cx.moveTo(168,274);cx.lineTo(420,238);cx.lineTo(586,194);cx.lineTo(590,152);cx.lineTo(500,146);cx.lineTo(436,130);cx.lineTo(346,160);cx.lineTo(396,180);cx.lineTo(310,214);cx.fill();
-    cx.beginPath();cx.moveTo(88,306);cx.lineTo(126,293);cx.lineTo(480,256);cx.lineTo(600,236);cx.lineTo(594,213);cx.lineTo(455,238);cx.lineTo(104,282);cx.fill();
-    cx.strokeStyle=D;cx.lineWidth=7;cx.lineCap='round';
-    cx.beginPath();cx.moveTo(228,182);cx.lineTo(250,190);cx.moveTo(232,204);cx.lineTo(254,212);cx.moveTo(406,150);cx.lineTo(428,160);cx.stroke();
-    cx.lineWidth=10;cx.beginPath();cx.moveTo(488,178);cx.lineTo(530,222);cx.moveTo(530,176);cx.lineTo(486,224);cx.stroke();
-    cx.translate(606,185);cx.rotate(.09);
-    var sx=Math.abs(Math.cos(t*sp));
-    cx.fillStyle='rgba(232,7,60,.16)';cx.beginPath();cx.ellipse(0,0,30,138,0,0,7);cx.fill();
-    cx.fillStyle=R;cx.beginPath();cx.ellipse(0,0,Math.max(4,17*sx),136,0,0,7);cx.fill();
-    cx.beginPath();cx.moveTo(-16,-18);cx.lineTo(30,0);cx.lineTo(-16,18);cx.fill();
-    cx.strokeStyle=D;cx.lineWidth=5;cx.beginPath();cx.moveTo(-8,-10);cx.lineTo(18,0);cx.lineTo(-8,10);cx.stroke();
-    cx.restore();
-  }
-
-  function draw(t){
-    var m=S.phase==='wait'?1:S.m,ph=S.phase;
-    cx.setTransform(DPR,0,0,DPR,0,0);cx.fillStyle='#0a0a0b';cx.fillRect(0,0,W,H);
-    cx.save();cx.translate(0,H);cx.rotate(t*0.00006);
-    var n=22,step=Math.PI*1.5/n;
-    for(var i=0;i<n;i++){if(i%2)continue;cx.fillStyle='rgba(255,255,255,.055)';cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,1400,-i*step-0.2,-(i+1)*step-0.2,true);cx.fill()}
-    cx.restore();
-    var hue=205+Math.min(115,70*clamp((m-1.3)/2.2)+45*clamp((m-3.5)/6));
-    var g=cx.createRadialGradient(352,290,0,352,290,300);
-    g.addColorStop(0,'hsla('+hue+',85%,48%,.62)');g.addColorStop(.55,'hsla('+hue+',80%,30%,.25)');g.addColorStop(1,'hsla('+hue+',80%,20%,0)');
-    cx.fillStyle=g;cx.fillRect(0,0,W,H);
-    if(ph==='wait'){
-      var p=clamp((Date.now()-S.wt)/5000);
-      cx.fillStyle='#fff';cx.font='600 24px Roboto,Arial,sans-serif';cx.textAlign='center';
-      cx.fillText('WAITING FOR NEXT ROUND',W/2,268);
-      cx.fillStyle='#1c1d20';cx.fillRect(W/2-110,292,220,8);
-      cx.fillStyle='#e8083e';cx.fillRect(W/2-110,292,220*(1-p),8);
-      cx.save();cx.translate(W/2-70,380);drawPlaneSprite(t,.03);cx.restore();return;
+  }catch(e){}
+}
+function clearMediaSession(){
+  try{
+    if("mediaSession" in navigator){
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = "none";
+      ["play","pause","seekbackward","seekforward","previoustrack","nexttrack","stop"].forEach(a=>{
+        try{navigator.mediaSession.setActionHandler(a,null);}catch(e){}
+      });
     }
-    var f=1-Math.exp(-(m-1)*2.2),px=30+470*f,py=H-26-370*(1-Math.exp(-(m-1)*4.5));
-    var fly=0;if(ph==='crash')fly=clamp((Date.now()-S.ct)/1000);
-    var bob=(ph==='fly'&&window.__scAnimOn!==false)?Math.sin(t/380)*5*f:0;py+=bob;
-    var ox=px+fly*fly*900,oy=py-fly*220;
-    cx.beginPath();cx.moveTo(4,H-4);cx.quadraticCurveTo(px*.58,H-4,px,py+6);
-    cx.lineTo(px,H);cx.lineTo(4,H);cx.closePath();
-    var fg=cx.createLinearGradient(0,py,0,H);fg.addColorStop(0,'rgba(229,8,60,.5)');fg.addColorStop(1,'rgba(110,0,14,.9)');
-    cx.fillStyle=fg;cx.fill();
-    cx.beginPath();cx.moveTo(4,H-4);cx.quadraticCurveTo(px*.58,H-4,px,py+6);
-    cx.strokeStyle='#e8083e';cx.lineWidth=6;cx.lineCap='round';cx.stroke();
-    cx.save();cx.translate(ox,oy+6);cx.globalAlpha=1-fly*.6;drawPlaneSprite(t,ph==='fly'?.05:.02);cx.restore();
-    cx.textAlign='center';cx.fillStyle='#fff';cx.shadowColor='rgba(0,0,0,.35)';cx.shadowBlur=18;
-    cx.font='700 118px Roboto,Arial,sans-serif';cx.fillText(m.toFixed(2)+'x',W/2,332);cx.shadowBlur=0;
-    if(ph==='crash'){cx.fillStyle='#e8083e';cx.font='700 34px Roboto,Arial,sans-serif';cx.fillText('FLEW AWAY!',W/2,218)}
-  }
-  function paint(){}
-  function loop(t){draw(t);requestAnimationFrame(loop);}
-  requestAnimationFrame(loop);
+  }catch(e){}
+}
+setInterval(clearMediaSession,3000);
 
-  /* ===== Session ===== */
-  var LS_USER='shikachapaa_user',LS_ACC='shikachapaa_accounts',currentUser=null;
-  function loadSession(){
+function scInitAudio(){
+  try{
+    if(!scAudioCtx){
+      scAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      scGain = scAudioCtx.createGain();
+      scGain.gain.value = 0.45;
+      scGain.connect(scAudioCtx.destination);
+    }
+    clearMediaSession();
+  }catch(e){}
+}
+function scLoadMusic(){
+  if(!SC_MUSIC_URL || scBuffer) return;
+  scInitAudio();
+  fetch(SC_MUSIC_URL)
+    .then(r=>r.arrayBuffer())
+    .then(d=>scAudioCtx.decodeAudioData(d))
+    .then(b=>{scBuffer=b;})
+    .catch(()=>{});
+}
+function scPlayMusic(){
+  try{
+    scInitAudio();
+    if(!scMusicOn) return;
+    if(scSource){ try{scAudioCtx.resume();}catch(e0){} return; }
+    if(!scBuffer){
+      scLoadMusic();
+      setTimeout(function(){ if(scBuffer && !scSource && scMusicOn) scPlayMusic(); },400);
+      return;
+    }
+    scAudioCtx.resume();
+    scSource = scAudioCtx.createBufferSource();
+    scSource.buffer = scBuffer;
+    scSource.loop = true;
+    scSource.connect(scGain);
+    scSource.onended = function(){ scSource = null; };
+    scSource.start(0);
+    clearMediaSession();
+  }catch(e){}
+}
+function scStopMusic(){
+  try{ if(scSource){ try{scSource.stop();}catch(e1){} scSource=null; } }catch(e){}
+}
+
+function tryPlayMusic(){
+  try{ scPlayMusic(); if(scSource||scBuffer) return; }catch(e){}
+  if(!bgMusic || !musicOn || !inGameAudio) return;
+  try{ if(lossSound){ lossSound.pause(); lossSound.currentTime=0; } }catch(e){}
+  lockAudioToGameOnly();
+  bgMusic.volume = 0.45;
+  const p = bgMusic.play(); try{clearMediaSession();}catch(e){}
+  if(p && typeof p.catch==='function') p.catch(()=>{});
+  setTimeout(lockAudioToGameOnly,100);
+}
+
+/* Restart main music automatically after every round (as requested) */
+function restartMusicForRound(){
+  try{
+    if(typeof scPlayMusic==='function' && (scBuffer||scSource)){
+      scMusicOn = true;
+      scPlayMusic();
+      if(lossSound){ try{lossSound.pause(); lossSound.currentTime=0;}catch(e){} }
+      return;
+    }
+  }catch(e){}
+  if(!bgMusic || !musicOn || !inGameAudio) return;
+  lockAudioToGameOnly();
+  try{
+    if(lossSound){ lossSound.pause(); lossSound.currentTime=0; }
+    if(bgMusic.paused){
+      const p = bgMusic.play(); try{clearMediaSession();}catch(e){}
+    }else{
+      try{clearMediaSession();}catch(e){}
+      return;
+    }
+  }catch(e){}
+  setTimeout(lockAudioToGameOnly,100);
+}
+
+function playLossSound(){
+  if(!inGameAudio || !musicOn) return;
+  lockAudioToGameOnly();
+  if(lossResumeTimer){ clearTimeout(lossResumeTimer); lossResumeTimer=null; }
+  const resumeBgm = ()=>{
+    if(!inGameAudio || !musicOn) return;
     try{
-      var s=JSON.parse(localStorage.getItem(LS_USER)||'null');
-      var a=JSON.parse(localStorage.getItem(LS_ACC)||'{}');
-      if(s&&s.phone&&a[s.phone]){currentUser={phone:s.phone,balance:Number(a[s.phone].balance||0)};return true;}
+      if(lossSound){ lossSound.onended=null; if(!lossSound.paused){lossSound.pause();lossSound.currentTime=0;} }
     }catch(e){}
-    return false;
-  }
-  function saveBalance(){
-    if(!currentUser)return;
-    try{
-      var a=JSON.parse(localStorage.getItem(LS_ACC)||'{}');
-      if(!a[currentUser.phone])a[currentUser.phone]={balance:0};
-      a[currentUser.phone].balance=currentUser.balance;
-      localStorage.setItem(LS_ACC,JSON.stringify(a));
-      var s=JSON.parse(localStorage.getItem(LS_USER)||'{}');
-      s.balance=currentUser.balance;s.phone=currentUser.phone;
-      localStorage.setItem(LS_USER,JSON.stringify(s));
-    }catch(e){}
-  }
-  function updateBalUI(){
-    var el=document.querySelector('.bal .a b');
-    if(el&&currentUser)el.textContent=fmt(currentUser.balance);
-  }
-
-  /* ===== Signals: socket + offline ===== */
-  var SIGNAL_HOST='https://no-gen.bonto.run',socket=null,lowStreak=0;
-  function offlineHash(str){var h=2166136261>>>0;str=String(str);for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-  function offlineSeededRandom(seed){var t=seed>>>0;return function(){t+=0x6D2B79F5;var r=Math.imul(t^(t>>>15),1|t);r^=r+Math.imul(r^(r>>>7),61|r);return ((r^(r>>>14))>>>0)/4294967296;};}
-  function genCrashPoint(){
-    var rnd=offlineSeededRandom(offlineHash('shika-offline-'+Math.floor(Date.now()/12000)));
-    var EDGE=0.04,TIGHT=0.85,r=rnd(),value;
-    if(r<EDGE)value=1;
-    else{var raw=(1-EDGE)/Math.max(1e-9,1-r);value=1+(raw-1)*TIGHT;}
-    value=Math.max(1.01,Math.min(value,1000));
-    if(value<2){lowStreak++;if(lowStreak>8){value=2+rnd()*1.5;lowStreak=0;}}else lowStreak=0;
-    return Math.floor(value*100)/100;
-  }
-  var _newRound=newRound;
-  newRound=function(){
-    _newRound();
-    if(window.__serverCrash){S.crash=window.__serverCrash;window.__serverCrash=null;}
-    else S.crash=genCrashPoint();
+    tryPlayMusic();
   };
-  function connectSignals(){
-    if(typeof io==='undefined')return;
-    try{
-      if(socket){socket.disconnect();socket=null;}
-      socket=io(SIGNAL_HOST,{transports:['websocket','polling'],reconnection:true});
-      socket.on('crash',function(data){var v=Number(data&&(data.crash||data.multiplier||data.point)||0);if(v>=1)window.__serverCrash=v;});
-      socket.on('round',function(data){var v=Number(data&&(data.crash||data.multiplier)||0);if(v>=1)window.__serverCrash=v;});
-    }catch(e){}
+  try{
+    if(bgMusic) bgMusic.pause();
+    if(lossSound){
+      lossSound.onended = resumeBgm;
+      lossSound.currentTime = 0;
+      lossSound.volume = 0.7;
+      const p = lossSound.play();
+      if(p && typeof p.catch==='function') p.catch(()=>{ lossResumeTimer=setTimeout(resumeBgm,300); });
+      lossResumeTimer = setTimeout(resumeBgm,2000);
+    }else{
+      lossResumeTimer = setTimeout(resumeBgm,300);
+    }
+  }catch(e){
+    lossResumeTimer = setTimeout(resumeBgm,300);
   }
+  setTimeout(lockAudioToGameOnly,100);
+}
 
-  /* ===== Music ===== */
-  window.__scAnimOn=true;window.__scSoundOn=true;var musicOn=true;
-  var bgMusic=null;
-  try{bgMusic=new Audio('https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/Aviator_bg_music.mp3');bgMusic.loop=true;bgMusic.volume=0.45;}catch(e){}
-  function clearMediaSession(){
-    try{if('mediaSession' in navigator){navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none';
-      ['play','pause','seekbackward','seekforward','previoustrack','nexttrack','stop'].forEach(function(a){try{navigator.mediaSession.setActionHandler(a,null);}catch(e){}});}}catch(e){}
+function updateSpeakerUI(){
+  if(!speakerBtn) return;
+  if(musicOn){
+    speakerBtn.textContent = '🔊';
+    speakerBtn.classList.remove('muted');
+    speakerBtn.title = 'Mute music';
+  }else{
+    speakerBtn.textContent = '🔇';
+    speakerBtn.classList.add('muted');
+    speakerBtn.title = 'Unmute music';
   }
-  function tryPlayMusic(){if(!musicOn||!bgMusic){clearMediaSession();return;}try{var p=bgMusic.play();clearMediaSession();if(p&&p.catch)p.catch(function(){});}catch(e){}}
-  function restartMusicForRound(){if(!musicOn||!bgMusic){clearMediaSession();return;}try{bgMusic.pause();bgMusic.currentTime=0;var p=bgMusic.play();clearMediaSession();if(p&&p.catch)p.catch(function(){});}catch(e){}}
-  function setMusic(on){musicOn=!!on;if(!musicOn){try{bgMusic&&bgMusic.pause();}catch(e){}clearMediaSession();}else restartMusicForRound();}
+}
+if(speakerBtn){
+  speakerBtn.addEventListener('click', e=>{
+    e.stopPropagation();
+    musicOn = !musicOn;
+    scMusicOn = musicOn;
+    if(musicOn && inGameAudio){
+      tryPlayMusic();
+    }else{
+      try{ if(bgMusic) bgMusic.pause(); if(lossSound) lossSound.pause(); scStopMusic(); }catch(err){}
+      lockAudioToGameOnly();
+    }
+    updateSpeakerUI();
+  });
+}
+function unlockMusic(){
+  if(inGameAudio) tryPlayMusic();
+  document.removeEventListener('click',unlockMusic);
+  document.removeEventListener('touchstart',unlockMusic);
+}
+document.addEventListener('click',unlockMusic);
+document.addEventListener('touchstart',unlockMusic);
+lockAudioToGameOnly();
+updateSpeakerUI();
 
-  var _tick=tick;
-  tick=function(){
-    var prev=S.phase;_tick();
-    if(prev!=='fly'&&S.phase==='fly')try{restartMusicForRound();}catch(e){}
-    if(prev==='crash'&&S.phase==='wait')try{tryPlayMusic();}catch(e){}
+/* ========== GAME STATE (simplified but functional) ========== */
+let balance = 2500.00;
+let stake = 100;
+let phase = 'waiting'; // waiting | countdown | running | crash
+let mult = 1.00;
+let crashPoint = 2.5;
+let startTs = 0;
+let countdownLeft = 5;
+let myBet = null; // {stake, cashed:false, cashMult:null}
+
+const balEl = document.getElementById('bal');
+const stakeVal = document.getElementById('stakeVal');
+const betAmt = document.getElementById('betAmt');
+const betBtn = document.getElementById('betBtn');
+const partnerBrand = document.getElementById('partnerBrand');
+const cdLine = document.getElementById('cdLine');
+const winBubble = document.getElementById('winBubble');
+const wbMult = document.getElementById('wbMult');
+const wbAmt = document.getElementById('wbAmt');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function fmt(n){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function updateBal(){ balEl.textContent = fmt(balance); }
+function updateStakeUI(){ stakeVal.textContent = stake; betAmt.textContent = stake; }
+
+/* Chat messages (exact style + content pool from first file) */
+const MSGS = [
+  "Wueh, hii game leo imenipeleka mbio proper. Unadhani umeiva, alafu ndege inakataa kubeba mzigo 😂",
+  "Nimeona multiplier ikipanda nikasema leo ni yangu, kumbe nilikuwa najiconvince tu. Hii mambo ni noma.",
+  "Aki nilikuwa nangoja ipande kidogo tu, ghafla ndege imeenda. Sasa nimebaki kuangalia screen kama mjinga.",
+  "Leo nimepata ka-win kidogo, lakini losses zingine bado zinanichezea akili. Hii game inataka discipline maze.",
+  "Msee, unakaa hapo ukisema next round itakuwa poa, alafu inakushangaza tena. Lazima mtu ajue wakati wa kuacha.",
+  "Hii ndege haina huruma bana. Inapanda polepole ukianza kuamini, inakata safari ghafla.",
+  "Nilikuwa nimejipanga vizuri leo, lakini mambo yamechange haraka kuliko nilivyokuwa nimeexpect. Wueh!",
+  "Kuna round niliona ikipanda nikashangaa, nikasema kumbe leo kuna kitu. Lakini si kila round unaweza kushinda.",
+  "Aki hii game ni patience na bahati, lakini usijipe pressure ya kurudisha pesa ulizopoteza. Unaweza kujipata pabaya.",
+  "Nimecheka lakini ndani najua nimeumia 😂 Hii round imenifunza kwamba si kila opportunity ni ya kushika.",
+  "Msee, ile feeling ya kuona ndege imeenda kabla hujatoa pesa ni noma. Unabaki tu kusema, kwani nilikuwa nasubiri nini?",
+  "Leo nimeamua hakuna kufuata losses. Kama mambo haiko sawa, ni sawa kuclose game na kuendelea na shughuli zingine.",
+  "Niliona multiplier imeanza kupanda nikapata ka-hope, lakini ikaishia mapema. Hii ndio maana siwezi kuhesabu win kabla haijatokea.",
+  "Wasee, msichukulie kila round kama lazima mlipize ya previous. Pesa ikienda, imeenda; kujilazimisha kurudisha kunaweza kuongeza shida.",
+  "Hii Aviator inaweza kukupa furaha na frustration ndani ya dakika mbili. Mimi leo nachukua lesson, si lazima niendelee kucheza."
+];
+const AVATARS = ['😀','😎','🔥','💎','🚀','👑','🎯','💰','⚡','🌟','🍀','🎲'];
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function pick(arr){ return arr[rand(0,arr.length-1)]; }
+
+function addChatMsg(forceWin){
+  const cm = document.getElementById('cm');
+  if(!cm) return;
+  const isWin = forceWin === true || (forceWin !== false && Math.random() < 0.18);
+  const id = '2***' + rand(1,9);
+  const av = pick(AVATARS);
+  const time = new Date().toTimeString().slice(0,8);
+  let html = '';
+  if(isWin){
+    const multN = (Math.random()<0.5 ? 1.5+Math.random()*4 : 6+Math.random()*20).toFixed(2);
+    const bet = rand(100,8000);
+    const win = Math.round(bet * parseFloat(multN));
+    html = `<div class="msg"><div class="av2">${av}</div>
+      <div class="bb wcb">
+        <div class="wh"><span>\( {id}</span><small> \){time}</small></div>
+        <div class="wi">
+          <div class="wp"><div class="av2">\( {av}</div><b> \){id}</b></div>
+          <div class="wg">
+            <div><small>Cashed out</small><b class="pu">${multN}x</b></div>
+            <div><small>Win</small><b class="gr">${fmt(win)} KES</b></div>
+            <div><small>Round</small><b>${multN}x</b></div>
+            <div><small>Bet</small><b>${fmt(bet)} KES</b></div>
+          </div>
+          <div class="wd"><s></s><s></s></div>
+        </div>
+      </div>
+      <div class="hr"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg><small>${rand(0,7)}</small></div>
+    </div>`;
+  }else{
+    html = `<div class="msg"><div class="av2">${av}</div>
+      <div class="bb"><div class="mh2"><span>\( {id}</span><small> \){time}</small></div>${pick(MSGS)}</div>
+      <div class="hr"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg><small>${rand(0,5)}</small></div>
+    </div>`;
+  }
+  cm.insertAdjacentHTML('beforeend', html);
+  while(cm.children.length > 30) cm.removeChild(cm.firstChild);
+  cm.scrollTop = cm.scrollHeight;
+}
+
+/* Simple game loop */
+function nextCrash(){
+  // Realistic distribution
+  const r = Math.random();
+  if(r < 0.4) return 1.01 + Math.random()*0.9;
+  if(r < 0.75) return 1.5 + Math.random()*3;
+  if(r < 0.92) return 4 + Math.random()*8;
+  return 10 + Math.random()*40;
+}
+
+function startWaiting(){
+  phase = 'waiting';
+  mult = 1.00;
+  partnerBrand.style.display = 'flex';
+  partnerBrand.querySelector('.partner-subtitle').textContent = 'WAITING FOR NEXT ROUND';
+  cdLine.style.width = '100%';
+  restartMusicForRound(); // <-- auto restart music every round
+  setTimeout(startCountdown, 2200 + Math.random()*1800);
+}
+
+function startCountdown(){
+  phase = 'countdown';
+  countdownLeft = 5;
+  partnerBrand.querySelector('.partner-subtitle').textContent = 'STARTING IN ' + countdownLeft;
+  const tick = ()=>{
+    if(phase !== 'countdown') return;
+    countdownLeft -= 0.05;
+    cdLine.style.width = Math.max(0,(countdownLeft/5)*100) + '%';
+    if(countdownLeft <= 0){
+      startFlying();
+      return;
+    }
+    partnerBrand.querySelector('.partner-subtitle').textContent = 'STARTING IN ' + Math.ceil(countdownLeft);
+    requestAnimationFrame(tick);
   };
+  requestAnimationFrame(tick);
+}
 
-  function goHome(){
-    try{if(window.parent&&window.parent!==window)window.parent.postMessage('shika-close-aviator','*');
-    else window.location.href='shika-chapaa-home.html#/home';}catch(e){history.back();}
+function startFlying(){
+  phase = 'running';
+  partnerBrand.style.display = 'none';
+  crashPoint = nextCrash();
+  startTs = performance.now();
+  mult = 1.00;
+  if(myBet){ myBet.cashed = false; myBet.cashMult = null; }
+  // enable cashout if bet placed
+  if(myBet){
+    betBtn.className = 'go co';
+    betBtn.innerHTML = '<span>CASHOUT</span><small id="liveWin">'+fmt(stake)+' KES</small>';
   }
-  var gh=document.getElementById('gateHomeBtn'),gb=document.getElementById('gateBackBtn');
-  if(gh)gh.onclick=goHome;if(gb)gb.onclick=goHome;
-  var navBack=document.querySelector('.nav span');if(navBack){navBack.style.cursor='pointer';navBack.onclick=goHome;}
+}
 
-  // Colour win cards in chat when shareWin/wcard used
-  if(typeof wcard==='function'){
-    var _wc=wcard;
-    wcard=function(d){
-      var h=_wc(d);
-      var m=Number(d.cashout||d.mult||d.x||0);
-      var cls=m<2?'mc-low':m<10?'mc-mid':'mc-high';
-      return h.replace('id="cash"','id="cash" class="'+cls+'"');
-    };
+function doCrash(){
+  phase = 'crash';
+  partnerBrand.style.display = 'flex';
+  partnerBrand.querySelector('.partner-subtitle').textContent = 'FLEW AWAY!';
+  playLossSound(); // loss SFX then music resumes
+  if(myBet && !myBet.cashed){
+    // lost
+    myBet = null;
+    betBtn.className = 'go';
+    betBtn.innerHTML = '<span>BET</span><small><i id="betAmt">'+stake+'</i> KES</small>';
   }
+  setTimeout(startWaiting, 2800);
+}
 
-  function startApp(){
-    if(!loadSession()){var g=document.getElementById('loginGate');if(g)g.classList.remove('hidden');return;}
-    var g=document.getElementById('loginGate');if(g)g.classList.add('hidden');
-    var sp=document.getElementById('scSplash');
-    if(sp){
-      sp.classList.remove('hidden','fade');
-      var bar=sp.querySelector('.sp-bar i');
-      if(bar){bar.style.animation='none';void bar.offsetWidth;bar.style.animation='scLoad 1.4s ease forwards';}
-      var tx=document.getElementById('scSplashTxt');
-      if(tx)tx.textContent='Connection...';
-      setTimeout(function(){if(tx)tx.textContent='Loading game...';},500);
-      setTimeout(function(){
-        sp.classList.add('fade');
-        setTimeout(function(){sp.classList.add('hidden');},350);
-        updateBalUI();connectSignals();tryPlayMusic();
-      },1500);
-    } else {
-      updateBalUI();connectSignals();tryPlayMusic();
+function cashOut(){
+  if(phase !== 'running' || !myBet || myBet.cashed) return;
+  myBet.cashed = true;
+  myBet.cashMult = mult;
+  const win = stake * mult;
+  balance += win;
+  updateBal();
+  // show win bubble (exact style)
+  wbMult.textContent = mult.toFixed(2) + 'x';
+  wbAmt.textContent = fmt(win) + ' KES';
+  winBubble.classList.add('show');
+  setTimeout(()=>winBubble.classList.remove('show'), 3200);
+  betBtn.className = 'go';
+  betBtn.innerHTML = '<span>BET</span><small><i id="betAmt">'+stake+'</i> KES</small>';
+  myBet = null;
+  addChatMsg(true); // push a win card into chat
+}
+
+function placeBet(){
+  if(phase === 'running' || phase === 'crash') return;
+  if(balance < stake){
+    const t = document.getElementById('toast');
+    t.textContent = 'Not enough balance';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+    return;
+  }
+  balance -= stake;
+  updateBal();
+  myBet = {stake, cashed:false, cashMult:null};
+  betBtn.className = 'go cn';
+  betBtn.innerHTML = '<span>CANCEL</span><small>Waiting…</small>';
+}
+
+/* Canvas draw (simple plane path) */
+function draw(){
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#0a0a0b';
+  ctx.fillRect(0,0,w,h);
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for(let x=0;x<w;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for(let y=0;y<h;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  if(phase === 'running' || phase === 'crash'){
+    const t = (performance.now() - startTs) / 1000;
+    // simple growth curve
+    mult = Math.min(crashPoint, 1 + Math.pow(t * 0.45, 1.55));
+    if(mult >= crashPoint && phase === 'running'){
+      mult = crashPoint;
+      doCrash();
     }
 
-    setTimeout(function(){
-      try{
-        // Hook menu toggles from buildMenu sheets
-        document.querySelectorAll('[data-tog="music"]').forEach(function(el){el.onclick=function(){setMusic(!musicOn);var t=el.querySelector('.sc-tog,.tg');if(t)t.classList.toggle('on',musicOn);};});
-        document.querySelectorAll('[data-tog="sound"]').forEach(function(el){el.onclick=function(){window.__scSoundOn=!window.__scSoundOn;var t=el.querySelector('.sc-tog,.tg');if(t)t.classList.toggle('on',window.__scSoundOn);clearMediaSession();};});
-        document.querySelectorAll('[data-tog="anim"]').forEach(function(el){el.onclick=function(){window.__scAnimOn=!window.__scAnimOn;var t=el.querySelector('.sc-tog,.tg');if(t)t.classList.toggle('on',window.__scAnimOn);};});
-      }catch(e){}
-    },600);
-  }
+    // path
+    const progress = Math.min(1, (mult-1)/(crashPoint-1+0.001));
+    const px = 40 + progress * (w-80);
+    const py = h - 60 - Math.log(mult) * 90;
 
-  // History chat icon → shareWin
-  document.addEventListener('click',function(e){
-    if(e.target.closest('.ib.i1, [data-share-win], .share-win')){
-      try{if(typeof shareWin==='function')shareWin();}catch(err){}
+    ctx.strokeStyle = phase==='crash' ? '#e2002e' : '#28a809';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(40, h-60);
+    for(let i=0;i<=progress*60;i++){
+      const m = 1 + (mult-1)*(i/(progress*60||1));
+      const x = 40 + (i/(progress*60||1)) * (w-80) * progress;
+      const y = h - 60 - Math.log(m) * 90;
+      ctx.lineTo(x,y);
     }
-  });
+    ctx.stroke();
 
-  
-  function unlockAudioOnce(){
-    try {
-      if (window.__audioUnlocked) return;
-      window.__audioUnlocked = true;
-      if (typeof tryPlayMusic === 'function') tryPlayMusic();
-    } catch(e) {}
+    // plane
+    ctx.fillStyle = phase==='crash' ? '#e2002e' : '#fff';
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI*2);
+    ctx.fill();
+
+    // live mult text
+    ctx.fillStyle = phase==='crash' ? '#e2002e' : '#fff';
+    ctx.font = 'bold 64px Inter, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(mult.toFixed(2) + 'x', w/2, h/2 - 20);
+
+    if(myBet && !myBet.cashed && phase==='running'){
+      const liveWin = stake * mult;
+      const el = document.getElementById('liveWin');
+      if(el) el.textContent = fmt(liveWin) + ' KES';
+    }
+  }else if(phase === 'waiting' || phase === 'countdown'){
+    // already handled by partner branding overlay
   }
-  ['pointerdown','touchstart','click'].forEach(function(ev){
-    document.addEventListener(ev, unlockAudioOnce, {once:true, passive:true});
-  });
 
-  buildCards();hist();newRound();tick();setInterval(tick,100);startApp();
-})();
+  requestAnimationFrame(draw);
+}
+
+/* Controls */
+document.getElementById('minus').onclick = ()=>{ stake = Math.max(10, stake-10); updateStakeUI(); };
+document.getElementById('plus').onclick = ()=>{ stake = Math.min(50000, stake+10); updateStakeUI(); };
+document.querySelectorAll('.q button').forEach(b=>{
+  b.onclick = ()=>{ stake = Number(b.dataset.v); updateStakeUI(); };
+});
+betBtn.onclick = ()=>{
+  if(phase === 'running' && myBet && !myBet.cashed){
+    cashOut();
+  }else if(myBet && (phase==='waiting'||phase==='countdown')){
+    // cancel
+    balance += myBet.stake;
+    updateBal();
+    myBet = null;
+    betBtn.className = 'go';
+    betBtn.innerHTML = '<span>BET</span><small><i id="betAmt">'+stake+'</i> KES</small>';
+  }else{
+    placeBet();
+  }
+};
+
+/* Chat toggle */
+document.getElementById('cb').onclick = ()=> document.getElementById('chat').classList.add('show');
+document.getElementById('cc2').onclick = ()=> document.getElementById('chat').classList.remove('show');
+document.getElementById('cs').onclick = ()=>{
+  const t = document.getElementById('ci').value.trim();
+  if(!t) return;
+  document.getElementById('ci').value = '';
+  // push own message
+  const cm = document.getElementById('cm');
+  const html = `<div class="msg"><div class="av2">YOU</div>
+    <div class="bb"><div class="mh2"><span>You</span><small>\( {new Date().toTimeString().slice(0,8)}</small></div> \){t}</div></div>`;
+  cm.insertAdjacentHTML('beforeend', html);
+  cm.scrollTop = cm.scrollHeight;
+};
+
+/* Init */
+updateBal();
+updateStakeUI();
+
+// Splash → start game
+setTimeout(()=>{
+  const s = document.getElementById('splash');
+  s.classList.add('fade-out');
+  setTimeout(()=>{
+    s.classList.add('hidden');
+    inGameAudio = true;
+    scLoadMusic();
+    scPlayMusic();
+    tryPlayMusic();
+    startWaiting();
+    // seed chat
+    for(let i=0;i<12;i++) addChatMsg(i%5===0);
+    setInterval(()=>addChatMsg(), 3200);
+  }, 400);
+}, 2200);
+
+// scale to fit
+function fit(){
+  const app = document.getElementById('app');
+  const scale = Math.min(window.innerWidth/720, window.innerHeight/1400, 1);
+  app.style.transform = `scale(${scale})`;
+}
+fit();
+window.addEventListener('resize', fit);
+
+// start draw loop
+requestAnimationFrame(draw);
 </script>
 </body>
 </html>
