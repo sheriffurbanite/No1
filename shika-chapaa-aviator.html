@@ -1370,12 +1370,7 @@
     .mult-badge.mid{color:#9a35cf!important;background:transparent!important}
     .mult-badge.high{color:#d826c0!important;background:transparent!important}
 
-    .bet-win{
-      font-weight:800;
-      font-size:9px;
-      color:#b8f5b8;
-      text-align:right
-    }
+    .bet-win{font-weight:800;font-size:9px;color:#20b90a;text-align:right}
 
     .empty-bets{
       text-align:center;
@@ -4206,6 +4201,12 @@
       if (phase === 'waiting' || phase === 'countdown') {
         trail = [];
         flightT = 0;
+        // After flew away / between rounds — auto bed music if not muted
+        try {
+          if (prevPhase === 'crashed' || prevPhase === 'running') {
+            setTimeout(function(){ tryPlayMusic(); }, 400);
+          }
+        } catch (e) {}
         // Clear previous-round players and rebuild ranked board before takeoff
         if (prevPhase !== 'waiting' && prevPhase !== 'countdown') {
           if (typeof generateLiveBoard === 'function') {
@@ -8394,22 +8395,9 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     function lockAudioToGameOnly(){
       hideAudioEl(bgMusic);
       hideAudioEl(lossSound);
-
-      try {
-        if (navigator.mediaSession) {
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: ' ',
-            artist: ' ',
-            album: ' '
-          });
-          const empty = () => {};
-          ['play','pause','seekbackward','seekforward','previoustrack','nexttrack','stop']
-            .forEach(a => {
-              try { navigator.mediaSession.setActionHandler(a, empty); } catch(e){}
-            });
-        }
-      } catch(e){}
+      clearMediaSession();
     }
+
 
     function muteAllGameAudio(){
       inGameAudio = false;
@@ -8444,6 +8432,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         }
       } catch (e) {}
     }
+
     clearMediaSession();
     setInterval(clearMediaSession, 3000);
 
@@ -8527,46 +8516,53 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
 
     function tryPlayMusic(){
-      try { scPlayMusic(); if (scSource || scBuffer) return; } catch (e) {}
-      if(!bgMusic || !musicOn || !inGameAudio) return;
-      // Stop loss SFX if still playing
+      // Original HTMLAudio bed — respect user mute; never show media notifications
+      if (!musicOn || !inGameAudio) {
+        clearMediaSession();
+        return;
+      }
+      if (!bgMusic) return;
       try {
         if (lossSound) {
           lossSound.pause();
           lossSound.currentTime = 0;
         }
-      } catch(e){}
+      } catch (e) {}
       lockAudioToGameOnly();
-      bgMusic.volume = 0.45;
-      const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){};
-      if(p && typeof p.catch === 'function'){
-        p.catch(() => {});
-      }
-      setTimeout(lockAudioToGameOnly, 100);
+      try {
+        bgMusic.volume = 0.45;
+        var p = bgMusic.play();
+        clearMediaSession();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      } catch (e) {}
+      clearMediaSession();
     }
+
 
     // Main track restarts when the next round begins
     function restartMusicForRound(){
-      // Restart bed music from the start of each new round (no media notifications)
-      try {
-        if (typeof scPlayMusic === 'function') {
-          if (!scMusicOn) return;
-          scPlayMusic(true); // force restart
-          if (lossSound) { try { lossSound.pause(); lossSound.currentTime = 0; } catch(e){} }
-          return;
-        }
-      } catch (e) {}
-      if (!bgMusic || !musicOn || !inGameAudio) return;
+      // Restart from start each new round / after flew away — if not muted
+      if (!musicOn || !inGameAudio) {
+        clearMediaSession();
+        return;
+      }
+      if (!bgMusic) return;
       lockAudioToGameOnly();
       try {
-        if (lossSound) { lossSound.pause(); lossSound.currentTime = 0; }
+        if (lossSound) {
+          lossSound.pause();
+          lossSound.currentTime = 0;
+        }
         bgMusic.pause();
         bgMusic.currentTime = 0;
+        bgMusic.volume = 0.45;
         var p = bgMusic.play();
-        try { clearMediaSession(); } catch(e) {}
-        if (p && typeof p.then === 'function') p.catch(function(){});
+        clearMediaSession();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
       } catch (e) {}
+      clearMediaSession();
     }
+
 
     // After loss — short SFX, then auto-resume continuous BGM (no long silence)
     let lossResumeTimer = null;
@@ -9071,39 +9067,37 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
     try { setAppRoute('#/aviator'); } catch (e) {}
     init();
 
+    
     (function wireSpeakerMute(){
       var btn = document.getElementById('speakerBtn');
       if (!btn || btn._muteWired) return;
       btn._muteWired = true;
+      function applyMuteUI(muted){
+        btn.classList.toggle('muted', muted);
+        btn.textContent = muted ? '🔇' : '🔊';
+        btn.title = muted ? 'Unmute' : 'Mute';
+      }
+      // init UI from musicOn
+      try { applyMuteUI(!musicOn); } catch (e) {}
       btn.addEventListener('click', function(e){
         e.preventDefault();
         e.stopPropagation();
+        musicOn = !musicOn;
         try {
-          // Toggle muted state
-          var muted = false;
-          if (typeof scMusicOn !== 'undefined') {
-            scMusicOn = !scMusicOn;
-            muted = !scMusicOn;
-            if (scMusicOn) {
-              if (typeof scPlayMusic === 'function') scPlayMusic(false);
-            } else {
-              if (typeof scStopMusic === 'function') scStopMusic();
-            }
-          }
-          if (typeof musicOn !== 'undefined') {
-            musicOn = !muted;
-          }
-          if (typeof bgMusic !== 'undefined' && bgMusic) {
-            if (muted) { try { bgMusic.pause(); } catch (e1) {} }
-            else { try { bgMusic.play().catch(function(){}); } catch (e2) {} }
-          }
-          btn.classList.toggle('muted', muted);
-          btn.textContent = muted ? '🔇' : '🔊';
-          btn.title = muted ? 'Unmute' : 'Mute';
-          try { clearMediaSession(); } catch (e3) {}
-        } catch (err) {}
+          if (typeof scMusicOn !== 'undefined') scMusicOn = musicOn;
+        } catch (e0) {}
+        if (!musicOn) {
+          try { if (bgMusic) bgMusic.pause(); } catch (e1) {}
+          try { if (typeof scStopMusic === 'function') scStopMusic(); } catch (e2) {}
+          clearMediaSession();
+        } else {
+          tryPlayMusic();
+          clearMediaSession();
+        }
+        applyMuteUI(!musicOn);
       }, true);
     })();
+
 
 
   </script>
