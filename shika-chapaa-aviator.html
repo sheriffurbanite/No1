@@ -1224,16 +1224,8 @@
       flex-direction:column
     }
 
-    #betsTabs,.bets-tabs{display:none!important}
-    .bets-tabs{
-      display:flex;
-      height:24px;
-      flex-shrink:0;
-      background:#111415;
-      border-radius:12px;
-      padding:2px;
-      margin-bottom:3px
-    }
+    #betsTabs_placeholder_removed{display:block}
+    .bets-tabs{display:flex!important;gap:6px;padding:4px 2px 6px;flex-shrink:0}
 
     .bets-tabs button{
       flex:1;
@@ -2001,7 +1993,7 @@
   
     /* === forced UI rules (user request) === */
     #depositBtn, .wallet-route-btn { display: none !important; }
-    #betsTabs, .bets-tabs { display: none !important; }
+    #betsTabs_placeholder_removed{display:block}
     .chat-win-amt { color: #4ade80 !important; }
     .chat-win-plane { display: none !important; }
     .cashout-mult { color: #b8f0c0 !important; text-shadow: 0 0 10px rgba(46,204,64,0.35) !important; }
@@ -2101,7 +2093,7 @@
     .wb-like .like-n, .chat-likes .like-n{font-size:11px;line-height:1.2}
 
     /* KILL deposit and tabs */
-    #depositBtn, .wallet-route-btn, #betsTabs, .bets-tabs { display: none !important; height: 0 !important; overflow: hidden !important; }
+    #depositBtn, .wallet-route-btn, #betsTabs_placeholder_removed{display:block}
     .chat-win-amt { color: #4ade80 !important; }
     .chat-win-plane, .chat-win-card .chat-win-plane { display: none !important; }
     .cashout-mult { color: #b8f0c0 !important; }
@@ -2934,6 +2926,13 @@
       ========================== -->
 
       <div class="bets-footer">
+
+        
+        <div class="bets-tabs" id="betsTabs">
+          <button class="active" data-filter="all" type="button">All Bets</button>
+          <button data-filter="previous" type="button">Previous</button>
+          <button data-filter="top" type="button">Top</button>
+        </div>
 
         <div class="bets-meta">
           <div class="bets-total">
@@ -8485,19 +8484,22 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         .catch(function () {});
     }
 
-    function scPlayMusic(){
+    function scPlayMusic(forceRestart){
       try {
         scInitAudio();
         if (!scMusicOn) return;
-        // Already playing — keep continuous, do not restart/cut
-        if (scSource) {
+        if (forceRestart && scSource) {
+          try { scSource.stop(); } catch (e1) {}
+          scSource = null;
+        }
+        // Already playing and not forced — keep going
+        if (scSource && !forceRestart) {
           try { scAudioCtx.resume(); } catch (e0) {}
           return;
         }
         if (!scBuffer) {
           scLoadMusic();
-          // retry shortly when buffer arrives
-          setTimeout(function(){ if (scBuffer && !scSource && scMusicOn) scPlayMusic(); }, 400);
+          setTimeout(function(){ if (scBuffer && scMusicOn) scPlayMusic(forceRestart); }, 500);
           return;
         }
         scAudioCtx.resume();
@@ -8545,35 +8547,25 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
 
     // Main track restarts when the next round begins
     function restartMusicForRound(){
-      // Web Audio bed stays continuous — do not stop/restart it each round
+      // Restart bed music from the start of each new round (no media notifications)
       try {
-        if (typeof scPlayMusic === 'function' && (scBuffer || scSource)) {
-          scMusicOn = true;
-          scPlayMusic();
+        if (typeof scPlayMusic === 'function') {
+          if (!scMusicOn) return;
+          scPlayMusic(true); // force restart
           if (lossSound) { try { lossSound.pause(); lossSound.currentTime = 0; } catch(e){} }
           return;
         }
       } catch (e) {}
-      if(!bgMusic || !musicOn || !inGameAudio) return;
+      if (!bgMusic || !musicOn || !inGameAudio) return;
       lockAudioToGameOnly();
       try {
-        if (lossSound) {
-          lossSound.pause();
-          lossSound.currentTime = 0;
-        }
-        // Keep continuous: only resume if paused, do not seek to 0
-        if (bgMusic.paused) {
-          const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){}
-        } else {
-          try{ clearMediaSession(); }catch(e){}
-          return;
-        }
-      } catch(e){}
-      const p = (bgMusic.paused ? bgMusic.play() : null); try{ clearMediaSession(); }catch(e){};
-      if(p && typeof p.catch === 'function'){
-        p.catch(() => {});
-      }
-      setTimeout(lockAudioToGameOnly, 100);
+        if (lossSound) { lossSound.pause(); lossSound.currentTime = 0; }
+        bgMusic.pause();
+        bgMusic.currentTime = 0;
+        var p = bgMusic.play();
+        try { clearMediaSession(); } catch(e) {}
+        if (p && typeof p.then === 'function') p.catch(function(){});
+      } catch (e) {}
     }
 
     // After loss — short SFX, then auto-resume continuous BGM (no long silence)
@@ -9078,6 +9070,41 @@ if (chatSend) chatSend.addEventListener('click', sendMine);
     // Default address bar to login until session restores
     try { setAppRoute('#/aviator'); } catch (e) {}
     init();
+
+    (function wireSpeakerMute(){
+      var btn = document.getElementById('speakerBtn');
+      if (!btn || btn._muteWired) return;
+      btn._muteWired = true;
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          // Toggle muted state
+          var muted = false;
+          if (typeof scMusicOn !== 'undefined') {
+            scMusicOn = !scMusicOn;
+            muted = !scMusicOn;
+            if (scMusicOn) {
+              if (typeof scPlayMusic === 'function') scPlayMusic(false);
+            } else {
+              if (typeof scStopMusic === 'function') scStopMusic();
+            }
+          }
+          if (typeof musicOn !== 'undefined') {
+            musicOn = !muted;
+          }
+          if (typeof bgMusic !== 'undefined' && bgMusic) {
+            if (muted) { try { bgMusic.pause(); } catch (e1) {} }
+            else { try { bgMusic.play().catch(function(){}); } catch (e2) {} }
+          }
+          btn.classList.toggle('muted', muted);
+          btn.textContent = muted ? '🔇' : '🔊';
+          btn.title = muted ? 'Unmute' : 'Mute';
+          try { clearMediaSession(); } catch (e3) {}
+        } catch (err) {}
+      }, true);
+    })();
+
 
   </script>
 
