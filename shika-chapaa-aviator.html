@@ -2017,8 +2017,10 @@
   
     
     
-    /* EXACT win bubble palette from user template */
+    
+    /* EXACT structure from user Win bubble HTML (scaled for chat) */
     :root{
+      --wb-page:#1b1b1b;
       --wb-bubble:#262463;
       --wb-card:#07074a;
       --wb-muted:#8d90c8;
@@ -2026,58 +2028,60 @@
       --wb-red:#ff4d5a;
       --wb-blue:#2f7df6;
     }
-    .chat-row{display:flex;align-items:flex-start;gap:8px;margin:10px 0;padding:0 8px}
-    .chat-row > .chat-avatar,
-    .chat-row > .chat-avatar-fallback{
+    .chat-row.win-row{
+      display:flex;align-items:flex-end;gap:0;margin:12px 0;padding:0 6px;position:relative;
+    }
+    .chat-row.win-row > .chat-avatar,
+    .chat-row.win-row > .chat-avatar-fallback{
       width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;
-      margin-top:auto;align-self:flex-end;
+      border:2px solid #2d2400;
+      background:radial-gradient(circle at 38% 32%,#fff1a0,#e2a900 45%,#6e4a00);
+      margin-right:6px;align-self:flex-end;
     }
     .chat-avatar-fallback{
-      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;
-      background:radial-gradient(circle at 38% 32%,#fff1a0,#e2a900 45%,#6e4a00);border:2px solid #2d2400;
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;
     }
-    .chat-win-wrap{display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0}
-    .chat-win-card{
-      flex:1;min-width:0;max-width:280px;
-      background:var(--wb-bubble);border-radius:14px 14px 14px 0;padding:10px 10px 12px;
-      border:none;box-shadow:none;position:relative;
+    .wb-stage{
+      position:relative;width:min(100%,300px);height:210px;flex-shrink:0;
     }
-    .chat-win-card .wb-head{
-      display:flex;align-items:center;gap:16px;margin:0 0 8px 2px;font-size:13px;line-height:1.2;
+    .wb-bubble{
+      position:absolute;left:0;top:0;right:36px;bottom:0;
+      background:var(--wb-bubble);border-radius:14px 14px 14px 0;
     }
-    .chat-win-card .wb-head .u{color:var(--wb-red);font-weight:700}
-    .chat-win-card .wb-head .t{color:var(--wb-muted);font-weight:500}
-    .chat-win-inner{
-      background:var(--wb-card);border-radius:14px;padding:12px 12px 14px;position:relative;overflow:hidden;
+    .wb-head{
+      position:absolute;left:10px;top:8px;height:18px;
+      display:flex;align-items:center;gap:14px;font-size:12px;z-index:2;
     }
-    .chat-win-inner .wb-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-    .chat-win-inner .wb-coin{
-      width:40px;height:40px;border-radius:50%;flex-shrink:0;
+    .wb-head .u{color:var(--wb-red);font-weight:700}
+    .wb-head .t{color:var(--wb-muted)}
+    .wb-card{
+      position:absolute;left:10px;top:30px;right:10px;bottom:10px;
+      background:var(--wb-card);border-radius:14px;overflow:hidden;
+    }
+    .wb-coin{
+      position:absolute;left:10px;top:10px;width:40px;height:40px;border-radius:50%;
       background:radial-gradient(circle at 38% 32%,#fff1a0,#e2a900 45%,#6e4a00);
-      border:2px solid #2d2400;
     }
-    .chat-win-inner .wb-name{font-size:15px;font-weight:600;color:#fff;flex:1;line-height:1.2}
-    .chat-win-inner .wb-shield{width:20px;height:22px;flex-shrink:0}
-    .chat-win-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0}
-    .chat-win-grid span{display:block;font-size:12px;color:var(--wb-muted);margin-bottom:2px;line-height:1.2}
-    .chat-win-grid strong{font-size:14px;font-weight:600;line-height:1.2}
-    .chat-win-mult{color:var(--wb-blue)!important}
-    .chat-win-amt{color:var(--wb-green)!important}
-    .chat-win-round,.chat-win-bet{color:#fff;font-weight:500}
-    .chat-win-divider{
-      display:flex;align-items:center;gap:6px;margin:12px 0 10px;position:relative;
+    .wb-name{
+      position:absolute;left:58px;top:18px;font-size:14px;line-height:20px;font-weight:600;color:#fff;
     }
-    .chat-win-divider .ln{flex:1;height:1.5px;background:#3d3f86}
-    .chat-win-divider svg{width:32px;height:18px;flex-shrink:0;opacity:.55}
-    .chat-win-plane{display:none!important}
-    .win-card-top{display:none!important}
-    .chat-likes{
-      margin-left:2px;color:#6c6c6c;font-size:12px;cursor:pointer;flex-shrink:0;
-      text-align:center;min-width:32px;align-self:center;user-select:none;
+    .wb-shield{position:absolute;right:12px;top:14px;width:18px;height:20px}
+    .wb-l{position:absolute;font-size:11px;color:var(--wb-muted);line-height:16px}
+    .wb-v{position:absolute;font-size:13px;font-weight:600;line-height:16px}
+    .wb-line{position:absolute;top:108px;height:1.5px;background:#3d3f86}
+    .wb-plane{position:absolute;left:50%;top:98px;width:36px;height:20px;transform:translateX(-50%)}
+    .wb-notch{
+      position:absolute;top:100px;width:16px;height:16px;border-radius:50%;background:var(--wb-bubble);
     }
-    .chat-likes svg{width:22px;height:20px;fill:#777;display:block;margin:0 auto 2px}
-    .chat-likes.liked{color:#f472b6}
-    .chat-likes.liked svg{fill:#f472b6}
+    .wb-like{
+      position:absolute;right:0;top:50%;transform:translateY(-50%);width:32px;
+      text-align:center;color:#6c6c6c;font-size:11px;cursor:pointer;user-select:none;z-index:3;
+    }
+    .wb-like svg{width:22px;height:20px;fill:#777;display:block;margin:0 auto 2px}
+    .wb-like.liked{color:#f472b6}
+    .wb-like.liked svg{fill:#f472b6}
+    /* legacy class hides */
+    .chat-win-plane,.win-card-top{display:none!important}
     .chat-share-hint{display:none!important}
 
     /* KILL deposit and tabs */
@@ -8407,6 +8411,22 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
       lockAudioToGameOnly();
     }
 
+    
+    /* Suppress lock-screen / notification media controls for game audio */
+    function clearMediaSession(){
+      try {
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.metadata = null;
+          navigator.mediaSession.playbackState = "none";
+          ["play","pause","seekbackward","seekforward","previoustrack","nexttrack","stop"].forEach(function (a) {
+            try { navigator.mediaSession.setActionHandler(a, null); } catch (e) {}
+          });
+        }
+      } catch (e) {}
+    }
+    clearMediaSession();
+    setInterval(clearMediaSession, 3000);
+
     function tryPlayMusic(){
       if(!bgMusic || !musicOn || !inGameAudio) return;
       // Stop loss SFX if still playing
@@ -8418,7 +8438,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
       } catch(e){}
       lockAudioToGameOnly();
       bgMusic.volume = 0.45;
-      const p = bgMusic.play();
+      const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){};
       if(p && typeof p.catch === 'function'){
         p.catch(() => {});
       }
@@ -8437,7 +8457,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         bgMusic.pause();
         bgMusic.currentTime = 0;
       } catch(e){}
-      const p = bgMusic.play();
+      const p = bgMusic.play(); try{ clearMediaSession(); }catch(e){};
       if(p && typeof p.catch === 'function'){
         p.catch(() => {});
       }
@@ -8727,37 +8747,46 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           var avHtml = m.avatar
             ? '<img class="chat-avatar" src="' + m.avatar + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'"><div class="chat-avatar-fallback" style="display:none">' + (m.id||'?').charAt(0) + '</div>'
             : '<div class="chat-avatar-fallback">' + (m.id||'?').charAt(0) + '</div>';
-          var likeCls = m._liked ? 'chat-likes liked' : 'chat-likes';
-          var heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg>';
           var f = function(n){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+          var heart = '<svg viewBox="0 0 24 24"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg>';
           if (m.type === 'win') {
             var cash = parseFloat(m.mult)||0;
             var winAmt = Number(m.win)||0;
             var betAmt = Number(m.bet)||0;
-            var rnd = m.round != null ? m.round : m.mult;
-            return '<div class="chat-row" data-mid="' + mid + '">' + avHtml +
-              '<div class="chat-win-wrap"><div class="chat-win-card">' +
+            var rnd = parseFloat(m.round != null ? m.round : m.mult)||0;
+            var liked = m._liked ? ' liked' : '';
+            // Structure matches user Win bubble HTML: avatar | bubble(head+card) | like
+            return '<div class="chat-row win-row" data-mid="' + mid + '">' + avHtml +
+              '<div class="wb-stage">' +
+              '<div class="wb-bubble">' +
               '<div class="wb-head"><span class="u">' + m.id + '</span><span class="t">' + m.time + '</span></div>' +
-              '<div class="chat-win-inner">' +
-              '<div class="wb-top"><div class="wb-coin"></div><div class="wb-name">' + m.id + '</div>' +
-              '<svg class="wb-shield" viewBox="0 0 24 26"><path d="M12 1l10 4v8c0 6-4.5 10-10 12C6.5 23 2 19 2 13V5z" fill="#1fa34a"/><path d="M7 13l3.5 3.5L17 10" stroke="#fff" stroke-width="2.5" fill="none"/></svg></div>' +
-              '<div class="chat-win-grid">' +
-              '<div><span>Cashed out:</span><strong class="chat-win-mult">' + cash.toFixed(2) + 'x</strong></div>' +
-              '<div><span>Win:</span><strong class="chat-win-amt">' + f(winAmt) + ' KES</strong></div>' +
-              '</div>' +
-              '<div class="chat-win-divider"><div class="ln"></div>' +
-              '<svg viewBox="0 0 56 30"><path d="M3 21l36-7-8-9 5-1 13 9 5 1-2 4-10 1-12 9-4-1 5-9-17 3z" fill="#8d90c8" opacity=".55"/></svg>' +
-              '<div class="ln"></div></div>' +
-              '<div class="chat-win-grid">' +
-              '<div><span>Round:</span><strong class="chat-win-round">' + parseFloat(rnd).toFixed(2) + 'x</strong></div>' +
-              '<div><span>Bet:</span><strong class="chat-win-bet">' + f(betAmt) + ' KES</strong></div>' +
-              '</div></div></div>' +
-              '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heartSvg + '<div class="like-n">' + (m.likes||0) + '</div></div></div></div>';
+              '<div class="wb-card">' +
+              '<div class="wb-coin"></div>' +
+              '<div class="wb-name">' + m.id + '</div>' +
+              '<svg class="wb-shield" viewBox="0 0 24 26"><path d="M12 1l10 4v8c0 6-4.5 10-10 12C6.5 23 2 19 2 13V5z" fill="#1fa34a"/><path d="M7 13l3.5 3.5L17 10" stroke="#fff" stroke-width="2.5" fill="none"/></svg>' +
+              '<div class="wb-l" style="left:10px;top:58px">Cashed out:</div>' +
+              '<div class="wb-v" style="left:10px;top:74px;color:var(--wb-blue)">' + cash.toFixed(2) + 'x</div>' +
+              '<div class="wb-l" style="left:50%;top:58px">Win:</div>' +
+              '<div class="wb-v" style="left:50%;top:74px;color:var(--wb-green)">' + f(winAmt) + ' KES</div>' +
+              '<div class="wb-notch" style="left:-8px"></div>' +
+              '<div class="wb-notch" style="right:-8px"></div>' +
+              '<div class="wb-line" style="left:12px;width:38%"></div>' +
+              '<svg class="wb-plane" viewBox="0 0 56 30"><path d="M3 21l36-7-8-9 5-1 13 9 5 1-2 4-10 1-12 9-4-1 5-9-17 3z" fill="#8d90c8" opacity=".55"/></svg>' +
+              '<div class="wb-line" style="right:12px;width:38%"></div>' +
+              '<div class="wb-l" style="left:10px;top:122px">Round:</div>' +
+              '<div class="wb-v" style="left:10px;top:138px;font-weight:500">' + rnd.toFixed(2) + 'x</div>' +
+              '<div class="wb-l" style="left:50%;top:122px">Bet:</div>' +
+              '<div class="wb-v" style="left:50%;top:138px;font-weight:500">' + f(betAmt) + ' KES</div>' +
+              '</div></div>' +
+              '<div class="wb-like' + liked + '" data-like="1" data-mid="' + mid + '">' + heart +
+              '<div class="like-n">' + (m.likes||0) + '</div></div>' +
+              '</div></div>';
           }
           return '<div class="chat-row" data-mid="' + mid + '">' + avHtml +
             '<div class="chat-bubble"><div class="chat-meta"><span class="chat-name">' + m.id + '</span><span class="chat-time">' + m.time + '</span></div>' +
             '<div class="chat-text">' + m.text + '</div></div>' +
-            '<div class="' + likeCls + '" data-like="1" data-mid="' + mid + '">' + heartSvg + '<div class="like-n">' + (m.likes||0) + '</div></div></div>';
+            '<div class="chat-likes' + (m._liked?' liked':'') + '" data-like="1" data-mid="' + mid + '">' + heart +
+            '<div class="like-n">' + (m.likes||0) + '</div></div></div>';
         }
 
         function renderAll(){
