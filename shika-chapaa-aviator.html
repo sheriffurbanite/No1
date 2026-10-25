@@ -8200,6 +8200,8 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     ========================================== */
 
     function init(){
+      try { scLoadMusic(); } catch (e) {}
+
       try {
         var db = document.getElementById('depositBtn');
         if (db) { db.style.display = 'none'; db.onclick = function(e){ e && e.preventDefault(); return false; }; }
@@ -8355,7 +8357,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     const bgMusic = document.getElementById('bgMusic');
     const lossSound = document.getElementById('lossSound');
     const speakerBtn = document.getElementById('speakerBtn');
-    let musicOn = true;
+    let musicOn = true; try { scMusicOn = true; scPlayMusic(); } catch(e) {};
     let inGameAudio = false; // only play when game view is active
 
     function hideAudioEl(el){
@@ -8427,7 +8429,70 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
     clearMediaSession();
     setInterval(clearMediaSession, 3000);
 
+    
+    /* Web Audio music — no mediaSession / lock-screen notifications */
+    var SC_MUSIC_URL = 'https://res.cloudinary.com/qegjv5mo/video/upload/f_mp3/Aviator_-_Music_1080p.mp3';
+    var scAudioCtx = null;
+    var scGain = null;
+    var scBuffer = null;
+    var scSource = null;
+    var scMusicOn = true;
+
+    function scInitAudio(){
+      try {
+        if (!scAudioCtx) {
+          scAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          scGain = scAudioCtx.createGain();
+          scGain.gain.value = 0.45;
+          scGain.connect(scAudioCtx.destination);
+        }
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.metadata = null;
+          navigator.mediaSession.playbackState = "none";
+          ["play","pause","seekbackward","seekforward","previoustrack","nexttrack","stop"].forEach(function (a) {
+            try { navigator.mediaSession.setActionHandler(a, null); } catch (e) {}
+          });
+        }
+      } catch (e) {}
+    }
+
+    function scLoadMusic(){
+      if (!SC_MUSIC_URL || scBuffer) return;
+      scInitAudio();
+      fetch(SC_MUSIC_URL)
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (d) { return scAudioCtx.decodeAudioData(d); })
+        .then(function (b) { scBuffer = b; })
+        .catch(function () {});
+    }
+
+    function scPlayMusic(){
+      try {
+        scInitAudio();
+        scLoadMusic();
+        if (!scBuffer || scSource || !scMusicOn) return;
+        scAudioCtx.resume();
+        scSource = scAudioCtx.createBufferSource();
+        scSource.buffer = scBuffer;
+        scSource.loop = true;
+        scSource.connect(scGain);
+        scSource.start(0);
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.metadata = null;
+          navigator.mediaSession.playbackState = "none";
+        }
+      } catch (e) {}
+    }
+
+    function scStopMusic(){
+      try {
+        if (scSource) { try { scSource.stop(); } catch (e1) {} scSource = null; }
+      } catch (e) {}
+    }
+
+
     function tryPlayMusic(){
+      try { if (scBuffer) { scPlayMusic(); return; } } catch (e) {}
       if(!bgMusic || !musicOn || !inGameAudio) return;
       // Stop loss SFX if still playing
       try {
@@ -8673,26 +8738,21 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
         ];
         var COLORS = ['#3b82f6','#22c55e','#eab308','#a855f7','#ef4444','#06b6d4','#f97316','#ec4899','#64748b'];
         var MSGS = [
-          'Aviator stage iko live — plane iko ready ✈️',
-          'Hii round multiplier inaweza kuwa anything wasee',
-          'Cashout smart, usishike greed kwenye stage',
-          'Fair crash wasee — kila round ni independent',
-          'Ndege ikipaa tension inaingia 😂🚀',
-          'Bet small, watch the stage, cash out clean',
-          'Shika Chapaa Aviator — stage iko smooth leo',
-          'Red early? Next round tuko tena 🔥',
-          'Won amount iko poa lakini si kila round',
-          'Auto cashout saved me on that crash',
-          'Multiplier ribbon iko hot — check history',
-          'Plane iko mid-air, hold or cash? 👀',
-          'Gambling ni chance — weka limit yako',
-          'Stage glow + plane path iko clean leo',
-          'Big win bubble inakuja for someone 💰',
-          'Aviator si predict — play responsible',
-          'Cashed at 2x safe, next flight ni yako',
-          'Live bets board iko busy wasee',
-          'Crash came early — respect the game',
-          'Kenya on Aviator stage 🇰🇪 tuko pamoja'
+          "Wueh, hii game leo imenipeleka mbio proper. Unadhani umeiva, alafu ndege inakataa kubeba mzigo 😂",
+          "Nimeona multiplier ikipanda nikasema leo ni yangu, kumbe nilikuwa najiconvince tu. Hii mambo ni noma.",
+          "Aki nilikuwa nangoja ipande kidogo tu, ghafla ndege imeenda. Sasa nimebaki kuangalia screen kama mjinga.",
+          "Leo nimepata ka-win kidogo, lakini losses zingine bado zinanichezea akili. Hii game inataka discipline maze.",
+          "Msee, unakaa hapo ukisema next round itakuwa poa, alafu inakushangaza tena. Lazima mtu ajue wakati wa kuacha.",
+          "Hii ndege haina huruma bana. Inapanda polepole ukianza kuamini, inakata safari ghafla.",
+          "Nilikuwa nimejipanga vizuri leo, lakini mambo yamechange haraka kuliko nilivyokuwa nimeexpect. Wueh!",
+          "Kuna round niliona ikipanda nikashangaa, nikasema kumbe leo kuna kitu. Lakini si kila round unaweza kushinda.",
+          "Aki hii game ni patience na bahati, lakini usijipe pressure ya kurudisha pesa ulizopoteza. Unaweza kujipata pabaya.",
+          "Nimecheka lakini ndani najua nimeumia 😂 Hii round imenifunza kwamba si kila opportunity ni ya kushika.",
+          "Msee, ile feeling ya kuona ndege imeenda kabla hujatoa pesa ni noma. Unabaki tu kusema, kwani nilikuwa nasubiri nini?",
+          "Leo nimeamua hakuna kufuata losses. Kama mambo haiko sawa, ni sawa kuclose game na kuendelea na shughuli zingine.",
+          "Niliona multiplier imeanza kupanda nikapata ka-hope, lakini ikaishia mapema. Hii ndio maana siwezi kuhesabu win kabla haijatokea.",
+          "Wasee, msichukulie kila round kama lazima mlipize ya previous. Pesa ikienda, imeenda; kujilazimisha kurudisha kunaweza kuongeza shida.",
+          "Hii Aviator inaweza kukupa furaha na frustration ndani ya dakika mbili. Mimi leo nachukua lesson, si lazima niendelee kucheza."
         ];
 
         function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
@@ -8751,6 +8811,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
           var heart = '<svg viewBox="0 0 24 24"><path d="M12 21.5s-9-6-9-12.2A5 5 0 0 1 12 6.5a5 5 0 0 1 9 2.8c0 6.2-9 12.2-9 12.2z"/></svg>';
           if (m.type === 'win') {
             var cash = parseFloat(m.mult)||0;
+            var mc = (typeof multColor === 'function' ? multColor(cash) : (cash < 2 ? '#00b8d1' : cash < 10 ? '#9a35cf' : '#d826c0'));
             var winAmt = Number(m.win)||0;
             var betAmt = Number(m.bet)||0;
             var rnd = parseFloat(m.round != null ? m.round : m.mult)||0;
@@ -8765,7 +8826,7 @@ document.getElementById('mpesaDepositBtn').addEventListener('click', () => {
               '<div class="wb-name">' + m.id + '</div>' +
               '<svg class="wb-shield" viewBox="0 0 24 26"><path d="M12 1l10 4v8c0 6-4.5 10-10 12C6.5 23 2 19 2 13V5z" fill="#1fa34a"/><path d="M7 13l3.5 3.5L17 10" stroke="#fff" stroke-width="2.5" fill="none"/></svg>' +
               '<div class="wb-l" style="left:10px;top:58px">Cashed out:</div>' +
-              '<div class="wb-v" style="left:10px;top:74px;color:var(--wb-blue)">' + cash.toFixed(2) + 'x</div>' +
+              '<div class="wb-v" style="left:10px;top:74px;color:' + mc + '">' + cash.toFixed(2) + 'x</div>' +
               '<div class="wb-l" style="left:50%;top:58px">Win:</div>' +
               '<div class="wb-v" style="left:50%;top:74px;color:var(--wb-green)">' + f(winAmt) + ' KES</div>' +
               '<div class="wb-notch" style="left:-8px"></div>' +
