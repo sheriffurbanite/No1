@@ -413,7 +413,7 @@ body{overflow:visible!important}
 (function(){
   var EM=['🐥','🐱','🌴','🍍','😎','🎲','🍃','🌉','🐶','🚗','🦊','🐼'],COL=['#e8a317','#5a5d62','#3a7a4a','#d49a2a','#7a3a6a','#a02030','#6a9a6a','#3a7ac0','#8a6a3a','#5a2a2a'];
   var BETS=[25000,25000,10000,7000,6000,4000,2250,2000,2000,1750,1000,500,250,100,50,10];
-  var S={loading:true,load0:Date.now(),anim:true,hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
+  var S={loading:true,load0:Date.now(),anim:(function(){try{var v=localStorage.getItem('av_anim');return v===null?true:v==='1'}catch(e){return true}})(),hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
   var $=function(i){return document.getElementById(i)};
   function fit(){
     var w=window.innerWidth||document.documentElement.clientWidth||360;
@@ -427,29 +427,66 @@ body{overflow:visible!important}
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){setTimeout(fit,80)});
   function fmt(n){return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
-  function rngTag(){/* badge hidden — signals still use server when available, local fallback otherwise */}
-  // ---- crash-point generator. LOCAL logic is always available; the server is optional.
-  var RNG={url:'https://no-gen.bonto.run/',timeout:3500,useServer:true};
-  function localCrash(){return Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)} // P(crash >= m) = 0.97/m, 3% instant crash at 1.00x
-  function serverCrash(){
+  function rngTag(){/* online/offline resolved per round; UI badge stays hidden */}
+  // ---- Signals: online → no-gen.bonto.run ; offline → local 0.97 formula
+  var RNG={url:'https://no-gen.bonto.run/',timeout:2000,useServer:true,retries:2,online:false};
+  function localCrash(){return Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)} // P(crash >= m) = 0.97/m
+  function parseSignalText(t){
+    var v=NaN;
+    try{
+      var j=JSON.parse(t);
+      if(typeof j==='number')v=j;
+      else if(Array.isArray(j))v=parseFloat(j[0]);
+      else if(j&&typeof j==='object'){
+        ['crash','multiplier','value','x','result','signal'].some(function(k){
+          if(j[k]!==undefined&&j[k]!==null&&j[k]!==''){v=parseFloat(j[k]);return true}
+        });
+      }
+    }catch(e){v=parseFloat(t)}
+    v=Math.round(v*100)/100;
+    return (v>=1&&v<=10000)?v:null;
+  }
+  function serverCrashOnce(){
     if(!RNG.useServer||!window.fetch)return Promise.resolve(null);
-    var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort()},RNG.timeout);
-    return fetch(RNG.url,{cache:'no-store',signal:ctl?ctl.signal:undefined}).then(function(r){return r.text()}).then(function(t){
-      clearTimeout(tm);var v=NaN;
-      try{var j=JSON.parse(t);if(typeof j==='number')v=j;else if(Array.isArray(j))v=parseFloat(j[0]);else{['crash','multiplier','value','x','result','signal'].some(function(k){if(j[k]!==undefined){v=parseFloat(j[k]);return true}})}}catch(e){v=parseFloat(t)}
-      return (v>=1&&v<=10000)?Math.round(v*100)/100:null;
-    }).catch(function(){clearTimeout(tm);return null});
+    var ctl=window.AbortController?new AbortController():null;
+    var tm=setTimeout(function(){if(ctl)ctl.abort()},RNG.timeout);
+    return fetch(RNG.url,{cache:'no-store',mode:'cors',credentials:'omit',signal:ctl?ctl.signal:undefined})
+      .then(function(r){
+        if(!r.ok)throw new Error('http '+r.status);
+        return r.text();
+      })
+      .then(function(t){clearTimeout(tm);return parseSignalText(t)})
+      .catch(function(){clearTimeout(tm);return null});
+  }
+  function serverCrash(){
+    var attempt=0;
+    function tryOnce(){
+      return serverCrashOnce().then(function(v){
+        if(v!=null){RNG.online=true;return v}
+        attempt++;
+        if(attempt<RNG.retries)return new Promise(function(res){setTimeout(function(){res(tryOnce())},450)});
+        RNG.online=false;
+        return null;
+      });
+    }
+    return tryOnce();
   }
   function newRound(){
     S.crash=localCrash();S.src='local';rngTag();
     var rd=S.rid=(S.rid||0)+1;
-    serverCrash().then(function(v){if(v&&S.rid===rd&&S.phase==='wait'){S.crash=v;S.src='server';rngTag()}});
+    // Prefer live server signal while still in wait; keep local if offline / timeout
+    serverCrash().then(function(v){
+      if(v!=null&&S.rid===rd&&(S.phase==='wait'||S.phase==='loading')){
+        S.crash=v;S.src='server';rngTag();
+      }
+    });
     var ps=[];
     var np=26+Math.floor(Math.random()*14);for(var i=0;i<np;i++){
       var q=Math.random(),tgt;
-      if(q<.30)tgt=null;
-      else if(q<.72)tgt=+(1.15+Math.pow(Math.random(),1.8)*3.5).toFixed(2);
-      else if(q<.88)tgt=+(5+Math.random()*4.8).toFixed(2);
+      if(q<.28)tgt=null;
+      else if(q<.55)tgt=+(1.01+Math.random()*0.99).toFixed(2);
+      else if(q<.78)tgt=+(2.00+Math.pow(Math.random(),1.4)*3.0).toFixed(2);
+      else if(q<.90)tgt=+(5.00+Math.random()*5.0).toFixed(2);
       else if(q<.97)tgt=+(10.1+Math.pow(Math.random(),1.2)*18).toFixed(2);
       else tgt=+(30+Math.pow(Math.random(),2.5)*200).toFixed(2);
       ps.push({id:'2***'+Math.floor(Math.random()*10),bet:BETS[Math.min(BETS.length-1,Math.floor(Math.pow(Math.random(),.6)*BETS.length))],em:EM[i%EM.length],c:COL[i%COL.length],tgt:tgt,x:null,win:0});
@@ -472,9 +509,11 @@ body{overflow:visible!important}
     }else if(now-S.ct>3500){newRound()}
     paint();render();
   }
+  function hcol(v){return v<2?'#2f95e8':v<10?'#913ef8':'#c01cb0'}
   function row(p,z){
     var w=p.x!==null;
-    return '<div class="r'+(w?' w':'')+'"><i class="av" style="background:'+p.c+'">'+p.em+'</i><span class="n">'+p.id+'</span><span class="b">'+fmt(p.bet)+'</span><span class="x">'+(w?p.x.toFixed(2)+'x':'')+'</span><span class="wn">'+(w?fmt(p.win):(z?'0.00':''))+'</span></div>';
+    var xc=w?(' style="color:'+hcol(p.x)+'"'):'';
+    return '<div class="r'+(w?' w':'')+'"><i class="av" style="background:'+p.c+'">'+p.em+'</i><span class="n">'+p.id+'</span><span class="b">'+fmt(p.bet)+'</span><span class="x"'+xc+'>'+(w?p.x.toFixed(2)+'x':'')+'</span><span class="wn">'+(w?fmt(p.win):(z?'0.00':''))+'</span></div>';
   }
   var cols='<div class="ch"><span style="left:13px">Player</span><span style="right:352px">Bet KES</span><span style="right:181px">X</span><span style="right:12px">Win KES</span></div>';
   var DBK='av_top_v1',DB=null,pendU=[];
@@ -482,7 +521,7 @@ body{overflow:visible!important}
   function dbEnsure(){var n=new Date();if(!DB)DB={};['day','month','year'].forEach(function(p){if(!DB[p]||DB[p].k!==pk(n,p))DB[p]={k:pk(n,p),x:[],win:[],rounds:[]}})}
   function dbLoad(){try{DB=JSON.parse(localStorage.getItem(DBK)||'null')}catch(e){DB=null}dbEnsure()}
   function dbSave(){try{localStorage.setItem(DBK,JSON.stringify(DB))}catch(e){}}
-  function ins(a,en,key){a.push(en);a.sort(function(p,q){return q[key]-p[key]});if(a.length>50)a.length=50}
+  function ins(a,en,key){a.push(en);a.sort(function(p,q){return q[key]-p[key]});if(a.length>20)a.length=20}
   function recordRound(){
     dbEnsure();var best=null,en=[],t=Date.now();
     S.players.forEach(function(p){if(p.x!==null)en.push({id:p.id,e:p.em,b:p.bet,x:p.x,w:p.win,r:S.crash,t:t})});
@@ -503,8 +542,8 @@ body{overflow:visible!important}
     list.forEach(function(o,i){
       var d=new Date(o.t),ds=d2(d.getDate())+'.'+d2(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2);
       h+='<div class="tc" data-n="'+o.id+'" data-w="'+fmt(o.w)+'" data-x="'+fmt(o.x)+'" data-b="'+fmt(o.b)+'" data-r="'+fmt(o.r)+'" data-e="'+(o.e||'')+'"><i class="av" style="background:'+COL[i%COL.length]+'">'+(o.e||'')+'</i><span class="nm">'+o.id+'</span><span class="dt">'+ds+'</span>'+ICB+
-        '<span class="l" style="top:74px">Bet KES</span><span class="v" style="top:74px">'+fmt(o.b)+'</span><span class="l l2" style="top:74px">Result</span><span class="m" style="top:74px">'+fmt(o.x)+'x</span>'+
-        '<span class="l" style="top:102px">Win KES</span><span class="v" style="top:102px">'+fmt(o.w)+'</span><span class="l l2" style="top:102px">Round max.</span><span class="m" style="top:102px">'+fmt(o.r)+'x</span></div>';
+        '<span class="l" style="top:74px">Bet KES</span><span class="v" style="top:74px">'+fmt(o.b)+'</span><span class="l l2" style="top:74px">Result</span><span class="m" style="top:74px;color:'+hcol(o.x)+'">'+fmt(o.x)+'x</span>'+
+        '<span class="l" style="top:102px">Win KES</span><span class="v" style="top:102px">'+fmt(o.w)+'</span><span class="l l2" style="top:102px">Round max.</span><span class="m" style="top:102px;color:'+hcol(o.r)+'">'+fmt(o.r)+'x</span></div>';
     });
     return h+'</div>';
   }
@@ -529,7 +568,6 @@ body{overflow:visible!important}
       '<div class="ar2"><span style="left:76px">Auto bet</span><i class="tg" style="left:164px"></i><span style="left:296px">Auto Cash Out</span><i class="tg k2" style="left:449px"></i><span class="ci" contenteditable="true" inputmode="decimal">1.10</span><span class="cx">&#10005;</span></div></div>';}
     $('cards').innerHTML=c(0)+c(1);
   }
-  function hcol(v){return v<2?'#2f95e8':v<10?'#913ef8':'#c01cb0'}
   function hist(){
     var it=S.hist.map(function(v){return '<span style="color:'+hcol(v)+'">'+v.toFixed(2)+'x</span>'}).join('');
     $('hs').innerHTML=S.hist.slice(0,14).map(function(v){return '<span style="color:'+hcol(v)+'">'+v.toFixed(2)+'x</span>'}).join('')+'<span class="dt">&middot;&middot;&middot;</span>';
@@ -564,7 +602,7 @@ body{overflow:visible!important}
   function mrow(k,label,tog){return '<div class="mr" data-k="'+k+'">'+P_+IC[k]+'</svg><span>'+label+'</span>'+(tog?'<i class="mt'+(tog==2?' on':'')+'" data-t="'+k+'"></i>':'')+'</div>'}
   function buildMenu(){
     $('menu').innerHTML='<div class="mh"><i class="mav" id="mav">'+AV[avi]+'</i><b>254797XXX175</b><button id="cav">'+P_+IC.user+'</svg><span>Change<br>Avatar</span></button></div>'+
-      mrow('sound','Sound',2)+mrow('music','Music',2)+mrow('anim','Animation',2)+'<div class="msep"></div>'+
+      mrow('sound','Sound',2)+mrow('music','Music',2)+mrow('anim','Animation',S.anim?2:1)+'<div class="msep"></div>'+
       mrow('free','Free Bets')+mrow('hist','My Bet History')+mrow('lim','Game Limits')+mrow('how','How To Play')+mrow('rules','Game Rules')+mrow('fair','Provably Fair Settings')+mrow('room','Game Room: Room #1')+
       '<div class="mhome" data-k="home">'+P_+IC.home+'</svg>Home</div>';
   }
@@ -586,6 +624,10 @@ body{overflow:visible!important}
   buildMenu();
   function goHome(){
     try{if(window.AviatorSound){AviatorSound.setMusic(false);AviatorSound.setSound(false)}}catch(e){}
+    try{saveParentBal(BAL)}catch(e){}
+    if(window.parent&&window.parent!==window){
+      try{window.parent.postMessage('shika-close-aviator','*');return}catch(e){}
+    }
     if(window.history.length>1){
       window.history.back();
       setTimeout(function(){
@@ -623,7 +665,7 @@ body{overflow:visible!important}
     var t=e.target;
     if(t.closest('#cav')){avi=(avi+1)%AV.length;$('mav').textContent=AV[avi];return}
     var tg=t.closest('.mt');
-    if(tg){tg.classList.toggle('on');var on=tg.classList.contains('on');if(tg.dataset.t==='anim')S.anim=on;if(window.AviatorSound){if(tg.dataset.t==='sound')AviatorSound.setSound(on);if(tg.dataset.t==='music')AviatorSound.setMusic(on)}return}
+    if(tg){tg.classList.toggle('on');var on=tg.classList.contains('on');if(tg.dataset.t==='anim'){S.anim=on;try{localStorage.setItem('av_anim',on?'1':'0')}catch(e){}}if(window.AviatorSound){if(tg.dataset.t==='sound')AviatorSound.setSound(on);if(tg.dataset.t==='music')AviatorSound.setMusic(on)}return}
     var r=t.closest('.mr,.mhome');if(!r)return;var k=r.dataset.k;
     if(k==='home'){$('menu').classList.remove('show');goHome();return}
     if(k==='sound'||k==='music'||k==='anim'){r.querySelector('.mt').click();return}
@@ -788,8 +830,8 @@ body{overflow:visible!important}
     }
     var f=1-Math.exp(-(m-1)*2.2),px=30+470*f,py=H-26-370*(1-Math.exp(-(m-1)*4.5));
     var fly=ph==='crash'?clamp((now-S.ct)/900):0;
-    py+=ph==='fly'?Math.sin(t/380)*5*f:0;
-    if(fly<1){
+    py+=ph==='fly'&&S.anim?Math.sin(t/380)*5*f:0;
+    if(S.anim&&fly<1){
       cx.save();cx.globalAlpha=1-fly;
       cx.beginPath();cx.moveTo(4,H-4);cx.quadraticCurveTo(px*.58,H-4,px,py+6);cx.lineTo(px,H);cx.lineTo(4,H);cx.closePath();
       var fg=cx.createLinearGradient(0,py,0,H);fg.addColorStop(0,'rgba(229,8,60,.5)');fg.addColorStop(1,'rgba(110,0,14,.9)');cx.fillStyle=fg;cx.fill();
@@ -828,7 +870,9 @@ body{overflow:visible!important}
   function fnum(v){return Math.round(v).toLocaleString('en-US')}
   function meets(){return TM.joined&&CD.some(function(c){return(c.st==='idle'?c.amt:c.stake)>=RULES.min})}
   function cardEl(i){return $('cards').children[i]}
-  function setBal(v){BAL=Math.max(0,v);$('bal').textContent=fmt(BAL)}
+  function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null'),a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)}}catch(e){}return null}
+  function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('shikachapaa_accounts',JSON.stringify(a));localStorage.setItem('shikachapaa_user',JSON.stringify(s))}catch(e){}}
+  function setBal(v){BAL=Math.max(0,v);$('bal').textContent=fmt(BAL);saveParentBal(BAL)}
   function betClick(i){
     var c=CD[i];
     if(c.st==='idle'){var am=Math.max(10,c.amt);if(am>BAL){toast('Not enough balance');return}setBal(BAL-am);c.st='placed';c.stake=am;c.nx=(S.phase!=='wait')}
@@ -983,7 +1027,11 @@ body{overflow:visible!important}
   SH.dr=['Detailed rules','Bets under '+fmt(RULES.min)+' KES pause your progress. Only bets placed after joining count. Ties are ranked by who reached the score first. Shika Chapaa tournament rules apply.'];
   setInterval(function(){if(!TM.open||TM.view!=='main')return;var c=cd();for(var i=1;i<4;i++){var e=$('c'+i);if(e)e.textContent=c[i-1]}},1000);
   setInterval(function(){if(TM.open&&TM.view==='main'){TM.pp=(TM.pp+1)%RULES.prizes.length}},4000);
-  buildCards();hist();setBal(1000);if(window.AviatorSound)AviatorSound.start();newRound();tick();setInterval(tick,100);requestAnimationFrame(draw);
+  buildCards();hist();
+  (function(){var u=loadParentUser();setBal(u?u.balance:1000)})();
+  setInterval(function(){var u=loadParentUser();if(!u)return;var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
+  window.addEventListener('storage',function(e){if(e.key==='shikachapaa_user'||e.key==='shikachapaa_accounts'){var u=loadParentUser();if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance)}}});
+  if(window.AviatorSound)AviatorSound.start();newRound();tick();setInterval(tick,100);requestAnimationFrame(draw);
 })();
 </script>
 <script>
