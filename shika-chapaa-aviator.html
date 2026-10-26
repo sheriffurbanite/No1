@@ -429,12 +429,26 @@ body{overflow:visible!important}
   function fmt(n){return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
   function rngTag(){/* local Engine — UI badge stays hidden */}
   // ---- Shared Engine (same as simulator / signals): deterministic clock-driven rounds
-  // CD=5000ms countdown, GROWTH=0.00006, POST=4000ms after crash, max 10000x
+  // Shared Engine (same as signals / predictor): deterministic clock-driven rounds
+  // CD=5000ms countdown, GROWTH=0.00006, POST=4000ms after crash, max 1000x
+  // Crash distribution fitted to real Aviator sample (ANCH shares)
   var Engine=(function(){
-    var EPOCH=1793022676743, GROWTH=0.00006, CD=5000, POST=4000, MAXM=10000;
+    var EPOCH=1793022676743, GROWTH=0.00006, CD=5000, POST=4000, MAXM=1000;
     function seedOf(r){var h=2166136261>>>0,s=EPOCH+':'+r;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
     function rnd(a){return function(){a=(a+0x6D2B79F5)>>>0;var t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
-    function crashOf(r){var R=rnd(seedOf(r));R();var u=R();if(R()<1/33)return 1;return Math.min(MAXM,Math.max(1,Math.floor((100-u)/(1-u))/100))}
+    var ANCH=[[1,0.97],[1.1,0.88],[1.2,0.77],[1.5,0.5],[2,0.35],[3,0.22],[5,0.115],[10,0.04],[50,0.008],[100,0.004],[1000,0.0003]];
+    function crashOf(r){
+      var R=rnd(seedOf(r));R();var s=1-R();
+      if(s>=ANCH[0][1])return 1;
+      for(var i=1;i<ANCH.length;i++){
+        var a=ANCH[i-1],b=ANCH[i];
+        if(s>=b[1]){
+          var t=(Math.log(a[1])-Math.log(s))/(Math.log(a[1])-Math.log(b[1]));
+          return Math.min(MAXM,Math.floor(Math.exp(Math.log(a[0])+t*(Math.log(b[0])-Math.log(a[0])))*100)/100);
+        }
+      }
+      return MAXM;
+    }
     function runMs(c){return c<=1?0:Math.ceil(Math.log(c)/GROWTH/50)*50}
     var r=1,start=EPOCH;
     function dur(c){return CD+runMs(c)+POST}
@@ -447,7 +461,8 @@ body{overflow:visible!important}
         var phase=now<i.countdownEnd?'countdown':now<i.runEnd?'running':'crashed';
         var mult=phase==='running'?Math.min(i.crash,Math.floor(Math.exp(GROWTH*el)*100)/100):phase==='crashed'?i.crash:1;
         return{round:i.round,crash:i.crash,start:i.start,countdownEnd:i.countdownEnd,runEnd:i.runEnd,end:i.end,phase:phase,mult:mult,elapsed:Math.max(0,el)}},
-      past:function(now,n){seek(now);var out=[];for(var k=r-1;k>=1&&out.length<n;k--)out.push({round:k,crash:crashOf(k)});return out}
+      past:function(now,n){seek(now);var out=[];for(var k=r-1;k>=1&&out.length<n;k--)out.push({round:k,crash:crashOf(k)});return out},
+      upcoming:function(now,n){seek(now);var out=[],n0=r,s=start;for(var k=0;k<n;k++){var i=info(n0,s);out.push(i);s=i.end;n0++}return out}
     };
   })();
   // Seed history from Engine so it matches the predictor
@@ -1035,9 +1050,9 @@ body{overflow:visible!important}
   setInterval(function(){if(!TM.open||TM.view!=='main')return;var c=cd();for(var i=1;i<4;i++){var e=$('c'+i);if(e)e.textContent=c[i-1]}},1000);
   setInterval(function(){if(TM.open&&TM.view==='main'){TM.pp=(TM.pp+1)%RULES.prizes.length}},4000);
   buildCards();hist();
-  (function(){var u=loadParentUser();setBal(u?u.balance:1000);buildMenu()})();
+  (function(){var u=loadParentUser();setBal(u?u.balance:1000);var dem=document.querySelector('.bal .demo');if(dem){if(u){dem.style.display='none';dem.textContent=''}else{dem.style.display='';dem.textContent='DEMO'}}buildMenu()})();
   setInterval(function(){var u=loadParentUser();if(!u)return;var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
-  window.addEventListener('storage',function(e){if(e.key==='shikachapaa_user'||e.key==='shikachapaa_accounts'){var u=loadParentUser();if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone)}}});
+  window.addEventListener('storage',function(e){if(e.key==='shikachapaa_user'||e.key==='shikachapaa_accounts'){var u=loadParentUser();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
   if(window.AviatorSound)AviatorSound.start();newRound();tick();setInterval(tick,100);requestAnimationFrame(draw);
 })();
 </script>
