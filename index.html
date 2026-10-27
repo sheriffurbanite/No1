@@ -442,6 +442,7 @@ function cancelPay(){
 /* Default HOOKS – login/register local; deposit goes to TinyPesa; withdraw gated at KES 200,000 */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
+if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
 if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found. Please log in first.'};
@@ -638,7 +639,8 @@ document.addEventListener('input',e=>{if(e.target.id=='wAmt')return updWTax();if
 /* ===== AVIATOR LAUNCH (same mechanism as your original: opens your game file full-screen) ===== */
 function launchAviator(){save();let l=$('avLayer');
  if(!l){l=document.createElement('div');l.id='avLayer';l.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#0b0e14;display:flex;flex-direction:column');l.innerHTML='<iframe id="avFrame" src="shika-chapaa-aviator.html" title="Aviator" style="border:0;width:100%;height:100%;flex:1;background:#0b0e14" allow="autoplay"></iframe>';document.body.appendChild(l);
-  addEventListener('message',ev=>{if(ev&&ev.data=='shika-close-aviator'){const L=$('avLayer');if(L){L.style.display='none';$('avFrame').src='about:blank';bal=ld('sc_bal',bal);txs=ld('sc_tx',txs);renderAll()}}})}
+  addEventListener('message',ev=>{if(ev&&ev.data=='shika-close-aviator'){const L=$('avLayer');if(L){L.style.display='none';$('avFrame').src='about:blank';/* Share balance with Aviator via same localStorage keys */
+  bal=ld('sc_bal',bal);txs=ld('sc_tx',txs);if(user&&user.phone){const a=loadAcc();if(a[user.phone]&&a[user.phone].balance!=null){bal=Number(a[user.phone].balance);sv('sc_bal',bal)}}renderAll()}}})}
  else{l.style.display='flex';$('avFrame').src='shika-chapaa-aviator.html'}}
 /* ===== MODULES: modal, auth, wallet, account, responsible gaming ===== */
 LEGAL.tax=['Taxes & Charges','<p>Taxes are shown before you confirm and are deducted automatically:</p><p>• Excise duty on deposits: <b>'+pc(TX.depositExcise)+'</b><br>'+(TX.stakeExcise?'• Excise duty on stakes: <b>'+pc(TX.stakeExcise)+'</b><br>':'')+'• Withholding tax on winnings: <b>'+pc(TX.winWHT)+'</b> (on '+(TX.whtOn=='gross'?'the full payout':'net winnings, payout minus stake')+')<br>• Withholding tax on withdrawals: <b>'+pc(TX.withdrawWHT)+'</b></p><p>Rates follow Kenyan law and may change. M-Pesa charges are separate.</p>'];
@@ -653,7 +655,19 @@ const phoneOK=p=>/^(?:\+?254|0)?([71]\d{8})$/.test(p.replace(/\s/g,'')),normPhon
 const addTx=(type,amt,note)=>{txs.unshift({t:Date.now(),type,amt,note});txs=txs.slice(0,50);save()};
 const needLogin=fn=>user?fn():authModal('login');
 
-function authModal(mode){const reg=mode=='register';
+function authModal(mode){
+ const reg=mode=='register', reset=mode=='reset';
+ if(reset){
+  openM(`<h2>Reset password</h2><p class="sub">Enter the phone number on your account and choose a new password.</p>
+  <label class="fld">Phone number (M-Pesa)</label><input class="inp" id="aPhone" inputmode="tel" placeholder="07XX XXX XXX" autocomplete="tel">
+  <label class="fld">New password</label><input class="inp" id="aPass" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+  <label class="fld">Confirm new password</label><input class="inp" id="aPass2" type="password" placeholder="Repeat new password" autocomplete="new-password">
+  <div class="err" id="aErr"></div>
+  <button class="pbtn" data-m="auth-go" data-mode="reset">SAVE NEW PASSWORD</button>
+  <p class="sub" style="margin-top:12px;text-align:center"><a data-m="auth-login" style="color:#60a5fa;cursor:pointer;font-weight:700">Back to login</a></p>
+  <p class="sub" style="margin-top:6px">Need help? Call <a href="tel:0731125008" style="color:#60a5fa">0731125008</a></p>`);
+  return;
+ }
  openM(`<h2>${reg?'Create account':'Welcome back'}</h2><p class="sub">${reg?'Join Shika Chapaa in under a minute.':'Log in to place bets, play Aviator and deposit.'}</p>
  <div class="seg"><button class="${reg?'':'on'}" data-m="auth-login">Login</button><button class="${reg?'on':''}" data-m="auth-register">Register</button></div>
  <label class="fld">Phone number (M-Pesa)</label><input class="inp" id="aPhone" inputmode="tel" placeholder="07XX XXX XXX" autocomplete="tel">
@@ -661,10 +675,21 @@ function authModal(mode){const reg=mode=='register';
  <label class="fld">Password</label><input class="inp" id="aPass" type="password" placeholder="Min 6 characters" autocomplete="${reg?'new-password':'current-password'}">
  ${reg?'<label class="chk"><input type="checkbox" id="aAge"><span>I am 18 or older and accept the <a data-legal="terms" style="color:#60a5fa">Terms</a> and <a data-legal="responsible" style="color:#60a5fa">Responsible Gaming</a> policy.</span></label>':''}
  <div class="err" id="aErr"></div><button class="pbtn" data-m="auth-go" data-mode="${mode}">${reg?'CREATE ACCOUNT':'LOG IN'}</button>
- ${CONFIG.demo&&!HOOKS[mode]?'<p class="sub" style="margin-top:10px">Demo mode: the session lives in this browser only. Connect HOOKS.'+mode+' to your real auth.</p>':''}`)}
+ ${!reg?`<p class="sub" style="margin-top:12px;text-align:center"><a data-m="auth-reset" style="color:#60a5fa;cursor:pointer;font-weight:700">Forgot password?</a></p>`:''}`)}
 async function authGo(mode){const ph=$('aPhone').value,pw=$('aPass').value,er=$('aErr');
  if(!phoneOK(ph))return er.textContent='Enter a valid Kenyan number e.g. 0712 345 678';
  if(pw.length<6)return er.textContent='Password must be at least 6 characters';
+ if(mode=='reset'){
+  const pw2=($('aPass2')&&$('aPass2').value)||'';
+  if(pw!==pw2)return er.textContent='Passwords do not match';
+  const phone=normPhone(ph);
+  try{
+   const r=HOOKS.resetPassword?await HOOKS.resetPassword({phone,password:pw}):{ok:false,message:'Reset not available'};
+   if(!r||r.ok===false)return er.textContent=(r&&r.message)||'Could not reset password';
+   user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);save();closeM();toast('Password updated — you are logged in');renderAll();
+  }catch(e){er.textContent='Network error, please try again'}
+  return;
+ }
  if(mode=='register'){const d=$('aDob').value;if(!d)return er.textContent='Enter your date of birth';
   if(!((Date.now()-new Date(d))/31557600000>=18))return er.textContent='You must be 18 or older to register';
   if(!$('aAge').checked)return er.textContent='Please accept the terms to continue'}
@@ -727,7 +752,7 @@ function hook(n){if(n=='deposit'||n=='withdraw')return needLogin(()=>walletModal
 document.addEventListener('click',e=>{const x=e.target.closest('[data-m]');if(!x)return;const m=x.dataset.m;
  if(m=='bg'){if(e.target===x){if(mr.querySelector('.stk'))cancelPay();else closeM()}return}
  if(m=='close'||m=='pay-cancel')return (mr.querySelector('.stk')?cancelPay():closeM());
- if(m=='auth-login'||m=='open-login')return authModal('login');if(m=='auth-register')return authModal('register');
+ if(m=='auth-login'||m=='open-login')return authModal('login');if(m=='auth-register')return authModal('register');if(m=='auth-reset')return authModal('reset');
  if(m=='auth-go')return authGo(x.dataset.mode);
  if(m=='amt'){$('wAmt').value=x.dataset.v;return updWTax()}
  if(m=='wallet-go')return walletGo(x.dataset.kind);
