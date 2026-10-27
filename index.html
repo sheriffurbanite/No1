@@ -414,7 +414,11 @@ async function pollTinyStatus(ref,maxTries=40,intervalMs=3000){
   }
   return{ok:false,status:'timeout',message:'Payment timed out. If you paid, contact 0731125008 · sheriffurbanite@gmail.com with your reference.'};
 }
-function cancelPay(){_payAbort=true;closeM();toast('Payment check closed. If M-Pesa deducted, contact 0731125008.')}
+function cancelPay(){
+  _payAbort=true;
+  mr.innerHTML='';
+  toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');
+}
 /* Default HOOKS – login/register local; deposit goes to TinyPesa; withdraw gated at KES 200,000 */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
@@ -619,7 +623,11 @@ function launchAviator(){save();let l=$('avLayer');
 /* ===== MODULES: modal, auth, wallet, account, responsible gaming ===== */
 LEGAL.tax=['Taxes & Charges','<p>Taxes are shown before you confirm and are deducted automatically:</p><p>• Excise duty on deposits: <b>'+pc(TX.depositExcise)+'</b><br>'+(TX.stakeExcise?'• Excise duty on stakes: <b>'+pc(TX.stakeExcise)+'</b><br>':'')+'• Withholding tax on winnings: <b>'+pc(TX.winWHT)+'</b> (on '+(TX.whtOn=='gross'?'the full payout':'net winnings, payout minus stake')+')<br>• Withholding tax on withdrawals: <b>'+pc(TX.withdrawWHT)+'</b></p><p>Rates follow Kenyan law and may change. M-Pesa charges are separate.</p>'];
 const mr=$('modalRoot');
-const openM=h=>{mr.innerHTML=`<div class="modal" data-m="bg"><div class="mcard"><button class="mx" data-m="close" aria-label="Close">×</button>${h}</div></div>`};
+/* Phone back button = close / cancel. Push history entry when modal opens; popstate closes it. */
+const openM=(h,flag)=>{
+  try{if(!(history.state&&history.state.scModal))history.pushState({scModal:flag||'modal'},'')}catch(_){}
+  mr.innerHTML=`<div class="modal" data-m="bg"><div class="mcard"><button class="mx" data-m="close" aria-label="Close">×</button>${h}</div></div>`;
+};
 const closeM=()=>{mr.innerHTML=''};
 const phoneOK=p=>/^(?:\+?254|0)?([71]\d{8})$/.test(p.replace(/\s/g,'')),normPhone=p=>'0'+p.replace(/\s/g,'').match(/([71]\d{8})$/)[1];
 const addTx=(type,amt,note)=>{txs.unshift({t:Date.now(),type,amt,note});txs=txs.slice(0,50);save()};
@@ -669,6 +677,7 @@ async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhon
  if(dep&&limit){const day=txs.filter(x=>x.type=='deposit'&&Date.now()-x.t<864e5).reduce((a,x)=>a+x.amt,0);if(day+amt>limit)return er.textContent='This exceeds your daily deposit limit (KES '+nf(limit)+')'}
  const phone=normPhone(ph);
  const steps=dep?['Sending request to M-Pesa','Waiting for your PIN','Confirming payment','Crediting your wallet']:['Verifying your account','Sending to M-Pesa','Confirming with Safaricom','Finalising transfer'];
+ try{history.replaceState({scModal:'pay'},'')}catch(_){try{history.pushState({scModal:'pay'},'')}catch(__){}}
  mr.querySelector('.mcard').innerHTML=`<button class="mx" data-m="pay-cancel" aria-label="Close">×</button><div class="stk"><div class="spin"></div><h2 id="stkH">${dep?'Check your phone':'Processing'}</h2><p class="sub" id="stkS">${dep?'Enter your M-Pesa PIN to approve KES '+nf(amt)+'.':'Sending KES '+nf(amt)+' to '+phone}</p><div class="stkamt">KES ${nf(amt)}</div><div class="stkbar"><i id="stkBar"></i></div><div class="stksteps">${steps.map((t,i)=>`<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div><button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
  let stkI=0;const stkAdv=()=>{for(let i=0;i<steps.length;i++){const e=$('stkSt'+i);if(!e)return;e.className='stkst'+(i<stkI?' done':i==stkI?' now':'')}const bb=$('stkBar');if(bb)bb.style.width=Math.min(94,(stkI/steps.length)*100+10)+'%';stkI=Math.min(steps.length-1,stkI+1)};
  stkAdv();const stkT=setInterval(stkAdv,900);
@@ -811,7 +820,12 @@ function bestStrip(L){const w=L.filter(b=>b.st=='w'),l=L.filter(b=>b.st=='l'),c=
  return`<div class='best'><div class='bt1'>🏆 BEST WIN</div>${top?`<div class='bamt2'>${fmt(top.net??top.win)}</div><div class='bsub2'>${top.picks.length} pick${top.picks.length>1?'s':''} · odds ${f2(top.picks.reduce((a,p)=>a*p.odd,1))} · stake ${fmt(top.stake)}</div>`:`<div class='bsub2'>No wins yet. Your first one is coming.</div>`}<div class='bstat'><span class='okc'>${w.length} won</span><span class='badc'>${l.length} lost</span><span>${c.length} cashed out</span></div></div>`}
 document.addEventListener('click',e=>{const h=e.target.closest('[data-bx]');if(h){curBet=+h.dataset.bx;try{history.pushState({scBet:1},'')}catch(_){}renderAll();scrollTo({top:0});return}
  if(e.target.closest('[data-bback]')){if(history.state&&history.state.scBet)history.back();else{curBet=null;renderAll();scrollTo({top:0})}}});
-addEventListener('popstate',()=>{if(curBet!=null){curBet=null;renderAll();scrollTo({top:0})}});
+addEventListener('popstate',()=>{
+  /* Phone / browser back button */
+  if(mr.querySelector('.stk')){_payAbort=true;mr.innerHTML='';toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');return}
+  if(mr.innerHTML){mr.innerHTML='';return}
+  if(curBet!=null){curBet=null;renderAll();scrollTo({top:0})}
+});
 setInterval(()=>{document.querySelectorAll('.lv').forEach(e=>e.innerHTML=liveLine(e.dataset.lv,e.dataset.pk));document.querySelectorAll('.lvc').forEach(e=>e.textContent=liveChip(e.dataset.lc))},5000);
 /* logo safety net: if shika-logo.svg fails to load, show a built-in Aviator-style logo instead of a broken image */
 const LOGO_FB='data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='50%' cy='30%' r='80%'><stop offset='0' stop-color='#3b1670'/><stop offset='1' stop-color='#0b0f19'/></radialGradient><linearGradient id='p' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ff4d6d'/><stop offset='1' stop-color='#ff1744'/></linearGradient></defs><rect width='100' height='100' rx='24' fill='url(#g)'/><path d='M14 52 L88 16 L62 76 L50 54 Z' fill='url(#p)'/><path d='M50 54 L88 16 L38 46 Z' fill='#fff' opacity='.35'/><text x='50' y='93' font-family='Arial' font-weight='900' font-size='14' fill='gold' text-anchor='middle'>SHIKA</text></svg>`);
