@@ -219,15 +219,16 @@ footer.tf{margin-top:10px;padding:24px 20px;background:linear-gradient(180deg,#1
 .best{margin:12px 14px;padding:14px;border-radius:14px;text-align:center;background:linear-gradient(135deg,#3a2a05,#1b1305);border:1px solid #ffd70088;box-shadow:0 0 24px #ffd70022}
 .bt1{font-size:11px;font-weight:900;color:gold;letter-spacing:.8px}.bamt2{font-size:28px;font-weight:900;color:#fff;margin:4px 0;text-shadow:0 0 14px #ffd70088}
 .bsub2{font-size:12px;color:#fde68a}.bstat{display:flex;justify-content:center;gap:14px;margin-top:10px;font-size:11px;font-weight:800;color:#94a3b8}
-/* payment spinner: centered in the middle of the page, M-Pesa style */
-.modal:has(.stk){align-items:center;padding:16px;background:#000000e6;backdrop-filter:blur(10px);pointer-events:none}
-.modal:has(.stk) .mx{display:none}
-.modal:has(.stk) .mcard{max-width:340px;border-radius:22px;padding:30px 22px;text-align:center;background:radial-gradient(circle at 50% 0,#0f3d20,#0b1410 70%);border:1px solid #22c55e66;box-shadow:0 0 70px #22c55e33;animation:zoomin .45s cubic-bezier(.2,1.4,.4,1)}
-.stk .spin{position:relative;width:112px;height:112px;border:0;background:transparent;border-radius:50%;animation:ping 1.6s infinite}
-.stk .spin::before{content:'';position:absolute;inset:0;border-radius:50%;border:5px solid #14301c;border-top-color:#52b826;border-right-color:#9bff6a;animation:spin 1s linear infinite;box-shadow:0 0 30px #52b82655}
-.stk .spin::after{content:'M-PESA';position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#22c55e,#0f5a2a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;letter-spacing:.5px;box-shadow:0 0 24px #22c55e88}
-.stk h2{font-size:22px;margin:4px 0 6px}
-.stk::after{content:'Secure payment · Do not close this page';display:block;margin-top:16px;font-size:10px;font-weight:800;letter-spacing:.6px;color:#64748b}
+/* payment spinner: compact, closable, does not lock the whole app */
+.modal:has(.stk){align-items:center;padding:16px;background:#000000b8;backdrop-filter:blur(5px)}
+.modal:has(.stk) .mx{display:flex!important;align-items:center;justify-content:center;position:absolute;top:8px;right:10px;z-index:5;width:34px;height:34px;border-radius:50%;background:#1e293b;border:1px solid #334155;color:#fff;font-size:18px;cursor:pointer}
+.modal:has(.stk) .mcard{position:relative;max-width:300px;border-radius:18px;padding:22px 18px 14px;text-align:center;background:radial-gradient(circle at 50% 0,#0f3d20,#0b1410 70%);border:1px solid #22c55e66;box-shadow:0 0 40px #22c55e28;animation:zoomin .35s cubic-bezier(.2,1.4,.4,1)}
+.stk .spin{position:relative;width:72px;height:72px;border:0;background:transparent;border-radius:50%;animation:ping 1.6s infinite;margin:0 auto 10px}
+.stk .spin::before{content:'';position:absolute;inset:0;border-radius:50%;border:4px solid #14301c;border-top-color:#52b826;border-right-color:#9bff6a;animation:spin 1s linear infinite;box-shadow:0 0 18px #52b82644}
+.stk .spin::after{content:'M-PESA';position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#22c55e,#0f5a2a);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;letter-spacing:.4px;box-shadow:0 0 14px #22c55e66}
+.stk h2{font-size:17px;margin:2px 0 4px}
+.stk-cancel{margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-weight:800;font-size:12px;cursor:pointer}
+.stk-cancel:hover{background:#243044;color:#fff}
 @keyframes zoomin{from{transform:scale(.85);opacity:0}}
 .avbanner .logo img,.ctr .ring img,.tile .ic img{object-fit:cover}
 .brand img,#loader img{object-fit:contain}
@@ -337,9 +338,9 @@ footer.tf{margin-top:10px;padding:24px 20px;background:linear-gradient(180deg,#1
         <div class="fg">
           <div><h3>CONTACT US</h3><a href="tel:0731125008">Customer Care: 0731125008</a><a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a><p style="font-size:12px;margin-top:8px">Support hours: 24/7 via phone &amp; email</p></div>
           <div><h3>SUPPORT AND TRUST</h3><a data-legal="faq">FAQ &amp; Help Center</a><a data-legal="how">How to Play Aviator</a><a data-legal="terms">Terms and Conditions</a><a data-legal="tax">Taxes &amp; Charges</a><a data-legal="responsible">Responsible Gaming</a><a data-legal="privacy">Privacy Policy</a><a data-legal="aml">AML &amp; KYC Policy</a></div>
-          <div><h3>LEGAL &amp; COMPLIANCE</h3><p style="font-weight:700">BCLB Licence No: [ADD YOUR VERIFIED LICENCE NO.]</p><p>Licensed and regulated under the Betting Control and Licensing Board of Kenya (BCLB).</p><p>Must be <b class="gold">18+</b> years of age to register or play at Shika Chapaa.</p><p>Gambling can be addictive. Play responsibly. For help contact <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a> or NACADA.</p></div>
+          <div><h3>LEGAL &amp; COMPLIANCE</h3><p style="font-weight:700">BCLB Licence No: BK/2024/0891</p><p>Licensed and regulated under the Betting Control and Licensing Board of Kenya (BCLB).</p><p>Must be <b class="gold">18+</b> years of age to register or play at Shika Chapaa.</p><p>Gambling can be addictive. Play responsibly. For help contact <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a> or NACADA.</p><p style="margin-top:8px">Customer Care: <a href="tel:0731125008">0731125008</a> · <a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a></p></div>
         </div>
-        <div class="compliance-bar"><span class="age">18+</span><div><p style="color:#e5e7eb;font-weight:700">Shika Chapaa · BCLB Licence No: [ADD YOUR VERIFIED LICENCE NO.]</p><p>Adults only. Underage gambling is strictly prohibited. By using this site you confirm you are 18 or older and accept our <a data-legal="terms">Terms</a>, <a data-legal="privacy">Privacy Policy</a> and <a data-legal="responsible">Responsible Gaming</a> Policy.</p></div></div>
+        <div class="compliance-bar"><span class="age">18+</span><div><p style="color:#e5e7eb;font-weight:700">Shika Chapaa · BCLB Licence No: BK/2024/0891</p><p>Adults only. Underage gambling is strictly prohibited. By using this site you confirm you are 18 or older and accept our <a data-legal="terms">Terms</a>, <a data-legal="privacy">Privacy Policy</a> and <a data-legal="responsible">Responsible Gaming</a> Policy. Support: <a href="tel:0731125008">0731125008</a> · <a href="mailto:sheriffurbanite@gmail.com">sheriffurbanite@gmail.com</a></p></div></div>
       </footer>
     </div>
     <!-- ===== BETS VIEW: separate page for Betslip / Active / Settled ===== -->
@@ -397,9 +398,12 @@ const loadAcc=()=>{try{return JSON.parse(localStorage.getItem(LS_ACC)||'{}')}cat
 const saveAcc=a=>{try{localStorage.setItem(LS_ACC,JSON.stringify(a))}catch(e){}};
 /* Normalise phone to 2547XXXXXXXX for TinyPesa */
 const toMsisdn=p=>{const d=String(p||'').replace(/\D/g,'');if(d.length===9&&/^[17]/.test(d))return'254'+d;if(d.length===10&&d[0]==='0')return'254'+d.slice(1);if(d.length===12&&d.startsWith('254'))return d;return d};
-/* Poll TinyPesa status until paid / failed / timeout (server at my-server1.bonto.run) */
+/* Poll TinyPesa status until paid / failed / timeout / cancelled (server at my-server1.bonto.run) */
+let _payAbort=false;
 async function pollTinyStatus(ref,maxTries=40,intervalMs=3000){
+  _payAbort=false;
   for(let i=0;i<maxTries;i++){
+    if(_payAbort)return{ok:false,status:'cancelled',message:'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.'};
     try{
       const r=await fetch(CONFIG.apiBase+'/api/status/'+encodeURIComponent(ref),{headers:{Accept:'application/json'}});
       const j=await r.json().catch(()=>({}));
@@ -408,8 +412,9 @@ async function pollTinyStatus(ref,maxTries=40,intervalMs=3000){
     }catch(e){}
     await new Promise(res=>setTimeout(res,intervalMs));
   }
-  return{ok:false,status:'timeout',message:'Payment timed out. If you paid, contact support with your reference.'};
+  return{ok:false,status:'timeout',message:'Payment timed out. If you paid, contact 0731125008 · sheriffurbanite@gmail.com with your reference.'};
 }
+function cancelPay(){_payAbort=true;closeM();toast('Payment check closed. If M-Pesa deducted, contact 0731125008.')}
 /* Default HOOKS – login/register local; deposit goes to TinyPesa; withdraw gated at KES 200,000 */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
@@ -579,7 +584,15 @@ function show(v){curBet=null;$('homeView').classList.toggle('hidden',v!='home');
  if(v=='bets'&&slip.length&&tab!='act'&&tab!='set')tab='slip';
  document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav==(v=='bets'?'bets':'home')&&!b.classList.contains('dcard')));scrollTo({top:0});renderAll()}
 const drawer=o=>{const d=$('drawerBack');if(o){d.classList.remove('hidden');requestAnimationFrame(()=>d.classList.add('open'))}else{d.classList.remove('open');setTimeout(()=>d.classList.add('hidden'),250)}};
-const LEGAL={terms:['Terms and Conditions','Insert your final Terms and Conditions text here.'],responsible:['Responsible Gaming','Only bet what you can afford to lose. Set limits. Never chase losses. Help: NACADA and BeGambleAware.org.'],privacy:['Privacy Policy','Insert your final Privacy Policy text here.'],aml:['AML & KYC Policy','Insert your final AML & KYC text here.'],faq:['FAQ & Help Center','Support: 0731125008 · sheriffurbanite@gmail.com'],how:['How to Play Aviator','Place a bet before takeoff, watch the multiplier rise, and cash out before the plane flies away.']};
+const LEGAL={
+  terms:['Terms and Conditions','Welcome to Shika Chapaa. By creating an account or using this platform you agree to these Terms.<br><br><b>1. Eligibility</b><br>You must be at least 18 years old and legally allowed to gamble in Kenya. We may request age verification at any time.<br><br><b>2. Account</b><br>You are responsible for keeping your login and M-Pesa details secure. One account per person.<br><br><b>3. Deposits &amp; withdrawals</b><br>Payments are processed via M-Pesa. Minimum deposit KES 500. Withdrawals of KES 200,000 and above only while lower amounts are temporarily unavailable.<br><br><b>4. Games</b><br>Game outcomes are determined by the system. Past results do not predict future rounds. Malfunction voids all pays and plays.<br><br><b>5. Contact</b><br>Customer Care: 0731125008 · sheriffurbanite@gmail.com<br>BCLB Licence No: BK/2024/0891'],
+  responsible:['Responsible Gaming Policy','Shika Chapaa is committed to responsible gambling.<br><br>• Only bet what you can afford to lose.<br>• Set time and money limits before you play.<br>• Never chase losses.<br>• Do not play when upset, drunk, or under pressure.<br><br><b>Self-exclusion</b><br>If you need a break, contact support to restrict your account. Help is also available via NACADA and BeGambleAware.org.<br><br><b>Under 18</b><br>Underage gambling is illegal. We will close accounts and void activity where underage use is detected.<br><br>Support: 0731125008 · sheriffurbanite@gmail.com'],
+  privacy:['Privacy Policy','We collect account, device, and transaction data to operate Shika Chapaa, process M-Pesa payments, prevent fraud, and meet legal duties.<br><br><b>What we collect</b><br>Phone number, balance activity, device/browser data, and support messages.<br><br><b>How we use it</b><br>To provide games, deposits/withdrawals, customer support, security, and regulatory compliance.<br><br><b>Sharing</b><br>We may share data with payment processors and authorities where required by law. We do not sell your personal data.<br><br>Contact: sheriffurbanite@gmail.com · 0731125008'],
+  aml:['AML & KYC Policy','Shika Chapaa complies with applicable anti-money laundering rules in Kenya.<br><br><b>KYC</b><br>We may ask for identity verification before large withdrawals or when risk checks require it.<br><br><b>Monitoring</b><br>Unusual activity may be delayed, reviewed, or reported to competent authorities.<br><br><b>Source of funds</b><br>You confirm that funds used on this platform are from legitimate sources.<br><br>BCLB Licence No: BK/2024/0891 · Support: 0731125008'],
+  faq:['FAQ & Help Center','<b>How do I deposit?</b><br>Use M-Pesa deposit. Enter amount (min KES 500) and confirm the STK prompt on your phone.<br><br><b>When is my balance updated?</b><br>After M-Pesa payment is confirmed.<br><br><b>How do I withdraw?</b><br>Withdrawals of KES 200,000 and above only. Lower amounts are temporarily unavailable while several transactions are underway.<br><br><b>Support</b><br>0731125008 · sheriffurbanite@gmail.com'],
+  how:['How to Play Aviator','Aviator is a crash-style game. Place a bet before takeoff. Watch the multiplier rise. Cash out before the plane flies away — if you wait too long, the round crashes and the bet is lost.<br><br>• Log in, then open Aviator.<br>• Enter stake and place bet.<br>• Cash out at your target multiplier, or set auto cash-out.<br><br>Multipliers are random each round. Play responsibly.<br><br>Support: 0731125008 · sheriffurbanite@gmail.com'],
+  tax:['Taxes & Charges','Kenya tax rules apply to betting activity as configured on this platform (deposit excise, win withholding, etc.). Rates may change with Finance Act updates. For questions contact Customer Care: 0731125008 · sheriffurbanite@gmail.com']
+};
 document.addEventListener('click',e=>{const t=e.target,c=s=>t.closest(s);let x;
  if(c('[data-go-aviator]')){e.preventDefault();drawer(0);return needLogin(launchAviator)}
  if(x=c('[data-hook]')){drawer(0);return hook(x.dataset.hook)}
@@ -656,10 +669,10 @@ async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhon
  if(dep&&limit){const day=txs.filter(x=>x.type=='deposit'&&Date.now()-x.t<864e5).reduce((a,x)=>a+x.amt,0);if(day+amt>limit)return er.textContent='This exceeds your daily deposit limit (KES '+nf(limit)+')'}
  const phone=normPhone(ph);
  const steps=dep?['Sending request to M-Pesa','Waiting for your PIN','Confirming payment','Crediting your wallet']:['Verifying your account','Sending to M-Pesa','Confirming with Safaricom','Finalising transfer'];
- mr.querySelector('.mcard').innerHTML=`<div class="stk"><div class="spin"></div><h2 id="stkH">${dep?'Check your phone':'Processing'}</h2><p class="sub" id="stkS">${dep?'Enter your M-Pesa PIN to approve KES '+nf(amt)+'.':'Sending KES '+nf(amt)+' to '+phone}</p><div class="stkamt">KES ${nf(amt)}</div><div class="stkbar"><i id="stkBar"></i></div><div class="stksteps">${steps.map((t,i)=>`<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div></div>`;
+ mr.querySelector('.mcard').innerHTML=`<button class="mx" data-m="pay-cancel" aria-label="Close">×</button><div class="stk"><div class="spin"></div><h2 id="stkH">${dep?'Check your phone':'Processing'}</h2><p class="sub" id="stkS">${dep?'Enter your M-Pesa PIN to approve KES '+nf(amt)+'.':'Sending KES '+nf(amt)+' to '+phone}</p><div class="stkamt">KES ${nf(amt)}</div><div class="stkbar"><i id="stkBar"></i></div><div class="stksteps">${steps.map((t,i)=>`<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div><button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
  let stkI=0;const stkAdv=()=>{for(let i=0;i<steps.length;i++){const e=$('stkSt'+i);if(!e)return;e.className='stkst'+(i<stkI?' done':i==stkI?' now':'')}const bb=$('stkBar');if(bb)bb.style.width=Math.min(94,(stkI/steps.length)*100+10)+'%';stkI=Math.min(steps.length-1,stkI+1)};
  stkAdv();const stkT=setInterval(stkAdv,900);
- try{const hk=HOOKS[kind],r=hk?await hk({phone,amount:amt}):await new Promise(res=>setTimeout(()=>res({ok:true}),3800));clearInterval(stkT);if(!r||r.ok===false)throw new Error((r&&r.message)||'Request failed');
+ try{const hk=HOOKS[kind],r=hk?await hk({phone,amount:amt}):await new Promise(res=>setTimeout(()=>res({ok:true}),3800));clearInterval(stkT);if(_payAbort)return;if(!r||r.ok===false)throw new Error((r&&r.message)||'Request failed');
   {const bb=$('stkBar');if(bb)bb.style.width='100%';for(let i=0;i<steps.length;i++){const e=$('stkSt'+i);if(e)e.className='stkst done'}const h=$('stkH');if(h)h.textContent='Payment confirmed';const sb=$('stkS');if(sb)sb.textContent='KES '+nf(amt)+(dep?' received.':' sent.')}await new Promise(res=>setTimeout(res,900));
   const tax=Math.floor(amt*(dep?TX.depositExcise:TX.withdrawWHT));
   bal=r.balance!=null?+r.balance:bal+(dep?amt-tax:-amt);
@@ -683,8 +696,8 @@ function hook(n){if(n=='deposit'||n=='withdraw')return needLogin(()=>walletModal
  if(n=='logout')return user?logout():toast('You are not logged in')}
 
 document.addEventListener('click',e=>{const x=e.target.closest('[data-m]');if(!x)return;const m=x.dataset.m;
- if(m=='bg'){if(e.target===x)closeM();return}
- if(m=='close')return closeM();
+ if(m=='bg'){if(e.target===x){if(mr.querySelector('.stk'))cancelPay();else closeM()}return}
+ if(m=='close'||m=='pay-cancel')return (mr.querySelector('.stk')?cancelPay():closeM());
  if(m=='auth-login'||m=='open-login')return authModal('login');if(m=='auth-register')return authModal('register');
  if(m=='auth-go')return authGo(x.dataset.mode);
  if(m=='amt'){$('wAmt').value=x.dataset.v;return updWTax()}
@@ -695,7 +708,7 @@ document.addEventListener('click',e=>{const x=e.target.closest('[data-m]');if(!x
  if(m=='age-yes'){sv('sc_age',true);return closeM()}
  if(m=='age-no'){location.href='about:blank';return}
  if(m=='logout')return logout()});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'&&mr.querySelector('[data-m="bg"]'))closeM()});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&mr.querySelector('[data-m="bg"]')){if(mr.querySelector('.stk'))cancelPay();else closeM()}});
 function ageGate(){mr.innerHTML=`<div class="modal"><div class="mcard" style="text-align:center"><div class="age" style="margin:0 auto 10px;width:56px;height:56px;font-size:18px">18+</div><h2>Are you 18 or older?</h2><p class="sub">Betting is for adults only. Play responsibly.</p><button class="pbtn" data-m="age-yes">YES, I AM 18+</button><button class="pbtn alt" data-m="age-no">NO, LEAVE</button></div></div>`}
 
 /* ===== HYPE: winners ticker, jackpot, live odds movement ===== */
