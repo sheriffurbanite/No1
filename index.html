@@ -12,12 +12,16 @@
 <style>
 /* ===== 1. ORIGINAL BASE (same palette + class names as your site) ===== */
 *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
 html,body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0b0e14;color:#f1f5f9}
+body{overflow-x:hidden}
 .hidden{display:none!important}
 .shell{min-height:100vh;background:radial-gradient(circle at 50% 0,#1d1238,#0b0f19 75%);padding-bottom:74px}
 button{font-family:inherit;color:inherit}
 .gold{color:gold}.red{color:#ff1744;font-style:normal}
-header{height:60px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#121824ee;backdrop-filter:blur(12px);border-bottom:1px solid #1f293d;position:sticky;top:0;z-index:100}
+/* Top nav: soft sticky bar — stays while you browse, releases naturally into page flow */
+header{height:60px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:rgba(18,24,36,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid #1f293d;position:sticky;top:0;z-index:100;transition:box-shadow .25s ease}
+header.scrolled{box-shadow:0 8px 28px rgba(0,0,0,.35)}
 .hamb{display:none;flex-direction:column;justify-content:center;gap:4px;width:36px;height:36px;background:#1e293b;border:1px solid #334155;border-radius:8px;cursor:pointer;padding:8px 7px}
 .hamb span{display:block;height:2px;background:#fff;border-radius:2px}
 .brand{display:flex;align-items:center;gap:8px;cursor:pointer}.brand img{width:30px;height:30px;border-radius:7px;object-fit:cover}
@@ -32,13 +36,17 @@ nav.top .av{background:linear-gradient(135deg,#ff174447,#800a2073);border-color:
 .pill small{font-size:9px;text-transform:uppercase;color:#64748b;font-weight:900}.pill b{font-size:12px;color:#52b826;font-weight:900}
 .btn-dep,.playbtn,.avbanner button{border:0;font-weight:900;cursor:pointer;color:#0b0f19;background:linear-gradient(110deg,gold 30%,#fff6a8 50%,gold 70%);background-size:220% 100%;animation:shine 3.2s linear infinite}
 .btn-dep{border-radius:18px;padding:8px 15px;font-size:11px}
-.ribbon{display:none;gap:6px;padding:10px 12px;background:#121824;border-bottom:1px solid #1f293d;overflow-x:auto;scrollbar-width:none}
+/* Mid sports ribbon: sits under header on mobile, scrolls horizontally only */
+.ribbon{display:none;gap:6px;padding:10px 12px;background:rgba(18,24,36,.94);backdrop-filter:blur(10px);border-bottom:1px solid #1f293d;overflow-x:auto;scrollbar-width:none;position:sticky;top:60px;z-index:90;-webkit-overflow-scrolling:touch}
+.ribbon::-webkit-scrollbar{display:none}
 .chip{display:inline-flex;align-items:center;gap:5px;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:7px 13px;color:#cbd5e1;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:.2s}
 .chip.active{background:#15803d;border-color:#22c55e;color:#fff;box-shadow:0 0 14px #22c55e55}.chip.chip-av{border-color:#ff174480;color:#ff4d6d}
 .chip i{font-style:normal;font-size:10px;color:#94a3b8}.chip.active i{color:#fff}
-.grid{display:grid;grid-template-columns:210px 1fr 310px;gap:14px;padding:14px 16px;max-width:1540px;margin:0 auto}
-.side{background:#121824;border:1px solid #1f293d;border-radius:12px;padding:10px 0;position:sticky;top:74px;align-self:start;max-height:calc(100vh - 88px);overflow-y:auto}
-.side h4{margin:0 0 6px;font-size:10px;font-weight:900;color:#64748b;letter-spacing:.8px;padding:4px 14px 8px;border-bottom:1px solid #1f293d}
+/* Page body: one continuous vertical scroll — matches flow into footer/contact */
+.grid{display:grid;grid-template-columns:210px 1fr 310px;gap:14px;padding:14px 16px 8px;max-width:1540px;margin:0 auto}
+.side{background:#121824;border:1px solid #1f293d;border-radius:12px;padding:10px 0;position:sticky;top:74px;align-self:start;max-height:calc(100vh - 150px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+.side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
+.side h4{margin:0 0 6px;font-size:10px;font-weight:900;color:#64748b;letter-spacing:.8px;padding:4px 14px 8px;border-bottom:1px solid #1f293d;position:sticky;top:0;background:#121824;z-index:1}
 .side button{width:100%;display:flex;justify-content:space-between;gap:8px;padding:9px 14px;background:transparent;border:0;color:#cbd5e1;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
 .side button:hover{background:#18233a;padding-left:18px}.side button.active{background:#1e293b;color:#fff;border-left:3px solid #52b826;padding-left:11px}
 .side button i{font-style:normal;font-size:10px;color:#64748b;background:#0b0f19;padding:1px 6px;border-radius:10px}
@@ -61,14 +69,16 @@ main{display:flex;flex-direction:column;gap:14px;min-width:0}
 .avbanner .t small{font-size:10px;font-weight:800;color:#ff4d6d;letter-spacing:.8px}.avbanner .t p{margin:2px 0 0;font-size:13px;color:#e2e8f0}
 .avbanner button{border-radius:10px;padding:10px 20px;font-size:12px}
 /* ===== 4. ODDS LIST ===== */
-.odds{background:#121824;border:1px solid #1f293d;border-radius:14px;overflow:hidden}
-.oh{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#111827;border-bottom:1px solid #1f293d;flex-wrap:wrap}
+/* Matches section: scrolls with the page (no inner “wall” box) */
+.odds{background:#121824;border:1px solid #1f293d;border-radius:14px;overflow:visible}
+.oh{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(17,24,39,.96);backdrop-filter:blur(8px);border-bottom:1px solid #1f293d;flex-wrap:wrap;position:sticky;top:60px;z-index:5;border-radius:14px 14px 0 0}
 .oh .l{flex:1;font-size:14px;font-weight:800}.oh .l small{color:#64748b;font-weight:400;margin-left:6px}
 .flt{display:flex;gap:2px;background:#0d1420;border:1px solid #1f293d;border-radius:8px;padding:3px}
 .flt button{background:transparent;border:0;font-size:11px;font-weight:700;color:#64748b;padding:5px 10px;border-radius:5px;cursor:pointer}.flt button.on{background:#1e293b;color:#f1f5f9}
 .cols{display:flex;gap:5px}.cols span{width:56px;text-align:center;font-size:11px;font-weight:700;color:#475569}
-.list{max-height:560px;overflow-y:auto}
+.list{max-height:none;overflow:visible}
 .row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #1a2336;transition:background .2s}.row:hover{background:#151f33}
+.row:last-child{border-bottom:0}
 .row .l{flex:1;min-width:0;padding-right:10px;display:flex;flex-direction:column;gap:3px}
 .lg{font-size:10px;color:#64748b}.tm{font-size:10px;font-weight:700;color:#94a3b8;margin-left:8px}.tm.live{color:#ff4d6d;animation:blink 1.4s infinite}
 .tms{font-size:13px;font-weight:700}.tms em{font-style:normal;font-size:10px;color:#475569;margin:0 5px}.mk{font-size:10px;color:#52b826}
@@ -78,7 +88,7 @@ main{display:flex;flex-direction:column;gap:14px;min-width:0}
 .odd.sel{background:#52b82633;border-color:#52b826;box-shadow:0 0 14px #52b82666}.odd.sel b{color:#7dff4f}
 .empty{padding:30px;text-align:center;color:#64748b;font-size:13px}
 /* ===== 5. BETSLIP – lives in its OWN page (phone) / right column (desktop). Never floats over the games. ===== */
-.slip{background:#121824;border:1px solid #1f293d;border-radius:14px;position:sticky;top:74px;align-self:start;overflow:hidden}
+.slip{background:#121824;border:1px solid #1f293d;border-radius:14px;position:sticky;top:74px;align-self:start;overflow:hidden;max-height:calc(100vh - 150px)}
 .slip .tabs{display:flex;background:#0b0f19;border-bottom:1px solid #1f293d}.slip .tabs button{flex:1;padding:11px;background:transparent;border:0;color:#fff;font-size:11px;font-weight:800;border-top:3px solid #52b826}
 .sbody{padding:14px}
 .si{background:#1b2638;border:1px solid #28374d;border-radius:8px;padding:9px 11px;margin-bottom:8px;font-size:12px;position:relative}
@@ -94,10 +104,12 @@ main{display:flex;flex-direction:column;gap:14px;min-width:0}
 .bet{background:#1b2638;border:1px solid #28374d;border-radius:10px;padding:11px 13px;margin:10px 14px;font-size:12px}
 .bet div{display:flex;justify-content:space-between;margin-top:4px;color:#cbd5e1}.bet b{color:#52b826}.bet .lost{color:#ff6b86}
 /* ===== 6. FOOTER ===== */
-footer.tf{margin-top:10px;padding:24px 20px;background:linear-gradient(180deg,#111824,#090e17);border:1px solid #1f293d;border-radius:14px;color:#94a3b8;font-size:11px}
-.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:16px}
-.fg h3{font-size:11px;font-weight:900;color:gold;letter-spacing:.8px;margin:0 0 10px}.fg a{display:block;color:#38bdf8;text-decoration:none;font-size:12px;margin-bottom:6px;cursor:pointer}.fg p{margin:0 0 6px;color:#cbd5e1}
-.compliance-bar{background:#0c1220;border-top:1px solid #ffffff14;padding:14px 16px;margin-top:12px;display:flex;gap:10px;align-items:flex-start}
+/* Contact / legal zone: appears after all matches — clear break from sports feed */
+footer.tf{margin:28px 16px 20px;padding:28px 22px 20px;background:linear-gradient(180deg,#0e1522,#080c14);border:1px solid #1f293d;border-radius:16px;color:#94a3b8;font-size:11px;max-width:1540px;margin-left:auto;margin-right:auto;position:relative}
+footer.tf::before{content:'';display:block;width:48px;height:3px;border-radius:2px;background:linear-gradient(90deg,gold,#52b826);margin:0 auto 18px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:8px}
+.fg h3{font-size:11px;font-weight:900;color:gold;letter-spacing:.8px;margin:0 0 10px}.fg a{display:block;color:#38bdf8;text-decoration:none;font-size:12px;margin-bottom:6px;cursor:pointer;transition:color .15s}.fg a:hover{color:#7dd3fc}.fg p{margin:0 0 6px;color:#cbd5e1}
+.compliance-bar{background:#0a101c;border-top:1px solid #ffffff12;padding:14px 16px;margin-top:16px;display:flex;gap:10px;align-items:flex-start;border-radius:0 0 14px 14px}
 .age{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:2px solid #fbbf24;color:#fbbf24;font-weight:900;font-size:12px}
 .compliance-bar p{color:#9ca3af;font-size:12px;line-height:1.45;margin:4px 0}.compliance-bar a{color:#60a5fa;text-decoration:underline;cursor:pointer}
 /* ===== 7. BOTTOM NAV ===== */
@@ -176,7 +188,15 @@ footer.tf{margin-top:10px;padding:24px 20px;background:linear-gradient(180deg,#1
 @keyframes tick{to{transform:translateX(-50%)}}@keyframes pop{50%{transform:scale(1.12)}}@keyframes rise{from{transform:translateY(40px);opacity:0}}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:520px){.tiles{grid-template-columns:repeat(4,1fr);gap:6px}.tile{padding:10px 2px;font-size:10px}.jack .amt{font-size:19px}}
 @media(min-width:901px){.phone-only{display:none!important}}
-@media(max-width:900px){.laptop-only{display:none!important}.grid{grid-template-columns:1fr;padding:10px}.hamb{display:flex}.ribbon{display:flex}}
+@media(max-width:900px){
+  .laptop-only{display:none!important}
+  .grid{grid-template-columns:1fr;padding:10px}
+  .hamb{display:flex}
+  .ribbon{display:flex}
+  .oh{top:108px} /* under header + sports ribbon */
+  footer.tf{margin:20px 10px 16px;padding:22px 16px 16px}
+  .side,.slip{position:static;max-height:none}
+}
 /* ===== 11. WELCOME BONUS ===== */
 .coin,.cn{border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6a8,gold 45%,#b8860b);border:2px solid #fde047;box-shadow:inset 0 0 0 3px #f59e0b66;color:#b45309;font-weight:900;display:flex;align-items:center;justify-content:center;width:var(--s,18px);height:var(--s,18px);font-size:calc(var(--s,18px)*.55)}
 .coin{position:fixed;top:-40px;z-index:6100;pointer-events:none;animation:coinfall var(--d,2s) linear var(--w,0s) forwards}
@@ -847,6 +867,8 @@ const probe=new Image();probe.onerror=()=>document.querySelectorAll('img').forEa
     }
   },50);
 })();
+/* Soft header depth while scrolling (visual only) */
+addEventListener('scroll',()=>{const h=document.querySelector('header');if(h)h.classList.toggle('scrolled',scrollY>8)},{passive:true});
 sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();
 })();
 </script></body></html>
