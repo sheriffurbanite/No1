@@ -404,18 +404,12 @@ const $=id=>document.getElementById(id),f2=n=>(+n||0).toLocaleString('en-US',{mi
 const HOOKS=Object.assign({deposit:null,withdraw:null,login:null,register:null,account:null,logout:null},window.SHIKA_HOOKS||{});
 /* ===== WALLET API – exact same as testing wallet HTML ===== */
 /* Works even when the page is opened inside a sub-path (e.g. bonto.dev/apps/xyz/) */
-/* Wallet API root — same endpoints as your testing wallet: api/pay, api/status, api/balance.
-   Default is your working server. Override with window.SHIKA_CONFIG={apiBase:'https://...'} if needed.
-   If this page is hosted ON that same server, relative BASE also works. */
-var BASE = (function () {
-  var override = (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase) || '';
-  if (override) {
-    var b = String(override).replace(/\/$/, '');
-    return b + '/';
-  }
-  /* Known working API host (same as when testing wallet succeeds on that server) */
-  return 'https://my-server1.bonto.run/';
-})();
+/* CRITICAL: API lives on my-server1.bonto.run — NOT on shikachapaa.site.
+   Your testing wallet works because it is served from the API host.
+   Shika is on shikachapaa.site, so BASE must be the API server, never the page origin. */
+var BASE = (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase)
+  ? (String(window.SHIKA_CONFIG.apiBase).replace(/\/$/, '') + '/')
+  : 'https://my-server1.bonto.run/';
 const CONFIG=Object.assign({demo:false,minDeposit:10,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
 
 async function getJSON(path, opts) {
@@ -424,7 +418,7 @@ async function getJSON(path, opts) {
   var t = await r.text();
   var data;
   try { data = JSON.parse(t); }
-  catch (e) { throw new Error('Wrong server address: got a web page instead of data from ' + url); }
+  catch (e) { throw new Error('Wrong server address: got a web page instead of data from ' + url + ' (API BASE=' + BASE + '). Host this call on the API server or set window.SHIKA_CONFIG.apiBase'); }
   return { ok: r.ok, data: data };
 }
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
