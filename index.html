@@ -439,59 +439,57 @@ function cancelPay(){
   mr.innerHTML='';
   toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');
 }
+/* ===== Safe crediting: each payment reference is credited ONCE, and only after the server says paid ===== */
+const _activePolls=new Set();
+const addPending=(ref,amount,phone)=>{const p=ld('sc_pending',[]);p.push({ref,amount,phone,t:Date.now()});sv('sc_pending',p.slice(-20))};
+const dropPending=ref=>sv('sc_pending',ld('sc_pending',[]).filter(x=>x.ref!==ref));
+function applyDeposit(k,ref,paidAmt){
+  const a=loadAcc();if(!a[k])return null;
+  a[k].creditedRefs=a[k].creditedRefs||[];
+  if(a[k].creditedRefs.includes(ref)){dropPending(ref);return{balance:Number(a[k].balance||0),bonus:0,amount:0,dup:true}}
+  a[k].creditedRefs.push(ref);a[k].creditedRefs=a[k].creditedRefs.slice(-100);
+  const tax=Math.floor(paidAmt*TX.depositExcise),credit=paidAmt-tax;
+  a[k].balance=Number(a[k].balance||0)+credit;
+  let bonus=0;
+  if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){bonus=BONUS.amt;a[k].balance+=bonus;a[k].firstDepositBonusClaimed=true}
+  saveAcc(a);dropPending(ref);
+  return{balance:a[k].balance,bonus,amount:paidAmt,tax};
+}
 /* Default HOOKS – login/register local; deposit goes to TinyPesa; withdraw gated at KES 200,000 */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
 if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
 if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
-  /* Uses the Sheriff deposit pattern: /api/pay → poll /api/status → server balance is source of truth.
-     Admin 0797124175 is credited offline by the server (no PayHero). Everyone else needs real STK. */
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found. Please log in first.'};
   const msisdn=toMsisdn(phone);
   if(!/^254[71]\d{8}$/.test(msisdn))return{ok:false,message:'Invalid M-Pesa number'};
-  amount=Math.round(Number(amount));
-  if(!amount||amount<1)return{ok:false,message:'Enter a valid amount'};
   const reference='SC-'+Date.now()+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
   let init;
   try{
     const res=await fetch(CONFIG.apiBase+'/api/pay',{
       method:'POST',
       headers:{'Content-Type':'application/json',Accept:'application/json'},
-      body:JSON.stringify({amount,phone:msisdn,reference,user_id:msisdn})
+      body:JSON.stringify({amount:Number(amount),phone:msisdn,reference,user_id:msisdn})
     });
     init=await res.json().catch(()=>({}));
-    if(!res.ok||!init.success)return{ok:false,message:(init&&init.message)||'Could not start payment'};
-  }catch(e){return{ok:false,message:'Network error: '+(e.message||'failed')}};
-
+    if(!res.ok||!init.success)return{ok:false,message:(init&&init.message)||'Could not start M-Pesa request'};
+  }catch(e){return{ok:false,message:'Network error contacting payment server'}};
   const ref=init.reference||reference;
-  let paidAmt=Number(amount);
-  let serverBal=null;
-
-  /* Admin offline: server already returned paid + balance — no poll */
+  /* Admin offline deposit: server already paid — no poll, no PayHero */
   if(init.paid){
-    paidAmt=Number(init.amount)||paidAmt;
-    if(init.balance!=null)serverBal=Number(init.balance);
-  }else{
-    /* Everyone else: poll /api/status until paid / failed / timeout */
-    const poll=await pollTinyStatus(ref);
-    if(!poll.ok)return{ok:false,message:poll.message||'Payment not completed'};
-    paidAmt=Number(poll.amount)||paidAmt;
-    try{
-      const br=await fetch(CONFIG.apiBase+'/api/balance/'+encodeURIComponent(msisdn),{headers:{Accept:'application/json'}});
-      const bj=await br.json().catch(()=>({}));
-      if(bj&&bj.balance!=null)serverBal=Number(bj.balance);
-    }catch(_){}
+    const done=applyDeposit(k,ref,Number(init.amount)||Number(amount));
+    if(!done)return{ok:false,message:'Account not found. Please log in again.'};
+    return{ok:true,balance:done.balance,bonus:done.bonus,reference:ref,amount:done.amount};
   }
-
-  /* Local wallet: credit after tax + optional welcome bonus (UI display). Server already holds full amount. */
-  const tax=Math.floor(paidAmt*TX.depositExcise),credit=paidAmt-tax;
-  a[k].balance=Number(a[k].balance||0)+credit;
-  let bonus=0;
-  if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){bonus=BONUS.amt;a[k].balance+=bonus;a[k].firstDepositBonusClaimed=true}
-  if(serverBal!=null){/* keep local in sync preference; server is authority for gateway */}
-  saveAcc(a);
-  return{ok:true,balance:a[k].balance,bonus,reference:ref,amount:paidAmt};
+  addPending(ref,Number(amount),k);
+  _activePolls.add(ref);
+  let poll;
+  try{poll=await pollTinyStatus(ref)}finally{_activePolls.delete(ref)}
+  if(!poll.ok){if(poll.status==='failed')dropPending(ref);return{ok:false,message:poll.message||'Payment not completed'}}
+  const done=applyDeposit(k,ref,Number(poll.amount)||Number(amount));
+  if(!done)return{ok:false,message:'Account not found. Please log in again.'};
+  return{ok:true,balance:done.balance,bonus:done.bonus,reference:ref,amount:done.amount};
 };
 if(!HOOKS.withdraw)HOOKS.withdraw=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
@@ -511,6 +509,22 @@ let bets=ld('sc_hype_bets',[]);
 /* Sync balance from persistent account store on load */
 if(user&&user.phone){const a=loadAcc();if(a[user.phone])bal=Number(a[user.phone].balance||0);else bal=0}
 const save=()=>{sv('sc_hype_bets',bets);sv('sc_bal',bal);sv('sc_tx',txs);sv('sc_limit',limit);sv('sc_excl',excl);if(user){const a=loadAcc();if(a[user.phone]){a[user.phone].balance=bal;saveAcc(a)}}};
+/* Resume unfinished deposits (modal closed / page refreshed): credit once, only if the server confirms */
+let _recBusy=false;
+async function recoverPending(){
+  if(_recBusy||!user)return;
+  const list=ld('sc_pending',[]).filter(x=>x.phone===user.phone);if(!list.length)return;
+  _recBusy=true;
+  try{for(const p of list){
+    if(_activePolls.has(p.ref))continue;
+    if(Date.now()-p.t>864e5){dropPending(p.ref);continue}
+    let j;try{j=await(await fetch(CONFIG.apiBase+'/api/status/'+encodeURIComponent(p.ref),{headers:{Accept:'application/json'}})).json()}catch(e){continue}
+    if(j&&(j.paid||j.status==='paid')){
+      const d=applyDeposit(user.phone,p.ref,Number(j.amount)||p.amount);
+      if(d&&!d.dup){bal=d.balance;addTx('deposit',d.amount,user.phone+' · confirmed later');if(d.bonus){addTx('bonus',d.bonus,'Welcome bonus');sv('sc_bonus',true)}save();renderAll();toast('Deposit of KES '+nf(d.amount)+' confirmed ✅')}
+    }else if(j&&j.status==='failed'){dropPending(p.ref)}
+  }}finally{_recBusy=false}
+}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
 
 /* ===== DATA (your original sports + matches) ===== */
@@ -737,7 +751,7 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
  ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa via TinyPesa · min KES 500</p>'}`);updWTax()}
 async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhone').value,amt=Math.floor(+$('wAmt').value);
  if(!phoneOK(ph))return er.textContent='Enter a valid M-Pesa number';
- const _adm=toMsisdn(ph)==='254797124175'; /* admin offline deposit — no min/max */
+ const _adm=toMsisdn(ph)==='254797124175'; /* admin offline — no min/max */
  const mn=dep?CONFIG.minDeposit:CONFIG.minWithdraw;
  if(!_adm&&!(amt>=mn))return er.textContent=dep?('Minimum deposit is KES '+nf(mn)):'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
  if(!_adm&&dep&&amt>CONFIG.maxDeposit)return er.textContent='Maximum deposit is KES '+nf(CONFIG.maxDeposit);
@@ -785,7 +799,7 @@ document.addEventListener('click',e=>{const x=e.target.closest('[data-m]');if(!x
  if(m=='excl'){excl=Date.now()+x.dataset.d*864e5;save();toast('Break started. Take care 💚');return accHTML()}
  if(m=='excl-unlock'){
    const code=($('exclUnlock')&&$('exclUnlock').value)||'';
-   const _k=atob('U2hpa2FBZG1pblVubG9jazIwMjQ='); // same master key as server
+   const _k=atob('U2hpa2FBZG1pblVubG9jazIwMjQ=');
    if(code===_k){excl=0;save();toast('Restriction paused');return accHTML()}
    return toast('Incorrect code');
  }
@@ -924,6 +938,6 @@ const probe=new Image();probe.onerror=()=>document.querySelectorAll('img').forEa
 })();
 /* Soft header depth while scrolling (visual only) */
 addEventListener('scroll',()=>{const h=document.querySelector('header');if(h)h.classList.toggle('scrolled',scrollY>8)},{passive:true});
-sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();
+sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();recoverPending();setInterval(recoverPending,20000);
 })();
 </script></body></html>
