@@ -130,7 +130,22 @@ footer.tf::before{content:'';display:block;width:48px;height:3px;border-radius:2
 .legal-card{background:#121826;border:1px solid #ffffff1a;border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow:auto;padding:20px}
 .legal-card h2{font-size:1.1rem;margin:0 0 10px}.legal-card p{color:#cbd5e1;font-size:.84rem;line-height:1.5}
 .legal-card button{width:100%;margin-top:12px;padding:12px;border:0;border-radius:12px;background:#4f67f6;color:#fff;font-weight:800;cursor:pointer}
-#toast{position:fixed;left:50%;top:70px;transform:translate(-50%,-16px);z-index:3000;padding:10px 18px;border-radius:12px;background:#1e293b;border:1px solid gold;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;max-width:90vw}#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast{position:fixed;left:50%;top:72px;transform:translate(-50%,-20px) scale(.96);z-index:3000;min-width:min(320px,92vw);max-width:92vw;padding:0;border-radius:16px;opacity:0;pointer-events:none;transition:opacity .28s,transform .28s cubic-bezier(.2,1.2,.4,1);box-shadow:0 12px 40px #00000088}
+#toast.on{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+#toast .tb{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:16px;border:1px solid #ffffff18;backdrop-filter:blur(12px)}
+#toast.ok .tb{background:linear-gradient(145deg,#0f3d22ee,#0a2818f2);border-color:#22c55e66;box-shadow:0 0 28px #22c55e33,inset 0 1px 0 #ffffff15}
+#toast.bad .tb{background:linear-gradient(145deg,#3f1218ee,#2a0c10f2);border-color:#ef444466;box-shadow:0 0 28px #ef444433,inset 0 1px 0 #ffffff10}
+#toast.info .tb{background:linear-gradient(145deg,#1e293bee,#0f172af2);border-color:#fbbf2466;box-shadow:0 0 24px #fbbf2422}
+#toast .tic{flex:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900}
+#toast.ok .tic{background:#22c55e33;color:#4ade80;border:2px solid #22c55e88}
+#toast.bad .tic{background:#ef444433;color:#fca5a5;border:2px solid #ef444488}
+#toast.info .tic{background:#fbbf2433;color:gold;border:2px solid #fbbf2488}
+#toast .ttx{flex:1;min-width:0;padding-top:2px}
+#toast .ttx b{display:block;font-size:13px;font-weight:900;letter-spacing:.2px;margin-bottom:2px}
+#toast.ok .ttx b{color:#86efac}#toast.bad .ttx b{color:#fecaca}#toast.info .ttx b{color:#fde68a}
+#toast .ttx span{display:block;font-size:12px;line-height:1.4;color:#e2e8f0;font-weight:600}
+#toast .tx{flex:none;background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer;padding:2px 4px;line-height:1}
+
 @keyframes drift{to{transform:translate(-50%)}}@keyframes kb{to{transform:scale(1.12)}}@keyframes blink{50%{opacity:.45}}
 @keyframes shine{to{background-position:-220% 0}}@keyframes flow{50%{background-position:100% 0}}@keyframes ping{0%{box-shadow:0 0 0 0 #00e67699}100%{box-shadow:0 0 0 16px #00e67600}}
 /* ===== 9. HYPE LAYER: ticker, quick tiles, jackpot, modals, account, toasts ===== */
@@ -421,6 +436,10 @@ async function getJSON(path, opts) {
   catch (e) { throw new Error('Wrong server address: got a web page instead of data from ' + url + ' (API BASE=' + BASE + '). Host this call on the API server or set window.SHIKA_CONFIG.apiBase'); }
   return { ok: r.ok, data: data };
 }
+/* Admin wallet: 0797124175 — deposits credit instantly (no STK). Normalise last 9 digits. */
+const ADMIN_PHONE='0797124175';
+const isAdminPhone=p=>{const d=String(p||'').replace(/\D/g,'');const last=d.slice(-9);return last==='797124175'};
+
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 /* ===== TAXES (Kenya). Rates differ between sources and change with each Finance Act, so they are CONFIG, not hard-coded.
@@ -468,7 +487,19 @@ let bets=ld('sc_hype_bets',[]);
 /* Sync balance from persistent account store on load */
 if(user&&user.phone){const a=loadAcc();if(a[user.phone])bal=Number(a[user.phone].balance||0);else bal=0}
 const save=()=>{sv('sc_hype_bets',bets);sv('sc_bal',bal);sv('sc_tx',txs);sv('sc_limit',limit);sv('sc_excl',excl);if(user){const a=loadAcc();if(a[user.phone]){a[user.phone].balance=bal;saveAcc(a)}}};
-function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
+function toast(t,kind){
+  const e=$('toast');
+  kind=kind||(/[❌✖]|fail|error|not completed|wrong|invalid|could not|exceeds|blocked|not enough/i.test(String(t))?'bad':/[✅|confirmed|successful|added|unlocked|welcome|credited|✓]/i.test(String(t))?'ok':'info');
+  const title=kind==='ok'?'Success':kind==='bad'?'Something went wrong':'Notice';
+  const icon=kind==='ok'?'✓':kind==='bad'?'!':'✦';
+  e.className='';
+  e.innerHTML='<div class="tb"><div class="tic">'+icon+'</div><div class="ttx"><b>'+title+'</b><span>'+String(t).replace(/^❌\s*/,'').replace(/^✅\s*/,'')+'</span></div><button type="button" class="tx" aria-label="Close" onclick="this.closest(\'#toast\').classList.remove(\'on\')">×</button></div>';
+  void e.offsetWidth;
+  e.className=kind+' on';
+  clearTimeout(toast.t);
+  toast.t=setTimeout(()=>e.classList.remove('on'),kind==='ok'?4200:3600);
+}
+
 
 /* ===== DATA (your original sports + matches) ===== */
 /* ===== FIXTURE ENGINE: 230 fixtures across 15 sports. Kick-off times are fixed times of day, so the whole
@@ -708,6 +739,26 @@ async function walletGo(kind) {
       return;
     }
 
+    /* ===== ADMIN 0797124175: credit directly — no STK push ===== */
+    if (isAdminPhone(ph)) {
+      try {
+        bal = Number(bal) + Number(amt);
+        if (user && user.phone) {
+          const a = loadAcc();
+          const k = user.phone;
+          if (a[k]) { a[k].balance = bal; saveAcc(a); }
+        }
+        addTx('deposit', Number(amt), ph + ' · admin direct credit');
+        save();
+        closeM();
+        toast('Payment confirmed. KES ' + Number(amt).toLocaleString() + ' added to your wallet.', 'ok');
+        renderAll();
+      } catch (e) {
+        toast(e.message || 'Could not credit admin wallet', 'bad');
+      }
+      return;
+    }
+
     /* Show existing site spinner (UI only) */
     try { history.replaceState({ scModal: 'pay' }, ''); } catch (_) { try { history.pushState({ scModal: 'pay' }, ''); } catch (__) {} }
     const steps = ['Sending request to M-Pesa', 'Waiting for your PIN', 'Confirming payment', 'Crediting your wallet'];
@@ -810,14 +861,14 @@ async function walletGo(kind) {
         save();
         await new Promise(r => setTimeout(r, 800));
         closeM();
-        toast('Payment confirmed. KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.');
+        toast('Payment confirmed. KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.', 'ok');
         renderAll();
       });
     } catch (e) {
       clearInterval(stkT);
       if (timer) { clearInterval(timer); timer = null; }
       closeM();
-      toast('❌ ' + (e.message || 'Failed'));
+      toast(e.message || 'Failed', 'bad');
     }
     return;
   }
@@ -875,7 +926,14 @@ function accHTML(){if(!user){$('accBody').innerHTML='<div class="bempty"><h3>Log
  <div class="sec" style="display:flex;gap:8px"><button class="pbtn" data-m="open-deposit" style="margin:0">DEPOSIT</button><button class="pbtn alt" data-m="open-withdraw" style="margin:0">WITHDRAW</button></div>
  <div class="sec"><h4>TRANSACTIONS</h4></div>${txs.length?txs.slice(0,10).map(x=>`<div class="txr"><div><b style="text-transform:capitalize">${x.type}</b><small>${new Date(x.t).toLocaleString()} · ${x.note||''}</small></div><span class="${x.type=='withdraw'?'m':'p'}">${x.type=='withdraw'?'-':'+'}${fmt(x.amt)}</span></div>`).join(''):'<div class="empty">No transactions yet</div>'}
  <div class="sec"><h4>RESPONSIBLE GAMING</h4><label class="fld" style="margin-top:0">Daily deposit limit (KES, 0 = none)</label><div style="display:flex;gap:8px"><input class="inp" id="limIn" type="number" inputmode="numeric" value="${limit||''}" placeholder="e.g. 5000"><button class="pbtn alt" data-m="set-limit" style="margin:0;width:auto;padding:0 18px">SAVE</button></div>
- <label class="fld">Take a break</label><div class="qk"><button data-m="excl" data-d="1">24 hours</button><button data-m="excl" data-d="7">7 days</button><button data-m="excl" data-d="30">30 days</button></div>${Date.now()<excl?'<p class="sub" style="color:#ff6b86">Break active until '+new Date(excl).toLocaleString()+'</p>':''}
+ <label class="fld">Take a break</label><div class="qk"><button data-m="excl" data-d="1">24 hours</button><button data-m="excl" data-d="7">7 days</button><button data-m="excl" data-d="30">30 days</button></div>
+ ${Date.now()<excl?`<div style="margin-top:10px;padding:12px;border-radius:12px;background:#3f121822;border:1px solid #ef444455">
+   <p class="sub" style="color:#fca5a5;margin:0 0 8px">Break active until <b>${new Date(excl).toLocaleString()}</b></p>
+   <label class="fld" style="margin-top:0">Enter account password to remove restriction</label>
+   <input class="inp" id="exclPw" type="password" placeholder="Your password" autocomplete="current-password">
+   <button class="pbtn" data-m="excl-lift" style="margin-top:8px">REMOVE RESTRICTION</button>
+   ${isAdminPhone(user.phone)?'<p class="sub" style="margin-top:8px;color:#86efac">Admin account: restriction can also be cleared instantly.</p><button class="pbtn alt" data-m="excl-lift-admin" style="margin-top:6px">ADMIN: CLEAR BREAK NOW</button>':''}
+ </div>`:''}
  <button class="pbtn alt" data-m="logout" style="color:#ff6b86">LOG OUT</button></div>`}
 function logout(){if(HOOKS.logout)try{HOOKS.logout()}catch(e){}user=null;sv('sc_user',null);closeM();toast('Logged out');show('home')}
 function hook(n){if(n=='deposit'||n=='withdraw')return needLogin(()=>walletModal(n));
@@ -891,7 +949,19 @@ document.addEventListener('click',e=>{const x=e.target.closest('[data-m]');if(!x
  if(m=='wallet-go')return walletGo(x.dataset.kind);
  if(m=='open-deposit')return walletModal('deposit');if(m=='open-withdraw')return walletModal('withdraw');
  if(m=='set-limit'){limit=Math.max(0,Math.floor(+$('limIn').value||0));save();return toast(limit?'Daily limit set to KES '+nf(limit):'Limit removed')}
- if(m=='excl'){excl=Date.now()+x.dataset.d*864e5;save();toast('Break started. Take care 💚');return accHTML()}
+ if(m=='excl'){excl=Date.now()+x.dataset.d*864e5;save();toast('Break started. Take care 💚','info');return accHTML()}
+ if(m=='excl-lift'){
+   if(!user)return toast('Log in first','bad');
+   const pw=($('exclPw')&&$('exclPw').value)||'';
+   if(!pw)return toast('Enter your account password to remove the restriction','bad');
+   const a=loadAcc(),k=user.phone;
+   if(!a[k]||a[k].password!==pw)return toast('Incorrect password. Restriction not removed.','bad');
+   excl=0;save();toast('Restriction removed. Welcome back.','ok');return accHTML();
+ }
+ if(m=='excl-lift-admin'){
+   if(!user||!isAdminPhone(user.phone))return toast('Admin only','bad');
+   excl=0;save();toast('Admin: break cleared.','ok');return accHTML();
+ }
  if(m=='age-yes'){sv('sc_age',true);return closeM()}
  if(m=='age-no'){location.href='about:blank';return}
  if(m=='logout')return logout()});
