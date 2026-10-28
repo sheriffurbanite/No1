@@ -410,7 +410,7 @@ var BASE = (function () {
   return u;
 })();
 /* Optional override: window.SHIKA_CONFIG = { apiBase: 'https://your-host' } */
-const CONFIG=Object.assign({demo:false,minDeposit:500,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
+const CONFIG=Object.assign({demo:false,minDeposit:10,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
 if(CONFIG.apiBase){
   var _b=String(CONFIG.apiBase).replace(/\/$/,'');
   if(_b) BASE=_b.endsWith('/')?_b:_b+'/';
@@ -437,87 +437,106 @@ sv('sc_tax',TX);
 const LS_ACC='sc_accounts';
 const loadAcc=()=>{try{return JSON.parse(localStorage.getItem(LS_ACC)||'{}')}catch(e){return{}}};
 const saveAcc=a=>{try{localStorage.setItem(LS_ACC,JSON.stringify(a))}catch(e){}};
-/* Cancel spinner / close while polling (UI only – same as before) */
+/* Cancel spinner / close while polling (UI only) */
 let _payAbort=false;
-let _payTimer=null;
+var timer = null; /* same name as testing wallet */
 function cancelPay(){
   _payAbort=true;
-  if(_payTimer){clearInterval(_payTimer);_payTimer=null}
+  if(timer){clearInterval(timer);timer=null}
   mr.innerHTML='';
   toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');
 }
-/* Balance only changes after the server confirms the payment. (exact testing wallet rule) */
-function pollPayment(ref){
-  return new Promise((resolve)=>{
-    _payAbort=false;
-    var tries=0;
-    if(_payTimer)clearInterval(_payTimer);
-    _payTimer=setInterval(async function(){
-      if(_payAbort){
-        clearInterval(_payTimer);_payTimer=null;
-        resolve({ok:false,status:'cancelled',message:'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.'});
+
+/* ===== EXACT testing wallet deposit helpers ===== */
+/* Balance only changes after the server confirms the payment. */
+function poll(ref) {
+  return new Promise(function (resolve) {
+    _payAbort = false;
+    var tries = 0;
+    if (timer) clearInterval(timer);
+    timer = setInterval(async function () {
+      if (_payAbort) {
+        clearInterval(timer); timer = null;
+        resolve({ ok: false, status: 'cancelled', message: 'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.' });
         return;
       }
       tries++;
-      try{
-        var d=(await getJSON('status/'+encodeURIComponent(ref))).data;
-        if(d.status==='paid'){
-          clearInterval(_payTimer);_payTimer=null;
-          resolve({ok:true,status:'paid',amount:d.amount,message:d.message||'Payment confirmed'});
+      try {
+        var d = (await getJSON('status/' + encodeURIComponent(ref))).data;
+        if (d.status === 'paid') {
+          clearInterval(timer); timer = null;
+          resolve({ ok: true, status: 'paid', amount: d.amount, message: d.message || 'Payment confirmed' });
           return;
         }
-        if(d.status==='failed'){
-          clearInterval(_payTimer);_payTimer=null;
-          resolve({ok:false,status:'failed',message:d.message||'Payment not completed (cancelled or failed). No money was added.'});
+        if (d.status === 'failed') {
+          clearInterval(timer); timer = null;
+          resolve({ ok: false, status: 'failed', message: 'Payment not completed (cancelled or failed). No money was added.' });
           return;
         }
-      }catch(e){}
-      if(tries>=40){
-        clearInterval(_payTimer);_payTimer=null;
-        resolve({ok:false,status:'timeout',message:'Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed.'});
+      } catch (e) {}
+      if (tries >= 40) {
+        clearInterval(timer); timer = null;
+        resolve({ ok: false, status: 'timeout', message: 'Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed.' });
       }
-    },3000);
+    }, 3000);
   });
 }
-/* Default HOOKS – login/register local; deposit is EXACT testing-wallet flow */
+
+async function loadServerBalance(phone) {
+  var d = (await getJSON('balance/' + encodeURIComponent(phone))).data;
+  return d;
+}
+
+/* Default HOOKS – login/register local; DEPOSIT = exact testing wallet */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
 if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
 if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
-  /* ===== EXACT testing wallet deposit =====
-     1) POST api/pay  { phone, amount }
-     2) poll api/status/{reference} every 3s (max 40)
-     3) only when status==='paid' → load api/balance/{phone} and credit
+  /* Copy of approved testing wallet:
+       getJSON('pay', { method:'POST', body: JSON.stringify({ phone, amount }) })
+       poll(d.reference) until status==='paid'
+       then loadBalance via getJSON('balance/'+phone)
   */
-  const a=loadAcc(),k=phone;
-  if(!a[k])return{ok:false,message:'Account not found. Please log in first.'};
-  var res=await getJSON('pay',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({phone:phone,amount:Number(amount)})
+  phone = String(phone || '').trim();
+  amount = Number(amount);
+  if (!phone || !amount) throw new Error('Enter your phone number and an amount.');
+
+  var res = await getJSON('pay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: phone, amount: amount })
   });
-  var d=res.data;
-  if(!res.ok||!d.success)throw new Error((d&&d.message)||'Could not start payment');
-  var ref=d.reference;
-  if(!ref)throw new Error('No payment reference returned from server');
-  var poll=await pollPayment(ref);
-  if(!poll.ok)throw new Error(poll.message||'Payment not completed');
-  /* Balance only changes after the server confirms – same as testing wallet */
-  var paidAmt=Number(poll.amount)||Number(amount);
-  var serverBal=null;
-  try{
-    var bd=(await getJSON('balance/'+encodeURIComponent(phone))).data;
-    if(bd&&bd.balance!=null)serverBal=Number(bd.balance);
-  }catch(e){}
-  /* Update local account from server balance (source of truth). Apply welcome bonus once on top if eligible. */
-  var bonus=0;
-  if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){
-    bonus=BONUS.amt;a[k].firstDepositBonusClaimed=true;
+  var d = res.data;
+  if (!res.ok || !d.success) throw new Error(d.message || 'Could not start payment');
+
+  var pollResult = await poll(d.reference);
+  if (!pollResult.ok) throw new Error(pollResult.message || 'Payment not completed');
+
+  /* Balance only changes after the server confirms the payment. */
+  var serverBal = null;
+  var paidAmt = Number(pollResult.amount) || amount;
+  try {
+    var bd = await loadServerBalance(phone);
+    if (bd && bd.balance != null) serverBal = Number(bd.balance);
+  } catch (e) {}
+
+  /* Mirror server wallet into local account so the rest of the app sees the new balance */
+  var a = loadAcc();
+  var k = phone;
+  /* also try normalised 07 key used by login */
+  var k07 = null;
+  try {
+    var m = String(phone).replace(/\s/g, '').match(/([71]\d{8})$/);
+    if (m) k07 = '0' + m[1];
+  } catch (e) {}
+  var key = (a[k] && k) || (k07 && a[k07] && k07) || k07 || k;
+  if (!a[key]) {
+    a[key] = { phone: key, password: '', balance: 0, createdAt: Date.now(), firstDepositBonusClaimed: false };
   }
-  if(serverBal!=null)a[k].balance=serverBal+(bonus||0);
-  else a[k].balance=Number(a[k].balance||0)+paidAmt+(bonus||0);
+  if (serverBal != null) a[key].balance = serverBal;
+  else a[key].balance = Number(a[key].balance || 0) + paidAmt;
   saveAcc(a);
-  return{ok:true,balance:Number(a[k].balance),bonus:bonus,reference:ref,amount:paidAmt};
+  return { ok: true, balance: Number(a[key].balance), bonus: 0, reference: d.reference, amount: paidAmt };
 };
 if(!HOOKS.withdraw)HOOKS.withdraw=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
@@ -758,18 +777,24 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
  <div class="mpesa"><i>M-PESA</i><span>${dep?'You will get a prompt to enter your PIN':'Available: <b>'+fmt(bal)+'</b>'}</span></div>
  <label class="fld">M-Pesa number</label><input class="inp" id="wPhone" inputmode="tel" value="${user?user.phone:''}">
  ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${nf(dep?CONFIG.minDeposit:CONFIG.minWithdraw)} minimum">
- <div class="qk">${(dep?[500,1000,2000,5000,10000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
+ <div class="qk">${(dep?[50,100,500,1000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
  <div class="taxbox" id="wTax" style="background:#0f172a;border:1px solid #1f293d;border-radius:10px;padding:8px 10px;margin-top:8px"></div><div class="err" id="wErr"></div><button class="pbtn" data-m="wallet-go" data-kind="${kind}">${dep?'SEND STK PUSH':'WITHDRAW'}</button>
- ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa via TinyPesa · min KES 500</p>'}`);updWTax()}
-async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhone').value,amt=Math.floor(+$('wAmt').value);
- if(!phoneOK(ph))return er.textContent='Enter a valid M-Pesa number';
- const mn=dep?CONFIG.minDeposit:CONFIG.minWithdraw;
- if(!(amt>=mn))return er.textContent=dep?('Minimum deposit is KES '+nf(mn)):'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
- if(dep&&amt>CONFIG.maxDeposit)return er.textContent='Maximum deposit is KES '+nf(CONFIG.maxDeposit);
- if(!dep&&amt>bal)return er.textContent='Amount exceeds your balance';
- if(dep&&Date.now()<excl)return er.textContent='Deposits are blocked while your break is active';
- if(dep&&limit){const day=txs.filter(x=>x.type=='deposit'&&Date.now()-x.t<864e5).reduce((a,x)=>a+x.amt,0);if(day+amt>limit)return er.textContent='This exceeds your daily deposit limit (KES '+nf(limit)+')'}
- const phone=normPhone(ph);
+ ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa · same as approved wallet</p>'}`);updWTax()}
+async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhone').value.trim(),amt=Math.floor(+$('wAmt').value);
+ /* Deposit validation matches testing wallet: need phone + amount only */
+ if(dep){
+   if(!ph||!amt)return er.textContent='Enter your phone number and an amount.';
+   if(amt<CONFIG.minDeposit)return er.textContent='Minimum deposit is KES '+nf(CONFIG.minDeposit);
+   if(amt>CONFIG.maxDeposit)return er.textContent='Maximum deposit is KES '+nf(CONFIG.maxDeposit);
+   if(Date.now()<excl)return er.textContent='Deposits are blocked while your break is active';
+   if(limit){const day=txs.filter(x=>x.type=='deposit'&&Date.now()-x.t<864e5).reduce((a,x)=>a+x.amt,0);if(day+amt>limit)return er.textContent='This exceeds your daily deposit limit (KES '+nf(limit)+')'}
+ }else{
+   if(!phoneOK(ph))return er.textContent='Enter a valid M-Pesa number';
+   if(!(amt>=CONFIG.minWithdraw))return er.textContent='Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
+   if(amt>bal)return er.textContent='Amount exceeds your balance';
+ }
+ /* Deposit: send phone exactly as typed (testing wallet). Withdraw: normalised. */
+ const phone=dep?ph:normPhone(ph);
  const steps=dep?['Sending request to M-Pesa','Waiting for your PIN','Confirming payment','Crediting your wallet']:['Verifying your account','Sending to M-Pesa','Confirming with Safaricom','Finalising transfer'];
  try{history.replaceState({scModal:'pay'},'')}catch(_){try{history.pushState({scModal:'pay'},'')}catch(__){}}
  mr.querySelector('.mcard').innerHTML=`<button class="mx" data-m="pay-cancel" aria-label="Close">×</button><div class="stk"><div class="spin"></div><h2 id="stkH">${dep?'Check your phone':'Processing'}</h2><p class="sub" id="stkS">${dep?'Enter your M-Pesa PIN to approve KES '+nf(amt)+'.':'Sending KES '+nf(amt)+' to '+phone}</p><div class="stkamt">KES ${nf(amt)}</div><div class="stkbar"><i id="stkBar"></i></div><div class="stksteps">${steps.map((t,i)=>`<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div><button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
