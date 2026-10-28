@@ -402,19 +402,28 @@ const $=id=>document.getElementById(id),f2=n=>(+n||0).toLocaleString('en-US',{mi
    window.SHIKA_HOOKS={deposit:async({phone,amount})=>({ok:true,balance:1500}), login:async({phone,password})=>({ok:true,balance:0}), ...}
    Leave a hook unset and the built-in localStorage module (inherited from audited rules) is used. */
 const HOOKS=Object.assign({deposit:null,withdraw:null,login:null,register:null,account:null,logout:null},window.SHIKA_HOOKS||{});
-/* API base: same-origin relative path like the working wallet demo (BASE + 'api/...').
-   Override only if the API is on another host: window.SHIKA_CONFIG={apiBase:'https://my-server1.bonto.run'} */
-const _pageBase=(function(){try{var u=location.href.split('#')[0].split('?')[0];if(!/\/$/.test(u))u=u.replace(/[^\/]*$/,'');return u}catch(e){return'/'}})();
+/* ===== WALLET API – exact same as testing wallet HTML ===== */
+/* Works even when the page is opened inside a sub-path (e.g. bonto.dev/apps/xyz/) */
+var BASE = (function () {
+  var u = location.href.split('#')[0].split('?')[0];
+  if (!/\/$/.test(u)) u = u.replace(/[^\/]*$/, '');
+  return u;
+})();
+/* Optional override: window.SHIKA_CONFIG = { apiBase: 'https://your-host' } */
 const CONFIG=Object.assign({demo:false,minDeposit:500,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
-const API_ROOT=(CONFIG.apiBase&&String(CONFIG.apiBase).replace(/\/$/,''))||(_pageBase.replace(/\/$/,''));
-const apiUrl=(path)=>API_ROOT+'/api/'+String(path).replace(/^\//,'');
-const apiFetch=async(path,opts)=>{
-  const url=apiUrl(path);
-  const r=await fetch(url,opts);
-  const t=await r.text();
-  let data;try{data=JSON.parse(t)}catch(e){throw new Error('Wrong server address: got a web page instead of data from '+url)}
-  return{ok:r.ok,data,url};
-};
+if(CONFIG.apiBase){
+  var _b=String(CONFIG.apiBase).replace(/\/$/,'');
+  if(_b) BASE=_b.endsWith('/')?_b:_b+'/';
+}
+async function getJSON(path, opts) {
+  var url = BASE + 'api/' + path;
+  var r = await fetch(url, opts);
+  var t = await r.text();
+  var data;
+  try { data = JSON.parse(t); }
+  catch (e) { throw new Error('Wrong server address: got a web page instead of data from ' + url); }
+  return { ok: r.ok, data: data };
+}
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 /* ===== TAXES (Kenya). Rates differ between sources and change with each Finance Act, so they are CONFIG, not hard-coded.
@@ -428,98 +437,87 @@ sv('sc_tax',TX);
 const LS_ACC='sc_accounts';
 const loadAcc=()=>{try{return JSON.parse(localStorage.getItem(LS_ACC)||'{}')}catch(e){return{}}};
 const saveAcc=a=>{try{localStorage.setItem(LS_ACC,JSON.stringify(a))}catch(e){}};
-/* Normalise phone to 2547XXXXXXXX for TinyPesa */
-const toMsisdn=p=>{const d=String(p||'').replace(/\D/g,'');if(d.length===9&&/^[17]/.test(d))return'254'+d;if(d.length===10&&d[0]==='0')return'254'+d.slice(1);if(d.length===12&&d.startsWith('254'))return d;return d};
-/* Poll TinyPesa status until paid / failed / timeout / cancelled (server at my-server1.bonto.run) */
+/* Cancel spinner / close while polling (UI only – same as before) */
 let _payAbort=false;
-async function pollTinyStatus(ref,maxTries=40,intervalMs=3000){
-  /* Same polling as the working wallet: every 3s, up to 40 tries; credit only on status==='paid' */
-  _payAbort=false;
-  for(let i=0;i<maxTries;i++){
-    if(_payAbort)return{ok:false,status:'cancelled',message:'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.'};
-    try{
-      const {data:j}=await apiFetch('status/'+encodeURIComponent(ref),{headers:{Accept:'application/json'}});
-      if(j.status==='paid'||j.paid===true)return{ok:true,status:'paid',amount:j.amount,message:j.message||'Payment confirmed'};
-      if(j.status==='failed')return{ok:false,status:'failed',message:j.message||'Payment not completed (cancelled or failed). No money was added.'};
-    }catch(e){console.warn('[Shika deposit] status poll error',e&&e.message)}
-    await new Promise(res=>setTimeout(res,intervalMs));
-  }
-  return{ok:false,status:'timeout',message:'Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed. If you paid, contact 0731125008 with your reference.'};
-}
+let _payTimer=null;
 function cancelPay(){
   _payAbort=true;
+  if(_payTimer){clearInterval(_payTimer);_payTimer=null}
   mr.innerHTML='';
   toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');
 }
-/* ===== Safe crediting: each payment reference is credited ONCE, and only after the server says paid ===== */
-const _activePolls=new Set();
-const addPending=(ref,amount,phone)=>{const p=ld('sc_pending',[]);p.push({ref,amount,phone,t:Date.now()});sv('sc_pending',p.slice(-20))};
-const dropPending=ref=>sv('sc_pending',ld('sc_pending',[]).filter(x=>x.ref!==ref));
-function applyDeposit(k,ref,paidAmt){
-  const a=loadAcc();if(!a[k])return null;
-  a[k].creditedRefs=a[k].creditedRefs||[];
-  if(a[k].creditedRefs.includes(ref)){dropPending(ref);return{balance:Number(a[k].balance||0),bonus:0,amount:0,dup:true}}
-  a[k].creditedRefs.push(ref);a[k].creditedRefs=a[k].creditedRefs.slice(-100);
-  const tax=Math.floor(paidAmt*TX.depositExcise),credit=paidAmt-tax;
-  a[k].balance=Number(a[k].balance||0)+credit;
-  let bonus=0;
-  if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){bonus=BONUS.amt;a[k].balance+=bonus;a[k].firstDepositBonusClaimed=true}
-  saveAcc(a);dropPending(ref);
-  return{balance:a[k].balance,bonus,amount:paidAmt,tax};
+/* Balance only changes after the server confirms the payment. (exact testing wallet rule) */
+function pollPayment(ref){
+  return new Promise((resolve)=>{
+    _payAbort=false;
+    var tries=0;
+    if(_payTimer)clearInterval(_payTimer);
+    _payTimer=setInterval(async function(){
+      if(_payAbort){
+        clearInterval(_payTimer);_payTimer=null;
+        resolve({ok:false,status:'cancelled',message:'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.'});
+        return;
+      }
+      tries++;
+      try{
+        var d=(await getJSON('status/'+encodeURIComponent(ref))).data;
+        if(d.status==='paid'){
+          clearInterval(_payTimer);_payTimer=null;
+          resolve({ok:true,status:'paid',amount:d.amount,message:d.message||'Payment confirmed'});
+          return;
+        }
+        if(d.status==='failed'){
+          clearInterval(_payTimer);_payTimer=null;
+          resolve({ok:false,status:'failed',message:d.message||'Payment not completed (cancelled or failed). No money was added.'});
+          return;
+        }
+      }catch(e){}
+      if(tries>=40){
+        clearInterval(_payTimer);_payTimer=null;
+        resolve({ok:false,status:'timeout',message:'Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed.'});
+      }
+    },3000);
+  });
 }
-/* Default HOOKS – login/register local; deposit goes to TinyPesa; withdraw gated at KES 200,000 */
+/* Default HOOKS – login/register local; deposit is EXACT testing-wallet flow */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
 if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
 if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
-  /* Mirror working wallet demo: POST api/pay {phone,amount} → poll api/status/{ref} → credit only when paid */
+  /* ===== EXACT testing wallet deposit =====
+     1) POST api/pay  { phone, amount }
+     2) poll api/status/{reference} every 3s (max 40)
+     3) only when status==='paid' → load api/balance/{phone} and credit
+  */
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found. Please log in first.'};
-  const msisdn=toMsisdn(phone);
-  if(!/^254[71]\d{8}$/.test(msisdn))return{ok:false,message:'Invalid M-Pesa number'};
-  /* Send phone as typed-style 07… AND as 254… is fine; demo sends whatever user typed. Server accepts both. */
-  const phoneForApi=phone; /* keep 07… like the working wallet */
-  console.log('[Shika deposit] POST',apiUrl('pay'),{phone:phoneForApi,amount:Number(amount),msisdn});
-  let init,payUrl;
+  var res=await getJSON('pay',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phone:phone,amount:Number(amount)})
+  });
+  var d=res.data;
+  if(!res.ok||!d.success)throw new Error((d&&d.message)||'Could not start payment');
+  var ref=d.reference;
+  if(!ref)throw new Error('No payment reference returned from server');
+  var poll=await pollPayment(ref);
+  if(!poll.ok)throw new Error(poll.message||'Payment not completed');
+  /* Balance only changes after the server confirms – same as testing wallet */
+  var paidAmt=Number(poll.amount)||Number(amount);
+  var serverBal=null;
   try{
-    const res=await apiFetch('pay',{
-      method:'POST',
-      headers:{'Content-Type':'application/json',Accept:'application/json'},
-      body:JSON.stringify({phone:phoneForApi,amount:Number(amount)})
-    });
-    payUrl=res.url;init=res.data;
-    if(!res.ok||!init.success){
-      console.warn('[Shika deposit] pay rejected',payUrl,init);
-      return{ok:false,message:(init&&init.message)||'Could not start M-Pesa request'};
-    }
-  }catch(e){
-    console.error('[Shika deposit] pay network error',e&&e.message);
-    return{ok:false,message:(e&&e.message)||'Network error contacting payment server'};
-  }
-  const ref=init.reference||(init.data&&init.data.external_reference)||(init.data&&init.data.reference);
-  if(!ref){console.warn('[Shika deposit] no reference in response',init);return{ok:false,message:'No payment reference returned from server'}}
-  console.log('[Shika deposit] polling ref',ref,'via',apiUrl('status/'+ref));
-  addPending(ref,Number(amount),k);
-  _activePolls.add(ref);
-  let poll;
-  try{poll=await pollTinyStatus(ref)}finally{_activePolls.delete(ref)}
-  if(!poll.ok){if(poll.status==='failed')dropPending(ref);console.warn('[Shika deposit] not paid',poll);return{ok:false,message:poll.message||'Payment not completed (cancelled or failed). No money was added.'}}
-  const paidAmt=Number(poll.amount)||Number(amount);
-  const done=applyDeposit(k,ref,paidAmt);
-  if(!done)return{ok:false,message:'Account not found. Please log in again.'};
-  try{
-    const br=await apiFetch('balance/'+encodeURIComponent(phoneForApi),{headers:{Accept:'application/json'}});
-    const bd=br.data||{};
-    if(br.ok&&bd.balance!=null){
-      const srv=Number(bd.balance);
-      if(srv>Number(done.balance||0)){
-        const a2=loadAcc();
-        if(a2[k]){a2[k].balance=srv;saveAcc(a2);done.balance=srv}
-      }
-    }
+    var bd=(await getJSON('balance/'+encodeURIComponent(phone))).data;
+    if(bd&&bd.balance!=null)serverBal=Number(bd.balance);
   }catch(e){}
-  console.log('[Shika deposit] success',{ref,paidAmt,balance:done.balance,bonus:done.bonus});
-  return{ok:true,balance:done.balance,bonus:done.bonus,reference:ref,amount:done.amount||paidAmt};
+  /* Update local account from server balance (source of truth). Apply welcome bonus once on top if eligible. */
+  var bonus=0;
+  if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){
+    bonus=BONUS.amt;a[k].firstDepositBonusClaimed=true;
+  }
+  if(serverBal!=null)a[k].balance=serverBal+(bonus||0);
+  else a[k].balance=Number(a[k].balance||0)+paidAmt+(bonus||0);
+  saveAcc(a);
+  return{ok:true,balance:Number(a[k].balance),bonus:bonus,reference:ref,amount:paidAmt};
 };
 if(!HOOKS.withdraw)HOOKS.withdraw=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
@@ -539,22 +537,6 @@ let bets=ld('sc_hype_bets',[]);
 /* Sync balance from persistent account store on load */
 if(user&&user.phone){const a=loadAcc();if(a[user.phone])bal=Number(a[user.phone].balance||0);else bal=0}
 const save=()=>{sv('sc_hype_bets',bets);sv('sc_bal',bal);sv('sc_tx',txs);sv('sc_limit',limit);sv('sc_excl',excl);if(user){const a=loadAcc();if(a[user.phone]){a[user.phone].balance=bal;saveAcc(a)}}};
-/* Resume unfinished deposits (modal closed / page refreshed): credit once, only if the server confirms */
-let _recBusy=false;
-async function recoverPending(){
-  if(_recBusy||!user)return;
-  const list=ld('sc_pending',[]).filter(x=>x.phone===user.phone);if(!list.length)return;
-  _recBusy=true;
-  try{for(const p of list){
-    if(_activePolls.has(p.ref))continue;
-    if(Date.now()-p.t>864e5){dropPending(p.ref);continue}
-    let j;try{j=(await apiFetch('status/'+encodeURIComponent(p.ref),{headers:{Accept:'application/json'}})).data}catch(e){continue}
-    if(j&&(j.paid||j.status==='paid')){
-      const d=applyDeposit(user.phone,p.ref,Number(j.amount)||p.amount);
-      if(d&&!d.dup){bal=d.balance;addTx('deposit',d.amount,user.phone+' · confirmed later');if(d.bonus){addTx('bonus',d.bonus,'Welcome bonus');sv('sc_bonus',true)}save();renderAll();toast('Deposit of KES '+nf(d.amount)+' confirmed ✅')}
-    }else if(j&&j.status==='failed'){dropPending(p.ref)}
-  }}finally{_recBusy=false}
-}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
 
 /* ===== DATA (your original sports + matches) ===== */
@@ -961,6 +943,6 @@ const probe=new Image();probe.onerror=()=>document.querySelectorAll('img').forEa
 })();
 /* Soft header depth while scrolling (visual only) */
 addEventListener('scroll',()=>{const h=document.querySelector('header');if(h)h.classList.toggle('scrolled',scrollY>8)},{passive:true});
-console.log('[Shika] API root =',API_ROOT,'(override with window.SHIKA_CONFIG.apiBase if needed)');sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();recoverPending();setInterval(recoverPending,20000);
+console.log('[Shika] wallet BASE =',BASE);sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();
 })();
 </script></body></html>
