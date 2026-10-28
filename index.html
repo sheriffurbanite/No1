@@ -437,107 +437,22 @@ sv('sc_tax',TX);
 const LS_ACC='sc_accounts';
 const loadAcc=()=>{try{return JSON.parse(localStorage.getItem(LS_ACC)||'{}')}catch(e){return{}}};
 const saveAcc=a=>{try{localStorage.setItem(LS_ACC,JSON.stringify(a))}catch(e){}};
-/* Cancel spinner / close while polling (UI only) */
-let _payAbort=false;
-var timer = null; /* same name as testing wallet */
-function cancelPay(){
-  _payAbort=true;
-  if(timer){clearInterval(timer);timer=null}
-  mr.innerHTML='';
+/* ===== Testing-wallet payment (copied verbatim logic) ===== */
+var timer = null;
+let _payAbort = false;
+function cancelPay() {
+  _payAbort = true;
+  if (timer) { clearInterval(timer); timer = null; }
+  mr.innerHTML = '';
   toast('Payment check closed. If M-Pesa deducted, contact 0731125008.');
 }
 
-/* ===== EXACT testing wallet deposit helpers ===== */
-/* Balance only changes after the server confirms the payment. */
-function poll(ref) {
-  return new Promise(function (resolve) {
-    _payAbort = false;
-    var tries = 0;
-    if (timer) clearInterval(timer);
-    timer = setInterval(async function () {
-      if (_payAbort) {
-        clearInterval(timer); timer = null;
-        resolve({ ok: false, status: 'cancelled', message: 'Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.' });
-        return;
-      }
-      tries++;
-      try {
-        var d = (await getJSON('status/' + encodeURIComponent(ref))).data;
-        if (d.status === 'paid') {
-          clearInterval(timer); timer = null;
-          resolve({ ok: true, status: 'paid', amount: d.amount, message: d.message || 'Payment confirmed' });
-          return;
-        }
-        if (d.status === 'failed') {
-          clearInterval(timer); timer = null;
-          resolve({ ok: false, status: 'failed', message: 'Payment not completed (cancelled or failed). No money was added.' });
-          return;
-        }
-      } catch (e) {}
-      if (tries >= 40) {
-        clearInterval(timer); timer = null;
-        resolve({ ok: false, status: 'timeout', message: 'Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed.' });
-      }
-    }, 3000);
-  });
-}
-
-async function loadServerBalance(phone) {
-  var d = (await getJSON('balance/' + encodeURIComponent(phone))).data;
-  return d;
-}
-
-/* Default HOOKS – login/register local; DEPOSIT = exact testing wallet */
+/* Login / register stay local. Deposit is NOT a HOOK — walletGo runs testing-wallet code directly. */
 if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'Account not found. Register first.'};if(a[k].password!==password)return{ok:false,message:'Incorrect password'};return{ok:true,balance:Number(a[k].balance||0)}};
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
 if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
-if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
-  /* Copy of approved testing wallet:
-       getJSON('pay', { method:'POST', body: JSON.stringify({ phone, amount }) })
-       poll(d.reference) until status==='paid'
-       then loadBalance via getJSON('balance/'+phone)
-  */
-  phone = String(phone || '').trim();
-  amount = Number(amount);
-  if (!phone || !amount) throw new Error('Enter your phone number and an amount.');
-
-  var res = await getJSON('pay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: phone, amount: amount })
-  });
-  var d = res.data;
-  if (!res.ok || !d.success) throw new Error(d.message || 'Could not start payment');
-
-  var pollResult = await poll(d.reference);
-  if (!pollResult.ok) throw new Error(pollResult.message || 'Payment not completed');
-
-  /* Balance only changes after the server confirms the payment. */
-  var serverBal = null;
-  var paidAmt = Number(pollResult.amount) || amount;
-  try {
-    var bd = await loadServerBalance(phone);
-    if (bd && bd.balance != null) serverBal = Number(bd.balance);
-  } catch (e) {}
-
-  /* Mirror server wallet into local account so the rest of the app sees the new balance */
-  var a = loadAcc();
-  var k = phone;
-  /* also try normalised 07 key used by login */
-  var k07 = null;
-  try {
-    var m = String(phone).replace(/\s/g, '').match(/([71]\d{8})$/);
-    if (m) k07 = '0' + m[1];
-  } catch (e) {}
-  var key = (a[k] && k) || (k07 && a[k07] && k07) || k07 || k;
-  if (!a[key]) {
-    a[key] = { phone: key, password: '', balance: 0, createdAt: Date.now(), firstDepositBonusClaimed: false };
-  }
-  if (serverBal != null) a[key].balance = serverBal;
-  else a[key].balance = Number(a[key].balance || 0) + paidAmt;
-  saveAcc(a);
-  return { ok: true, balance: Number(a[key].balance), bonus: 0, reference: d.reference, amount: paidAmt };
-};
+/* Deposit hook left null — deposit path is the testing wallet code inside walletGo */
+HOOKS.deposit = null;
 if(!HOOKS.withdraw)HOOKS.withdraw=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found'};
@@ -780,34 +695,178 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
  <div class="qk">${(dep?[50,100,500,1000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
  <div class="taxbox" id="wTax" style="background:#0f172a;border:1px solid #1f293d;border-radius:10px;padding:8px 10px;margin-top:8px"></div><div class="err" id="wErr"></div><button class="pbtn" data-m="wallet-go" data-kind="${kind}">${dep?'SEND STK PUSH':'WITHDRAW'}</button>
  ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa · same as approved wallet</p>'}`);updWTax()}
-async function walletGo(kind){const dep=kind=='deposit',er=$('wErr'),ph=$('wPhone').value.trim(),amt=Math.floor(+$('wAmt').value);
- /* Deposit validation matches testing wallet: need phone + amount only */
- if(dep){
-   if(!ph||!amt)return er.textContent='Enter your phone number and an amount.';
-   if(amt<CONFIG.minDeposit)return er.textContent='Minimum deposit is KES '+nf(CONFIG.minDeposit);
-   if(amt>CONFIG.maxDeposit)return er.textContent='Maximum deposit is KES '+nf(CONFIG.maxDeposit);
-   if(Date.now()<excl)return er.textContent='Deposits are blocked while your break is active';
-   if(limit){const day=txs.filter(x=>x.type=='deposit'&&Date.now()-x.t<864e5).reduce((a,x)=>a+x.amt,0);if(day+amt>limit)return er.textContent='This exceeds your daily deposit limit (KES '+nf(limit)+')'}
- }else{
-   if(!phoneOK(ph))return er.textContent='Enter a valid M-Pesa number';
-   if(!(amt>=CONFIG.minWithdraw))return er.textContent='Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
-   if(amt>bal)return er.textContent='Amount exceeds your balance';
- }
- /* Deposit: send phone exactly as typed (testing wallet). Withdraw: normalised. */
- const phone=dep?ph:normPhone(ph);
- const steps=dep?['Sending request to M-Pesa','Waiting for your PIN','Confirming payment','Crediting your wallet']:['Verifying your account','Sending to M-Pesa','Confirming with Safaricom','Finalising transfer'];
- try{history.replaceState({scModal:'pay'},'')}catch(_){try{history.pushState({scModal:'pay'},'')}catch(__){}}
- mr.querySelector('.mcard').innerHTML=`<button class="mx" data-m="pay-cancel" aria-label="Close">×</button><div class="stk"><div class="spin"></div><h2 id="stkH">${dep?'Check your phone':'Processing'}</h2><p class="sub" id="stkS">${dep?'Enter your M-Pesa PIN to approve KES '+nf(amt)+'.':'Sending KES '+nf(amt)+' to '+phone}</p><div class="stkamt">KES ${nf(amt)}</div><div class="stkbar"><i id="stkBar"></i></div><div class="stksteps">${steps.map((t,i)=>`<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div><button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
- let stkI=0;const stkAdv=()=>{for(let i=0;i<steps.length;i++){const e=$('stkSt'+i);if(!e)return;e.className='stkst'+(i<stkI?' done':i==stkI?' now':'')}const bb=$('stkBar');if(bb)bb.style.width=Math.min(94,(stkI/steps.length)*100+10)+'%';stkI=Math.min(steps.length-1,stkI+1)};
- stkAdv();const stkT=setInterval(stkAdv,900);
- try{const hk=HOOKS[kind],r=hk?await hk({phone,amount:amt}):await new Promise(res=>setTimeout(()=>res({ok:true}),3800));clearInterval(stkT);if(_payAbort)return;if(!r||r.ok===false)throw new Error((r&&r.message)||'Request failed');
-  {const bb=$('stkBar');if(bb)bb.style.width='100%';for(let i=0;i<steps.length;i++){const e=$('stkSt'+i);if(e)e.className='stkst done'}const h=$('stkH');if(h)h.textContent='Payment confirmed';const sb=$('stkS');if(sb)sb.textContent='KES '+nf(amt)+(dep?' received.':' sent.')}await new Promise(res=>setTimeout(res,900));
-  const tax=Math.floor(amt*(dep?TX.depositExcise:TX.withdrawWHT));
-  bal=r.balance!=null?+r.balance:bal+(dep?amt-tax:-amt);
-  addTx(kind,amt,phone+(tax?' · tax '+fmt(tax):''));
-  if(dep&&r.bonus){addTx('bonus',r.bonus,'Welcome bonus');sv('sc_bonus',true);setTimeout(()=>{coinShower(60);sfx('fanfare')},400)}
-  save();closeM();toast((dep?'Deposit':'Withdrawal')+' of KES '+nf(amt)+' successful'+(tax?' (tax KES '+nf(tax)+')':'')+(r.bonus?' + KES '+nf(r.bonus)+' bonus':'')+' ✅');renderAll()}
- catch(e){clearInterval(stkT);closeM();console.error('[Shika walletGo]',e);toast('❌ '+(e.message||'Failed')+' — try again')}}
+async function walletGo(kind) {
+  const dep = kind == 'deposit';
+  const er = $('wErr');
+  const ph = $('wPhone').value.trim();
+  const amt = Number($('wAmt').value);
+
+  /* ========== DEPOSIT: exact testing wallet behaviour ========== */
+  if (dep) {
+    if (!ph || !amt) {
+      er.textContent = 'Enter your phone number and an amount.';
+      return;
+    }
+
+    /* Show existing site spinner (UI only) */
+    try { history.replaceState({ scModal: 'pay' }, ''); } catch (_) { try { history.pushState({ scModal: 'pay' }, ''); } catch (__) {} }
+    const steps = ['Sending request to M-Pesa', 'Waiting for your PIN', 'Confirming payment', 'Crediting your wallet'];
+    mr.querySelector('.mcard').innerHTML =
+      `<button class="mx" data-m="pay-cancel" aria-label="Close">×</button>` +
+      `<div class="stk"><div class="spin"></div>` +
+      `<h2 id="stkH">Check your phone</h2>` +
+      `<p class="sub" id="stkS">Enter your M-Pesa PIN to approve KES ${Number(amt).toLocaleString()}.</p>` +
+      `<div class="stkamt">KES ${Number(amt).toLocaleString()}</div>` +
+      `<div class="stkbar"><i id="stkBar"></i></div>` +
+      `<div class="stksteps">${steps.map((t, i) => `<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div>` +
+      `<button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
+
+    let stkI = 0;
+    const stkAdv = () => {
+      for (let i = 0; i < steps.length; i++) {
+        const e = $('stkSt' + i);
+        if (!e) return;
+        e.className = 'stkst' + (i < stkI ? ' done' : i == stkI ? ' now' : '');
+      }
+      const bb = $('stkBar');
+      if (bb) bb.style.width = Math.min(94, (stkI / steps.length) * 100 + 10) + '%';
+      stkI = Math.min(steps.length - 1, stkI + 1);
+    };
+    stkAdv();
+    const stkT = setInterval(stkAdv, 900);
+    _payAbort = false;
+
+    try {
+      /* --- EXACT testing wallet pay call --- */
+      var res = await getJSON('pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: ph, amount: amt })
+      });
+      var d = res.data;
+      if (!res.ok || !d.success) throw new Error(d.message || 'Could not start payment');
+
+      const h = $('stkH'); if (h) h.textContent = 'Check your phone';
+      const sb = $('stkS'); if (sb) sb.textContent = 'Enter your M-Pesa PIN...';
+
+      /* --- EXACT testing wallet poll --- */
+      await new Promise(function (resolve, reject) {
+        var tries = 0;
+        if (timer) clearInterval(timer);
+        timer = setInterval(async function () {
+          if (_payAbort) {
+            clearInterval(timer); timer = null;
+            reject(new Error('Payment check cancelled. If M-Pesa deducted, contact 0731125008 with your reference.'));
+            return;
+          }
+          tries++;
+          try {
+            var st = (await getJSON('status/' + encodeURIComponent(d.reference))).data;
+            if (st.status === 'paid') {
+              clearInterval(timer); timer = null;
+              resolve(st);
+              return;
+            }
+            if (st.status === 'failed') {
+              clearInterval(timer); timer = null;
+              reject(new Error('Payment not completed (cancelled or failed). No money was added.'));
+              return;
+            }
+          } catch (e) {}
+          if (tries >= 40) {
+            clearInterval(timer); timer = null;
+            reject(new Error('Still waiting for confirmation. Nothing has been added yet. Your balance updates only if the payment is confirmed.'));
+          }
+        }, 3000);
+      }).then(async function (st) {
+        /* --- EXACT testing wallet loadBalance --- */
+        clearInterval(stkT);
+        const bb = $('stkBar'); if (bb) bb.style.width = '100%';
+        for (let i = 0; i < steps.length; i++) {
+          const e = $('stkSt' + i); if (e) e.className = 'stkst done';
+        }
+        const h2 = $('stkH'); if (h2) h2.textContent = 'Payment confirmed';
+        const s2 = $('stkS'); if (s2) s2.textContent = 'KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.';
+
+        var balData = null;
+        try {
+          balData = (await getJSON('balance/' + encodeURIComponent(ph))).data;
+        } catch (e) {}
+
+        /* Balance only changes after the server confirms the payment. */
+        if (balData && balData.balance != null) {
+          bal = Number(balData.balance);
+        } else {
+          bal = Number(bal) + Number(st.amount || amt);
+        }
+
+        /* keep local account in sync for the rest of the app */
+        if (user && user.phone) {
+          const a = loadAcc();
+          const k = user.phone;
+          if (a[k]) { a[k].balance = bal; saveAcc(a); }
+        }
+        addTx('deposit', Number(st.amount || amt), ph);
+        save();
+        await new Promise(r => setTimeout(r, 800));
+        closeM();
+        toast('Payment confirmed. KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.');
+        renderAll();
+      });
+    } catch (e) {
+      clearInterval(stkT);
+      if (timer) { clearInterval(timer); timer = null; }
+      closeM();
+      toast('❌ ' + (e.message || 'Failed'));
+    }
+    return;
+  }
+
+  /* ========== WITHDRAW: unchanged site logic ========== */
+  if (!phoneOK(ph)) return er.textContent = 'Enter a valid M-Pesa number';
+  if (!(amt >= CONFIG.minWithdraw)) return er.textContent = 'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
+  if (amt > bal) return er.textContent = 'Amount exceeds your balance';
+  const phone = normPhone(ph);
+  const stepsW = ['Verifying your account', 'Sending to M-Pesa', 'Confirming with Safaricom', 'Finalising transfer'];
+  try { history.replaceState({ scModal: 'pay' }, ''); } catch (_) { try { history.pushState({ scModal: 'pay' }, ''); } catch (__) {} }
+  mr.querySelector('.mcard').innerHTML =
+    `<button class="mx" data-m="pay-cancel" aria-label="Close">×</button>` +
+    `<div class="stk"><div class="spin"></div>` +
+    `<h2 id="stkH">Processing</h2>` +
+    `<p class="sub" id="stkS">Sending KES ${nf(amt)} to ${phone}</p>` +
+    `<div class="stkamt">KES ${nf(amt)}</div>` +
+    `<div class="stkbar"><i id="stkBar"></i></div>` +
+    `<div class="stksteps">${stepsW.map((t, i) => `<div class="stkst" id="stkSt${i}"><i></i><span>${t}</span></div>`).join('')}</div>` +
+    `<button type="button" class="stk-cancel" data-m="pay-cancel">Close / Cancel</button></div>`;
+  let stkI = 0;
+  const stkAdv = () => {
+    for (let i = 0; i < stepsW.length; i++) {
+      const e = $('stkSt' + i); if (!e) return;
+      e.className = 'stkst' + (i < stkI ? ' done' : i == stkI ? ' now' : '');
+    }
+    const bb = $('stkBar'); if (bb) bb.style.width = Math.min(94, (stkI / stepsW.length) * 100 + 10) + '%';
+    stkI = Math.min(stepsW.length - 1, stkI + 1);
+  };
+  stkAdv();
+  const stkT = setInterval(stkAdv, 900);
+  try {
+    const hk = HOOKS.withdraw;
+    const r = hk ? await hk({ phone, amount: amt }) : await new Promise(res => setTimeout(() => res({ ok: true }), 3800));
+    clearInterval(stkT);
+    if (_payAbort) return;
+    if (!r || r.ok === false) throw new Error((r && r.message) || 'Request failed');
+    { const bb = $('stkBar'); if (bb) bb.style.width = '100%'; for (let i = 0; i < stepsW.length; i++) { const e = $('stkSt' + i); if (e) e.className = 'stkst done'; } const h = $('stkH'); if (h) h.textContent = 'Payment confirmed'; const sb = $('stkS'); if (sb) sb.textContent = 'KES ' + nf(amt) + ' sent.'; }
+    await new Promise(res => setTimeout(res, 900));
+    const tax = Math.floor(amt * TX.withdrawWHT);
+    bal = r.balance != null ? +r.balance : bal - amt;
+    addTx('withdraw', amt, phone + (tax ? ' · tax ' + fmt(tax) : ''));
+    save(); closeM();
+    toast('Withdrawal of KES ' + nf(amt) + ' successful' + (tax ? ' (tax KES ' + nf(tax) + ')' : '') + ' ✅');
+    renderAll();
+  } catch (e) {
+    clearInterval(stkT); closeM(); toast('❌ ' + (e.message || 'Failed') + ' — try again');
+  }
+}
 
 function accHTML(){if(!user){$('accBody').innerHTML='<div class="bempty"><h3>Log in to view your account</h3><p>Balance, history and play limits live here.</p><button class="pbtn" data-m="open-login">LOG IN / REGISTER</button></div>';return}
  const act=bets.filter(b=>b.st=='a').length,staked=bets.reduce((a,b)=>a+b.stake,0);
