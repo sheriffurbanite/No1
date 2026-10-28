@@ -622,7 +622,7 @@ body{overflow:visible!important}
     return s.slice(0,6)+'XXX'+s.slice(-3);
   }
   function buildMenu(){
-    var u=null;try{u=JSON.parse(localStorage.getItem('shikachapaa_user')||'null')}catch(e){}
+    var u=null;try{u=JSON.parse(localStorage.getItem('sc_user')||'null')}catch(e){}
     var phoneLabel=maskPhone(u&&u.phone);
     $('menu').innerHTML='<div class="mh"><i class="mav" id="mav">'+AV[avi]+'</i><b id="mph">'+phoneLabel+'</b><button id="cav">'+P_+IC.user+'</svg><span>Change<br>Avatar</span></button></div>'+
       mrow('sound','Sound',2)+mrow('music','Music',2)+mrow('anim','Animation',S.anim?2:1)+'<div class="msep"></div>'+
@@ -893,8 +893,8 @@ body{overflow:visible!important}
   function fnum(v){return Math.round(v).toLocaleString('en-US')}
   function meets(){return TM.joined&&CD.some(function(c){return(c.st==='idle'?c.amt:c.stake)>=RULES.min})}
   function cardEl(i){return $('cards').children[i]}
-  function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null'),a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)}}catch(e){}return null}
-  function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('shikachapaa_accounts',JSON.stringify(a));localStorage.setItem('shikachapaa_user',JSON.stringify(s))}catch(e){}}
+  function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null'),a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)};if(s&&s.phone){var b=Number(localStorage.getItem('sc_bal'));if(!isNaN(b))return{phone:s.phone,balance:b}}}catch(e){}return null}
+  function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('sc_accounts',JSON.stringify(a));localStorage.setItem('sc_user',JSON.stringify(s));localStorage.setItem('sc_bal',JSON.stringify(a[s.phone].balance))}catch(e){}}
   function setBal(v){BAL=Math.max(0,v);$('bal').textContent=fmt(BAL);saveParentBal(BAL)}
   function betClick(i){
     var c=CD[i];
@@ -1053,7 +1053,7 @@ body{overflow:visible!important}
   buildCards();hist();
   (function(){var u=loadParentUser();setBal(u?u.balance:1000);var dem=document.querySelector('.bal .demo');if(dem){if(u){dem.style.display='none';dem.textContent=''}else{dem.style.display='';dem.textContent='DEMO'}}buildMenu()})();
   setInterval(function(){var u=loadParentUser();if(!u)return;var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
-  window.addEventListener('storage',function(e){if(e.key==='shikachapaa_user'||e.key==='shikachapaa_accounts'){var u=loadParentUser();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
+  window.addEventListener('storage',function(e){if(e.key==='sc_user'||e.key==='sc_accounts'||e.key==='sc_bal'){var u=loadParentUser();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
   if(window.AviatorSound)AviatorSound.start();newRound();tick();setInterval(tick,100);requestAnimationFrame(draw);
 })();
 </script>
