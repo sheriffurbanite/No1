@@ -404,17 +404,20 @@ const $=id=>document.getElementById(id),f2=n=>(+n||0).toLocaleString('en-US',{mi
 const HOOKS=Object.assign({deposit:null,withdraw:null,login:null,register:null,account:null,logout:null},window.SHIKA_HOOKS||{});
 /* ===== WALLET API – exact same as testing wallet HTML ===== */
 /* Works even when the page is opened inside a sub-path (e.g. bonto.dev/apps/xyz/) */
+/* Wallet API root — same endpoints as your testing wallet: api/pay, api/status, api/balance.
+   Default is your working server. Override with window.SHIKA_CONFIG={apiBase:'https://...'} if needed.
+   If this page is hosted ON that same server, relative BASE also works. */
 var BASE = (function () {
-  var u = location.href.split('#')[0].split('?')[0];
-  if (!/\/$/.test(u)) u = u.replace(/[^\/]*$/, '');
-  return u;
+  var override = (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase) || '';
+  if (override) {
+    var b = String(override).replace(/\/$/, '');
+    return b + '/';
+  }
+  /* Known working API host (same as when testing wallet succeeds on that server) */
+  return 'https://my-server1.bonto.run/';
 })();
-/* Optional override: window.SHIKA_CONFIG = { apiBase: 'https://your-host' } */
 const CONFIG=Object.assign({demo:false,minDeposit:10,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
-if(CONFIG.apiBase){
-  var _b=String(CONFIG.apiBase).replace(/\/$/,'');
-  if(_b) BASE=_b.endsWith('/')?_b:_b+'/';
-}
+
 async function getJSON(path, opts) {
   var url = BASE + 'api/' + path;
   var r = await fetch(url, opts);
@@ -679,7 +682,10 @@ async function authGo(mode){const ph=$('aPhone').value,pw=$('aPass').value,er=$(
  const phone=normPhone(ph),hk=HOOKS[mode];
  try{const r=hk?await hk({phone,password:pw}):{ok:true};
   if(!r||r.ok===false)return er.textContent=(r&&r.message)||'Could not sign you in';
-  user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);save();closeM();toast(mode=='register'?'Account created 🎉':'Welcome back!');renderAll()}
+  user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);save();closeM();toast(mode=='register'?'Account created 🎉':'Welcome back!');
+  /* Sync wallet from server — same as testing wallet loadBalance */
+  try{var bd=(await getJSON('balance/'+encodeURIComponent(phone))).data;if(bd&&bd.balance!=null){bal=Number(bd.balance);const a=loadAcc();if(a[phone]){a[phone].balance=bal;saveAcc(a)}save();}}catch(e){}
+  renderAll()}
  catch(e){er.textContent='Network error, please try again'}}
 
 let wKind='deposit';
