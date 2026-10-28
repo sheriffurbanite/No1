@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Shika Chapaa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:#0e0e0e;color:#bbc2bb;font-family:Roboto,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+html,body{background:#0e0e0e;color:#bbc2bb;font-family:Inter,system-ui,sans-serif}
 body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer}
 /* all sizes below are in the screenshot's 720px-wide pixel space; JS zooms to fit */
@@ -16,7 +17,7 @@ button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer
 .nav .lv{font-size:18px;color:#8fa0b4;font-weight:400}.nav .lv.c{color:#e0405a}
 .nav svg{vertical-align:middle;margin-left:8px}
 .bal{height:62px;background:#1b1c1e;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;gap:26px}
-.bal .a{font-size:25px;color:#a3a3a5}.bal .a b{color:#2fb30f;font-weight:600;margin-right:4px}.bal .a .cur{color:#a3a3a5;font-weight:400}
+.bal .a{font-size:20px;color:#e8e8e8;font-weight:600}.bal .a b{color:#2fb30f;font-weight:700;margin-right:4px}
 .card{position:relative;margin:0 6px;height:193px;background:#1b1c1e;border-radius:0 0 26px 26px;overflow:hidden}
 .mode{position:absolute;left:194px;top:-10px;width:322px;height:34px;background:#141517;border-radius:0 0 18px 18px;display:flex;font-size:20px;color:#a3a3a5}
 .mode span{width:50%;text-align:center;padding-top:6px;height:34px}
@@ -237,7 +238,7 @@ body{overflow:visible!important}
 #boot .d2{left:calc(349*var(--su));animation-delay:-.4s}
 #boot .d3{left:calc(373*var(--su));animation-delay:0s}
 @keyframes bootpulse{0%,66%,100%{transform:scale(.32);background:#6b1515}20%,40%{transform:scale(1);background:#e81c1c}}
-#boot #conn{color:#fff;font:400 calc(26*var(--su))/1 Inter,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:calc(.5*var(--su))}
+#boot #conn{color:#fff;font:400 calc(26*var(--su))/1 Inter,system-ui,sans-serif;letter-spacing:calc(.5*var(--su))}
 #app{visibility:hidden}
 #app.ready{visibility:visible}
 </style>
@@ -258,7 +259,7 @@ body{overflow:visible!important}
 <div id="app"><div id="hp"></div><div id="menu"></div><div id="sheet"></div><div id="hm"></div><div id="tb"></div><div id="tm"></div><div id="chat"><div class="ch2"><i class="inf" id="cinfo">i</i><span>Online: <b id="co">7217</b></span><i class="cx2" id="cc2">&#10005;</i></div><div id="cm"></div><div class="cin2"><textarea id="ci" placeholder="Your message..." maxlength="160" rows="1"></textarea><div class="cbt"><span id="cn"><u>AA</u>160</span><svg id="cs" viewBox="0 0 24 24" width="40" height="40" fill="#6a6a6a"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div></div></div><div id="toast">Not enough balance<b id="tx">&#10005;</b></div>
   <div id="top"><div class="nav"><span id="goBack" role="button" tabindex="0" style="cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation">&#10094; Go Back</span><span id="lv" hidden><b id="mult"></b></span>
     <span id="fsBtn" style="cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation">View Fullscreen<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.4"><path d="M2 9V2h7M17 2h7v7M24 17v7h-7M9 24H2v-7"/></svg></span></div>
-  <div class="bal"><span class="demo" style="display:none"></span><div class="a"><b id="bal">0.00</b> <span class="cur">KES</span></div>
+  <div class="bal"><span class="demo" style="display:none"></span><div class="a"><b id="bal">0.00</b>KES</div>
     <svg id="mb" width="26" height="22" viewBox="0 0 26 22" stroke="#a3a3a5" stroke-width="2.4"><path d="M2 3h22M2 11h22M2 19h22"/></svg>
     <svg id="cb" width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="#a3a3a5" stroke-width="2.4"><path d="M13 3C7 3 2 6.6 2 11c0 2.3 1.2 4.3 3.2 5.7L4 21l5-2.4c1.2.3 2.6.4 4 .4 6.5 0 11-3.6 11-8s-4.5-8-11-8z"/></svg></div>
   <div class="bn"><div class="bi"><div class="lvp" id="lvp"><i></i><span id="lvt">LIVE</span></div><div class="bt" id="bt">Daily Crown &middot; KES 400,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
@@ -621,7 +622,7 @@ body{overflow:visible!important}
     return s.slice(0,6)+'XXX'+s.slice(-3);
   }
   function buildMenu(){
-    var u=null;try{u=JSON.parse(localStorage.getItem('sc_user')||'null')}catch(e){}
+    var u=null;try{u=JSON.parse(localStorage.getItem('shikachapaa_user')||'null')}catch(e){}
     var phoneLabel=maskPhone(u&&u.phone);
     $('menu').innerHTML='<div class="mh"><i class="mav" id="mav">'+AV[avi]+'</i><b id="mph">'+phoneLabel+'</b><button id="cav">'+P_+IC.user+'</svg><span>Change<br>Avatar</span></button></div>'+
       mrow('sound','Sound',2)+mrow('music','Music',2)+mrow('anim','Animation',S.anim?2:1)+'<div class="msep"></div>'+
@@ -847,7 +848,7 @@ body{overflow:visible!important}
     cx.textAlign='center';
     if(ph==='wait'){
       var p=clamp((now-S.wt)/5000);
-      cx.fillStyle='#fff';cx.font='600 24px Roboto,Arial,sans-serif';cx.fillText('WAITING FOR NEXT ROUND',W/2,268);
+      cx.fillStyle='#fff';cx.font='600 24px Inter,system-ui,sans-serif';cx.fillText('WAITING FOR NEXT ROUND',W/2,268);
       cx.fillStyle='#1c1d20';cx.fillRect(W/2-110,292,220,8);cx.fillStyle='#e8083e';cx.fillRect(W/2-110,292,220*(1-p),8);return;
     }
     var f=1-Math.exp(-(m-1)*2.2),px=30+470*f,py=H-26-370*(1-Math.exp(-(m-1)*4.5));
@@ -860,8 +861,8 @@ body{overflow:visible!important}
       cx.beginPath();cx.moveTo(4,H-4);cx.quadraticCurveTo(px*.58,H-4,px,py+6);cx.strokeStyle='#e8083e';cx.lineWidth=6;cx.lineCap='round';cx.stroke();
       cx.translate(px+fly*fly*900,py+4-fly*220);planeImg(t,ph==='fly'?.05:.03);cx.restore();
     }
-    cx.shadowColor='rgba(0,0,0,.35)';cx.shadowBlur=18;cx.font='700 118px Roboto,Arial,sans-serif';
-    if(ph==='crash'){cx.fillStyle='#dc0120';cx.fillText(m.toFixed(2)+'x',W/2,332);cx.shadowBlur=0;cx.fillStyle='#fff';cx.font='400 32px Roboto,Arial,sans-serif';cx.fillText('FLEW AWAY!',W/2,203)}
+    cx.shadowColor='rgba(0,0,0,.35)';cx.shadowBlur=18;cx.font='700 118px Inter,system-ui,sans-serif';
+    if(ph==='crash'){cx.fillStyle='#dc0120';cx.fillText(m.toFixed(2)+'x',W/2,332);cx.shadowBlur=0;cx.fillStyle='#fff';cx.font='400 32px Inter,system-ui,sans-serif';cx.fillText('FLEW AWAY!',W/2,203)}
     else{cx.fillStyle='#fff';cx.fillText(m.toFixed(2)+'x',W/2,332);cx.shadowBlur=0}
   }
   var _d=draw;draw=function(t){_d(t);requestAnimationFrame(draw)};
@@ -892,8 +893,8 @@ body{overflow:visible!important}
   function fnum(v){return Math.round(v).toLocaleString('en-US')}
   function meets(){return TM.joined&&CD.some(function(c){return(c.st==='idle'?c.amt:c.stake)>=RULES.min})}
   function cardEl(i){return $('cards').children[i]}
-  function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null'),a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)};if(s&&s.phone){var b=Number(localStorage.getItem('sc_bal'));if(!isNaN(b))return{phone:s.phone,balance:b}}}catch(e){}return null}
-  function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('sc_accounts',JSON.stringify(a));localStorage.setItem('sc_user',JSON.stringify(s));localStorage.setItem('sc_bal',JSON.stringify(a[s.phone].balance))}catch(e){}}
+  function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null'),a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)}}catch(e){}return null}
+  function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('shikachapaa_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('shikachapaa_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('shikachapaa_accounts',JSON.stringify(a));localStorage.setItem('shikachapaa_user',JSON.stringify(s))}catch(e){}}
   function setBal(v){BAL=Math.max(0,v);$('bal').textContent=fmt(BAL);saveParentBal(BAL)}
   function betClick(i){
     var c=CD[i];
@@ -951,7 +952,7 @@ body{overflow:visible!important}
   function renderHist(){
     var rows=MY.slice(0,HMN).map(function(o,i){
       var d=new Date(o.t),w=o.w>0,xv=w?o.x:(o.r||0);
-      return '<div class="hmr'+(w?' w':'')+'" data-i="'+i+'"><div class="d">'+d2(d.getHours())+':'+d2(d.getMinutes())+'<br>'+d2(d.getDate())+'-'+d2(d.getMonth()+1)+'-'+String(d.getFullYear()).slice(2)+'</div><div class="b">'+o.b.toFixed(2)+'</div><div class="xp" style="color:'+hcol(xv)+'">'+xv.toFixed(2)+'x</div>'+(w?'<div class="co">'+o.w.toFixed(2)+'</div>':'')+'<div class="i1" data-a="fair">'+SHLD2+'</div><div class="i2" data-a="share">'+BUB2+'</div></div>'}).join('');
+      return '<div class="hmr'+(w?' w':'')+'" data-i="'+i+'"><div class="d">'+d2(d.getHours())+':'+d2(d.getMinutes())+'<br>'+d2(d.getDate())+'-'+d2(d.getMonth()+1)+'-'+String(d.getFullYear()).slice(2)+'</div><div class="b">'+fmt(o.b)+'</div><div class="xp" style="color:'+hcol(xv)+'">'+xv.toFixed(2)+'x</div>'+(w?'<div class="co">'+fmt(o.w)+'</div>':'')+'<div class="i1" data-a="fair">'+SHLD2+'</div><div class="i2" data-a="share">'+BUB2+'</div></div>'}).join('');
     $('hm').innerHTML='<div class="hmh"><span>MY BET HISTORY</span><i id="hmx">&#10006;</i></div><div class="hmc"><span style="left:9px">Date</span><span style="right:388px">Bet KES</span><span style="left:302px">X</span><span style="right:76px">Cash out KES</span></div>'+(rows||'<div class="hint" style="padding:24px">No bets played yet. Every round you play is saved here.</div>')+(MY.length>HMN?'<button id="hml">Load more</button>':'');
   }
   $('hm').onclick=function(e){
@@ -966,9 +967,9 @@ body{overflow:visible!important}
   var STARS='<svg width="173" height="56" viewBox="0 0 173 56" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.4" stroke-linejoin="round">'+star(26,17,12)+star(47,41,6)+star(148,16,13)+star(126,41,5.5)+'</svg>';
   function showWin(x,win){
     var d=document.createElement('div');d.className='wbub';
-    d.innerHTML='<div class="l"><small>You have cashed out!</small><b>'+x.toFixed(2)+'x</b></div><div class="w">'+STARS+'<small>Win KES</small><b>'+win.toFixed(2)+'</b></div><i class="x"></i>';
+    d.innerHTML='<div class="l"><small>You have cashed out!</small><b>'+x.toFixed(2)+'x</b></div><div class="w">'+STARS+'<small>Win KES</small><b>'+fmt(win)+'</b></div><i class="x"></i>';
     d.querySelector('.x').onclick=function(){d.remove()};
-    $('wb').appendChild(d);setTimeout(function(){d.remove()},4500);
+    $('wb').appendChild(d);setTimeout(function(){d.remove()},2000);
     while($('wb').children.length>2)$('wb').removeChild($('wb').firstChild);
   }
   function onFly(){if(window.AviatorSound)AviatorSound.restartMusicForRound();CD.forEach(function(c){if(c.st==='placed'&&!c.nx)c.st='live'});CD.forEach(function(c,i){PM[i]=c.st==='live'?{b:c.stake,t:Date.now()}:null})}
@@ -1052,7 +1053,7 @@ body{overflow:visible!important}
   buildCards();hist();
   (function(){var u=loadParentUser();setBal(u?u.balance:1000);var dem=document.querySelector('.bal .demo');if(dem){if(u){dem.style.display='none';dem.textContent=''}else{dem.style.display='';dem.textContent='DEMO'}}buildMenu()})();
   setInterval(function(){var u=loadParentUser();if(!u)return;var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
-  window.addEventListener('storage',function(e){if(e.key==='sc_user'||e.key==='sc_accounts'||e.key==='sc_bal'){var u=loadParentUser();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
+  window.addEventListener('storage',function(e){if(e.key==='shikachapaa_user'||e.key==='shikachapaa_accounts'){var u=loadParentUser();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
   if(window.AviatorSound)AviatorSound.start();newRound();tick();setInterval(tick,100);requestAnimationFrame(draw);
 })();
 </script>
