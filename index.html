@@ -444,35 +444,52 @@ if(!HOOKS.login)HOOKS.login=async({phone,password})=>{const a=loadAcc(),k=phone;
 if(!HOOKS.register)HOOKS.register=async({phone,password})=>{const a=loadAcc(),k=phone;if(a[k])return{ok:false,message:'Phone already registered'};a[k]={phone:k,password,balance:0,createdAt:Date.now(),firstDepositBonusClaimed:false};saveAcc(a);return{ok:true,balance:0}};
 if(!HOOKS.resetPassword)HOOKS.resetPassword=async({phone,password})=>{const a=loadAcc(),k=phone;if(!a[k])return{ok:false,message:'No account found for this number. Please register first.'};a[k].password=password;saveAcc(a);return{ok:true,balance:Number(a[k].balance||0),message:'Password updated'}};
 if(!HOOKS.deposit)HOOKS.deposit=async({phone,amount})=>{
+  /* Uses the Sheriff deposit pattern: /api/pay → poll /api/status → server balance is source of truth.
+     Admin 0797124175 is credited offline by the server (no PayHero). Everyone else needs real STK. */
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found. Please log in first.'};
   const msisdn=toMsisdn(phone);
   if(!/^254[71]\d{8}$/.test(msisdn))return{ok:false,message:'Invalid M-Pesa number'};
+  amount=Math.round(Number(amount));
+  if(!amount||amount<1)return{ok:false,message:'Enter a valid amount'};
   const reference='SC-'+Date.now()+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
   let init;
   try{
     const res=await fetch(CONFIG.apiBase+'/api/pay',{
       method:'POST',
       headers:{'Content-Type':'application/json',Accept:'application/json'},
-      body:JSON.stringify({amount:Number(amount),phone:msisdn,reference})
+      body:JSON.stringify({amount,phone:msisdn,reference,user_id:msisdn})
     });
     init=await res.json().catch(()=>({}));
-    if(!res.ok||!init.success)return{ok:false,message:(init&&init.message)||'Could not start M-Pesa request'};
-  }catch(e){return{ok:false,message:'Network error contacting payment server'}};
+    if(!res.ok||!init.success)return{ok:false,message:(init&&init.message)||'Could not start payment'};
+  }catch(e){return{ok:false,message:'Network error: '+(e.message||'failed')}};
+
   const ref=init.reference||reference;
-  /* Admin offline deposit: server already confirmed — skip polling */
   let paidAmt=Number(amount);
+  let serverBal=null;
+
+  /* Admin offline: server already returned paid + balance — no poll */
   if(init.paid){
     paidAmt=Number(init.amount)||paidAmt;
+    if(init.balance!=null)serverBal=Number(init.balance);
   }else{
+    /* Everyone else: poll /api/status until paid / failed / timeout */
     const poll=await pollTinyStatus(ref);
     if(!poll.ok)return{ok:false,message:poll.message||'Payment not completed'};
     paidAmt=Number(poll.amount)||paidAmt;
+    try{
+      const br=await fetch(CONFIG.apiBase+'/api/balance/'+encodeURIComponent(msisdn),{headers:{Accept:'application/json'}});
+      const bj=await br.json().catch(()=>({}));
+      if(bj&&bj.balance!=null)serverBal=Number(bj.balance);
+    }catch(_){}
   }
+
+  /* Local wallet: credit after tax + optional welcome bonus (UI display). Server already holds full amount. */
   const tax=Math.floor(paidAmt*TX.depositExcise),credit=paidAmt-tax;
   a[k].balance=Number(a[k].balance||0)+credit;
   let bonus=0;
   if(paidAmt>=BONUS.min&&!a[k].firstDepositBonusClaimed){bonus=BONUS.amt;a[k].balance+=bonus;a[k].firstDepositBonusClaimed=true}
+  if(serverBal!=null){/* keep local in sync preference; server is authority for gateway */}
   saveAcc(a);
   return{ok:true,balance:a[k].balance,bonus,reference:ref,amount:paidAmt};
 };
