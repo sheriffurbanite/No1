@@ -464,6 +464,11 @@ const LS_TX='sc_tx_by_acct';
 const loadTxMap=()=>{try{return JSON.parse(localStorage.getItem(LS_TX)||'{}')}catch(e){return{}}};
 const saveTxMap=()=>{if(!user||!user.phone)return;const m=loadTxMap();m[user.phone]=txs;try{localStorage.setItem(LS_TX,JSON.stringify(m))}catch(e){}};
 const useTx=phone=>{const m=loadTxMap();txs=Array.isArray(m[phone])?m[phone]:[];sv('sc_tx',txs)};
+const LS_BETS='sc_bets_by_acct';
+const loadBetMap=()=>{try{return JSON.parse(localStorage.getItem(LS_BETS)||'null')}catch(e){return null}};
+const saveBetMap=()=>{if(!user||!user.phone)return;const m=loadBetMap()||{};m[user.phone]=bets;try{localStorage.setItem(LS_BETS,JSON.stringify(m))}catch(e){}};
+/* first run after this update: the existing shared bet list is adopted by the first account that loads, every other account starts empty */
+const pickBets=phone=>{let m=loadBetMap();if(m===null){m={};m[phone]=bets;try{localStorage.setItem(LS_BETS,JSON.stringify(m))}catch(e){}}bets=Array.isArray(m[phone])?m[phone]:[];sv('sc_hype_bets',bets)};
 /* ===== Testing-wallet payment (copied verbatim logic) ===== */
 var timer = null;
 let _payAbort = false;
@@ -496,8 +501,8 @@ if(!HOOKS.logout)HOOKS.logout=()=>{};
 let sport='Soccer',filter='all',q='',slip=[],stake=0,tab='slip',user=ld('sc_user',null),bal=ld('sc_bal',0),txs=ld('sc_tx',[]),limit=ld('sc_limit',0),excl=ld('sc_excl',0);
 let bets=ld('sc_hype_bets',[]);
 /* Sync balance from persistent account store on load */
-if(user&&user.phone){const a=loadAcc();if(a[user.phone])bal=Number(a[user.phone].balance||0);else bal=0;const tm=loadTxMap();if(Array.isArray(tm[user.phone]))txs=tm[user.phone]}else txs=[];
-const save=()=>{sv('sc_hype_bets',bets);sv('sc_bal',bal);sv('sc_tx',txs);sv('sc_limit',limit);sv('sc_excl',excl);saveTxMap();if(user){const a=loadAcc();if(a[user.phone]){a[user.phone].balance=bal;saveAcc(a)}}};
+if(user&&user.phone){const a=loadAcc();if(a[user.phone])bal=Number(a[user.phone].balance||0);else bal=0;const tm=loadTxMap();txs=Array.isArray(tm[user.phone])?tm[user.phone]:[];pickBets(user.phone)}else{txs=[];bets=[]};
+const save=()=>{sv('sc_hype_bets',bets);sv('sc_bal',bal);sv('sc_tx',txs);sv('sc_limit',limit);sv('sc_excl',excl);saveTxMap();saveBetMap();if(user){const a=loadAcc();if(a[user.phone]){a[user.phone].balance=bal;saveAcc(a)}}};
 function toast(t,kind){
   const e=$('toast');
   kind=kind||(/[❌✖]|fail|error|not completed|wrong|invalid|could not|exceeds|blocked|not enough/i.test(String(t))?'bad':/[✅|confirmed|successful|added|unlocked|welcome|credited|✓]/i.test(String(t))?'ok':'info');
@@ -662,7 +667,7 @@ document.addEventListener('input',e=>{if(e.target.id=='wAmt')return updWTax();if
 function launchAviator(){save();let l=$('avLayer');
  if(!l){l=document.createElement('div');l.id='avLayer';l.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#0b0e14;display:flex;flex-direction:column');l.innerHTML='<iframe id="avFrame" src="shika-chapaa-aviator.html" title="Aviator" style="border:0;width:100%;height:100%;flex:1;background:#0b0e14" allow="autoplay"></iframe>';document.body.appendChild(l);
   addEventListener('message',ev=>{if(ev&&ev.data=='shika-close-aviator'){const L=$('avLayer');if(L){L.style.display='none';$('avFrame').src='about:blank';/* Share balance with Aviator via same localStorage keys */
-  bal=ld('sc_bal',bal);txs=ld('sc_tx',txs);saveTxMap();if(user&&user.phone){const a=loadAcc();if(a[user.phone]&&a[user.phone].balance!=null){bal=Number(a[user.phone].balance);sv('sc_bal',bal)}}renderAll()}}})}
+  bal=ld('sc_bal',bal);if(user&&user.phone){const tm=loadTxMap();txs=Array.isArray(tm[user.phone])?tm[user.phone]:[]}else txs=[];sv('sc_tx',txs);if(user&&user.phone){const a=loadAcc();if(a[user.phone]&&a[user.phone].balance!=null){bal=Number(a[user.phone].balance);sv('sc_bal',bal)}}renderAll()}}})}
  else{l.style.display='flex';$('avFrame').src='shika-chapaa-aviator.html'}}
 /* ===== MODULES: modal, auth, wallet, account, responsible gaming ===== */
 LEGAL.tax=['Taxes & Charges','<p>Taxes are shown before you confirm and are deducted automatically:</p><p>• Excise duty on deposits: <b>'+pc(TX.depositExcise)+'</b><br>'+(TX.stakeExcise?'• Excise duty on stakes: <b>'+pc(TX.stakeExcise)+'</b><br>':'')+'• Withholding tax on winnings: <b>'+pc(TX.winWHT)+'</b> (on '+(TX.whtOn=='gross'?'the full payout':'net winnings, payout minus stake')+')<br>• Withholding tax on withdrawals: <b>'+pc(TX.withdrawWHT)+'</b></p><p>Rates follow Kenyan law and may change. M-Pesa charges are separate.</p>'];
@@ -708,7 +713,7 @@ async function authGo(mode){const ph=$('aPhone').value,pw=$('aPass').value,er=$(
   try{
    const r=HOOKS.resetPassword?await HOOKS.resetPassword({phone,password:pw}):{ok:false,message:'Reset not available'};
    if(!r||r.ok===false)return er.textContent=(r&&r.message)||'Could not reset password';
-   user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);useTx(user.phone);save();closeM();toast('Password updated — you are logged in');renderAll();
+   user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);useTx(user.phone);pickBets(user.phone);save();closeM();toast('Password updated — you are logged in');renderAll();
   }catch(e){er.textContent='Network error, please try again'}
   return;
  }
@@ -718,7 +723,7 @@ async function authGo(mode){const ph=$('aPhone').value,pw=$('aPass').value,er=$(
  const phone=normPhone(ph),hk=HOOKS[mode];
  try{const r=hk?await hk({phone,password:pw}):{ok:true};
   if(!r||r.ok===false)return er.textContent=(r&&r.message)||'Could not sign you in';
-  user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);useTx(user.phone);save();closeM();toast(mode=='register'?'Account created 🎉':'Welcome back!');
+  user={phone,since:(user&&user.since)||Date.now()};if(r.balance!=null)bal=+r.balance;sv('sc_user',user);useTx(user.phone);pickBets(user.phone);save();closeM();toast(mode=='register'?'Account created 🎉':'Welcome back!');
   /* Sync wallet from server — same as testing wallet loadBalance */
   try{var bd=(await getJSON('balance/'+encodeURIComponent(phone))).data;if(bd&&bd.balance!=null){bal=Number(bd.balance);const a=loadAcc();if(a[phone]){a[phone].balance=bal;saveAcc(a)}save();}}catch(e){}
   renderAll()}
@@ -939,7 +944,7 @@ function txFullHTML(){const dep=txs.filter(x=>x.type=='deposit'),wd=txs.filter(x
  <div style="background:#121824;border:1px solid #1f293d;border-radius:14px;overflow:hidden;margin-top:8px">${L.length?L.map(txRow).join(''):'<div class="empty">No transactions yet</div>'}</div>`}
 function txOpen(){if(!user||$('txFull'))return;txF='all';const d=document.createElement('div');d.id='txFull';d.innerHTML=txFullHTML();document.body.appendChild(d);document.body.style.overflow='hidden';try{history.pushState({scTx:1},'')}catch(_){}}
 function txClose(){if(history.state&&history.state.scTx){history.back();return}const d=$('txFull');if(d)d.remove();document.body.style.overflow=''}
-function logout(){if(HOOKS.logout)try{HOOKS.logout()}catch(e){}user=null;sv('sc_user',null);txs=[];sv('sc_tx',[]);closeM();toast('Logged out');show('home')}
+function logout(){if(HOOKS.logout)try{HOOKS.logout()}catch(e){}user=null;sv('sc_user',null);txs=[];sv('sc_tx',[]);bets=[];sv('sc_hype_bets',[]);closeM();toast('Logged out');show('home')}
 function hook(n){if(n=='deposit'||n=='withdraw')return needLogin(()=>walletModal(n));
  if(n=='account')return needLogin(()=>HOOKS.account?HOOKS.account():show('acc'));
  if(n=='logout')return user?logout():toast('You are not logged in')}
