@@ -441,16 +441,27 @@ body{overflow:visible!important}
   // ---- Shared true-time clock: all devices follow the host server's UTC time (not the phone's own clock/time zone)
   var CLK=0,_dn=Date.now,_cs=false;
   Date.now=function(){return _dn.call(Date)+CLK};
+  // Public UTC + RTT-corrected offset (same source + algorithm as signals app)
   function syncClock(){
-    if(!window.fetch||!/^https?:/.test(location.protocol))return;
-    var t0=_dn.call(Date);
-    fetch(location.href.split('#')[0].split('?')[0]+'?_t='+t0,{method:'HEAD',cache:'no-store'}).then(function(r){
-      var t1=_dn.call(Date),h=r.headers.get('Date');if(!h)return;
-      var sv=Date.parse(h);if(isNaN(sv))return;
-      sv+=1000*(parseInt(r.headers.get('Age'),10)||0)+500;
-      var off=sv-(t0+t1)/2;
-      if(!_cs||Math.abs(off-CLK)>1500){var d=off-CLK;CLK=off;_cs=true;if(S.loading)S.load0+=d}
-    }).catch(function(){});
+    if(!window.fetch)return;
+    var best=null,done=0;
+    function sample(){
+      var t0=_dn.call(Date);
+      fetch('https://worldtimeapi.org/api/timezone/Etc/UTC',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+        var t1=_dn.call(Date),rtt=t1-t0;
+        var server=Date.parse(j.utc_datetime)+rtt/2;
+        var off=server-t1;
+        if(!best||rtt<best.rtt)best={rtt:rtt,off:off};
+      }).catch(function(){}).then(function(){
+        done++;
+        if(done<4){sample();return}
+        if(best){
+          var d=best.off-CLK;
+          if(!_cs||Math.abs(d)>400){CLK=best.off;_cs=true;if(typeof S!=='undefined'&&S.loading)S.load0+=d}
+        }
+      });
+    }
+    sample();
   }
   var EM=['🐥','🐱','🌴','🍍','😎','🎲','🍃','🌉','🐶','🚗','🦊','🐼'],COL=['#e8a317','#5a5d62','#3a7a4a','#d49a2a','#7a3a6a','#a02030','#6a9a6a','#3a7ac0','#8a6a3a','#5a2a2a'];
   var BETS=[25000,25000,10000,7000,6000,4000,2250,2000,2000,1750,1000,500,250,100,50,10];
