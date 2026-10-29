@@ -263,7 +263,6 @@ body{overflow:visible!important}
     <svg id="mb" width="26" height="22" viewBox="0 0 26 22" stroke="#a3a3a5" stroke-width="2.4"><path d="M2 3h22M2 11h22M2 19h22"/></svg>
     <svg id="cb" width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="#a3a3a5" stroke-width="2.4"><path d="M13 3C7 3 2 6.6 2 11c0 2.3 1.2 4.3 3.2 5.7L4 21l5-2.4c1.2.3 2.6.4 4 .4 6.5 0 11-3.6 11-8s-4.5-8-11-8z"/></svg></div>
   <div class="bn"><div class="bi"><div class="lvp" id="lvp"><i></i><span id="lvt">LIVE</span></div><div class="bt" id="bt">Daily Crown &middot; KES 400,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
-  <div class="bn" id="fbn" style="display:none"><div class="bi"><div class="lvp"><i></i><span>FREE</span></div><div class="bt" id="fbt">Free Bets &middot; Claim KES 10,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
   </div>
   <div class="hs" id="hs"></div>
   <div class="gm"><canvas id="cv"></canvas><div id="wb"></div></div>
@@ -286,6 +285,8 @@ body{overflow:visible!important}
   var source = null, srcGain = null;
   var soundOn = true, musicOn = true;
   var inRound = false;
+  var allowed = false;              /* audio stays silent until the splash + connection screens are finished */
+  var pageHidden = !!document.hidden; /* audio stays silent while the tab/app is in the background */
   var loss = new Audio();
   loss.preload = 'auto';
   [LOSS_MP3, LOSS_MP4].forEach(function (u) {
@@ -336,7 +337,7 @@ body{overflow:visible!important}
   }
   function startFromBeginning() {
     var c = getCtx();
-    if (!c || !buffer || !inRound || !musicOn) return;
+    if (!c || !buffer || !inRound || !musicOn || !allowed || pageHidden) return;
     stopSource(0);
     srcGain = c.createGain();
     srcGain.gain.value = 1;
@@ -365,16 +366,26 @@ body{overflow:visible!important}
     ['pointerdown', 'touchstart', 'keydown'].forEach(function (ev) { document.removeEventListener(ev, unlock, true); });
   }
   ['pointerdown', 'touchstart', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlock, true); });
-  document.addEventListener('visibilitychange', function () {
-    if (!ctx) return;
-    if (document.hidden) ctx.suspend();
-    else if (unlocked) ctx.resume();
-  });
+  function onHide() {
+    pageHidden = true;
+    stopSource(0);
+    try { loss.pause(); loss.currentTime = 0; } catch (e) {}
+    try { if (ctx) ctx.suspend(); } catch (e) {}
+  }
+  function onShow() {
+    pageHidden = false;
+    if (!allowed || !unlocked) return;
+    resumeCtx().then(function () { if (inRound && !source && buffer) startFromBeginning(); });
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) onHide(); else onShow(); });
+  window.addEventListener('pagehide', onHide);
+  window.addEventListener('pageshow', function () { if (!document.hidden) onShow(); });
   var API = {
     start: function () { loadBuffer().catch(function () {}); },
     restartMusicForRound: function () {
       inRound = true;
       try { loss.pause(); loss.currentTime = 0; } catch (e) {}
+      if (!allowed || pageHidden) return;
       resumeCtx().then(function () {
         if (buffer) startFromBeginning();
         else loadBuffer().then(startFromBeginning).catch(function () {});
@@ -383,7 +394,7 @@ body{overflow:visible!important}
     crash: function () {
       inRound = false;
       stopSource(120);
-      if (!soundOn) return;
+      if (!soundOn || !allowed || pageHidden) return;
       try {
         loss.currentTime = 0;
         var p = loss.play();
@@ -406,7 +417,21 @@ body{overflow:visible!important}
     },
     isSoundOn: function () { return soundOn; },
     isMusicOn: function () { return musicOn; },
-    isRoundActive: function () { return inRound; }
+    isRoundActive: function () { return inRound; },
+    enable: function () {
+      allowed = true;
+      if (inRound && !pageHidden) {
+        resumeCtx().then(function () {
+          if (buffer) startFromBeginning();
+          else loadBuffer().then(startFromBeginning).catch(function () {});
+        });
+      }
+    },
+    disable: function () {
+      allowed = false;
+      stopSource(0);
+      try { loss.pause(); } catch (e) {}
+    }
   };
   global.AviatorSound = API;
 })(window);
@@ -429,7 +454,7 @@ body{overflow:visible!important}
   }
   var EM=['🐥','🐱','🌴','🍍','😎','🎲','🍃','🌉','🐶','🚗','🦊','🐼'],COL=['#e8a317','#5a5d62','#3a7a4a','#d49a2a','#7a3a6a','#a02030','#6a9a6a','#3a7ac0','#8a6a3a','#5a2a2a'];
   var BETS=[25000,25000,10000,7000,6000,4000,2250,2000,2000,1750,1000,500,250,100,50,10];
-  var S={loading:true,load0:Date.now(),anim:(function(){try{var v=localStorage.getItem('av_anim');return v===null?true:v==='1'}catch(e){return true}})(),hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
+  var S={loading:true,load0:Date.now()-((function(){try{return sessionStorage.getItem('sc_av_booted')==='1'?3400:0}catch(e){return 0}})()),anim:(function(){try{var v=localStorage.getItem('av_anim');return v===null?true:v==='1'}catch(e){return true}})(),hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
   var $=function(i){return document.getElementById(i)};
   function fit(){
     var w=window.innerWidth||document.documentElement.clientWidth||360;
@@ -663,7 +688,7 @@ body{overflow:visible!important}
       '<div class="mhome" data-k="home">'+P_+IC.home+'</svg>Home</div>';
   }
   var SH={
-    free:['Free Bets','You have no free bets right now. You can add funds so the Bet button works.<button id="df">Add funds KES 1,000</button>'],
+    free:['Free Bets','You have no free bets right now.'],
     hist:['My Bet History','<table><tr><td>Date</td><td>Bet KES</td><td>X</td><td>Win KES</td></tr></table><p style="margin-top:10px;color:#8c8e92">No bets placed yet.</p>'],
     lim:['Game Limits','<table><tr><td>Min bet</td><td>10.00 KES</td></tr><tr><td>Max bet</td><td>25,000.00 KES</td></tr><tr><td>Max win per bet</td><td>1,000,000.00 KES</td></tr></table><p style="margin-top:8px;color:#8c8e92">Shika Chapaa limits.</p>'],
     how:['How To Play','1. Choose your stake and tap Bet before the round starts.<br>2. Watch the plane climb: the multiplier grows each moment.<br>3. Tap Cash Out before the plane flies away. Your stake times the multiplier is your win.<br>4. Use Auto to place bets and cash out automatically.'],
@@ -674,12 +699,14 @@ body{overflow:visible!important}
   function hex(n){var r='';for(var i=0;i<n;i++)r+='0123456789abcdef'[Math.floor(Math.random()*16)];return r}
   function sheet(k){window.scrollTo(0,0);
     var d=SH[k];if(k==='hist')d=['My Bet History',myHist()];
+    if(k==='free'&&isAdmin())d=['Free Bets',(fbDone()?'Your daily free bonus of KES 10,000 is claimed. Come back tomorrow.<button id="fbc" style="opacity:.5">Claimed today</button>':'Your daily free bonus: KES 10,000. Tap below to claim it.<button id="fbc">Claim KES 10,000</button>')];
     if(k==='fair')d=['Provably Fair Settings','<table><tr><td>Client seed</td><td>'+hex(8)+'</td></tr><tr><td>Server seed hash</td><td>'+hex(12)+'...</td></tr><tr><td>Round hash</td><td>'+hex(12)+'...</td></tr></table><p style="margin-top:8px;color:#8c8e92">Provably fair values for Shika Chapaa.</p>'];
     $('sheet').innerHTML='<h3>'+d[0]+'</h3>'+d[1]+'<button id="sx">Close</button>';$('sheet').classList.add('show');
   }
   buildMenu();
   function goHome(){
-    try{if(window.AviatorSound){AviatorSound.setMusic(false);AviatorSound.setSound(false)}}catch(e){}
+    if(!confirm('Are you sure you want to quit the game?'))return;
+    try{if(window.AviatorSound){AviatorSound.setMusic(false);AviatorSound.setSound(false);if(AviatorSound.disable)AviatorSound.disable()}}catch(e){}
     try{saveParentBal(BAL)}catch(e){}
     if(window.parent&&window.parent!==window){
       try{window.parent.postMessage('shika-close-aviator','*');return}catch(e){}
@@ -727,7 +754,7 @@ body{overflow:visible!important}
     if(k==='sound'||k==='music'||k==='anim'){r.querySelector('.mt').click();return}
     $('menu').classList.remove('show');if(k==='hist')openHist();else sheet(k);
   };
-  $('sheet').onclick=function(e){if(e.target.id==='sx')$('sheet').classList.remove('show');if(e.target.id==='df'){setBal(BAL+1000);toast('Funds added',true);$('sheet').classList.remove('show')}};
+  $('sheet').onclick=function(e){if(e.target.id==='sx')$('sheet').classList.remove('show');if(e.target.id==='fbc')fbClaim();if(e.target.id==='df'){setBal(BAL+1000);toast('Funds added',true);$('sheet').classList.remove('show')}};
   // ---- chat
   var NC=['#73b551','#d63cff','#3ec6e0','#e0a43c','#ff6a8a'],HEART='<svg viewBox="0 0 24 24" width="38" height="38"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z" fill="currentColor"/></svg>',SHLD='<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="#1fa24a"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2" fill="none"/></svg>';
   var NM=['2***1','2***0','2***4','2***6','2***7','2***9','2***3','2***8','2***2','2***5'];
@@ -1485,13 +1512,23 @@ body{overflow:visible!important}
     TM.joined=false;TM.best=0;TM.e=0;
     try{var r=JSON.parse(localStorage.getItem(tmKey())||'null');
       if(r&&r.j&&r.e>Date.now()){TM.joined=true;TM.best=+r.b||0;TM.e=r.e}
-      else if(r)localStorage.removeItem(tmKey())}catch(e){}
+      else if(r){if(r.j)TM.pend={b:+r.b||0,e:r.e};localStorage.removeItem(tmKey())}}catch(e){}
     TM.dirty=true;TM.sig='';
   }
   function tmExpire(){
-    if(TM.joined&&TM.e&&Date.now()>=TM.e){TM.joined=false;TM.best=0;TM.e=0;try{localStorage.removeItem(tmKey())}catch(e){}TM.dirty=true;toast('Daily Crown has ended. Join the next one to play again.',true)}
+    if(TM.joined&&TM.e&&Date.now()>=TM.e){TM.pend={b:TM.best,e:TM.e};TM.joined=false;TM.best=0;TM.e=0;try{localStorage.removeItem(tmKey())}catch(e){}TM.dirty=true;toast('Daily Crown has ended. Join the next one to play again.',true)}
   }
-  function switchAcct(){ACC=acctId();DBK='av_top_v2:'+ACC;dbLoad();loadMy();tmLoad();S.topDone=0;fbPaint()}
+  // When the pool ends, pay the prize for the player's final rank (1st 50,000 / 2nd 40,000 / 3rd 30,000 / 4-10 10,000), once per tournament
+  function tmPay(){
+    var p=TM.pend;if(!p)return;TM.pend=null;
+    if(!(p.b>0))return;
+    var pk='av_tmpaid:'+ACC;
+    try{if(localStorage.getItem(pk)===String(p.e))return;localStorage.setItem(pk,String(p.e))}catch(e){return}
+    var c=0;for(var i=0;i<BOT.n;i++)if(BOT.b[i]>p.b)c++;
+    var rank=c+1,pz=prizeFor(rank);
+    if(pz>0){var u=loadParentUser();if(u)BAL=u.balance;setBal(BAL+pz);toast('Daily Crown ended: you finished #'+rank+' and won KES '+fmt(pz),true)}
+  }
+  function switchAcct(){ACC=acctId();DBK='av_top_v2:'+ACC;dbLoad();loadMy();tmLoad();S.topDone=0}
   function cardEl(i){return $('cards').children[i]}
   function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null'),a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)};if(s&&s.phone){var b=Number(localStorage.getItem('sc_bal'));if(!isNaN(b))return{phone:s.phone,balance:b}}}catch(e){}return null}
   function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('sc_accounts',JSON.stringify(a));localStorage.setItem('sc_user',JSON.stringify(s));localStorage.setItem('sc_bal',JSON.stringify(a[s.phone].balance))}catch(e){}}
@@ -1562,7 +1599,7 @@ body{overflow:visible!important}
     var rows=MY.slice(0,HMN).map(function(o,i){
       var d=new Date(o.t),w=o.w>0,xv=w?o.x:(o.r||0);
       return '<div class="hmr'+(w?' w':'')+'" data-i="'+i+'"><div class="d">'+d2(d.getHours())+':'+d2(d.getMinutes())+'<br>'+d2(d.getDate())+'-'+d2(d.getMonth()+1)+'-'+String(d.getFullYear()).slice(2)+'</div><div class="b">'+fmt(o.b)+'</div><div class="xp" style="color:'+hcol(xv)+'">'+xv.toFixed(2)+'x</div>'+(w?'<div class="co">'+fmt(o.w)+'</div>':'')+'<div class="i1" data-a="fair">'+SHLD2+'</div><div class="i2" data-a="share">'+BUB2+'</div></div>'}).join('');
-    $('hm').innerHTML='<div class="hmh"><span>MY BET HISTORY</span><i id="hmx">&#10006;</i></div><div class="hmc"><span style="left:9px">Date</span><span style="right:388px">Bet KES</span><span style="left:302px">X</span><span style="right:76px">Cash out KES</span></div>'+(rows||'<div class="hint" style="padding:24px">No bets played yet. Every round you play is saved here.</div>')+(MY.length>HMN?'<button id="hml">Load more</button>':'');
+    $('hm').innerHTML='<div class="hmh"><span>MY BET HISTORY</span><i id="hmx">&#10006;</i></div><div class="hmc"><span style="left:9px">Date</span><span style="right:388px">Bet KES</span><span style="left:302px">X</span><span style="right:76px">Cash out KES</span></div>'+(rows||'<div class="hint" style="padding:24px">No bets played yet. Every round you play is saved here.</div>')+(MY.length>HMN?'<button id="hml">Load more</button>':'<button id="hml" disabled style="opacity:.45;cursor:default">No more bets</button>');
   }
   $('hm').onclick=function(e){
     var t=e.target;
@@ -1664,15 +1701,13 @@ body{overflow:visible!important}
   function fbKey(){return 'av_fb_v1:'+ACC}
   function fbDay(){var n=new Date(Date.now());return n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate()}
   function fbDone(){try{return localStorage.getItem(fbKey())===fbDay()}catch(e){return false}}
-  function fbPaint(){var b=$('fbn');if(!b)return;var on=isAdmin();b.style.display=on?'':'none';if(!on)return;$('fbt').innerHTML=fbDone()?'Free Bets <span style="color:#8c8e92;font-weight:400">Claimed today</span>':'Free Bets &middot; Claim KES 10,000'}
   function fbClaim(){
     if(!isAdmin())return;
     if(fbDone()){toast('Free Bets already claimed today. Come back tomorrow.');return}
     try{localStorage.setItem(fbKey(),fbDay())}catch(e){return}
-    setBal(BAL+10000);fbPaint();toast('KES 10,000 Free Bets claimed',true);
+    setBal(BAL+10000);toast('KES 10,000 Free Bets claimed',true);sheet('free');
   }
-  $('fbn').onclick=fbClaim;fbPaint();setInterval(fbPaint,5000);
-  tmLoad();setInterval(tmExpire,5000);syncClock();setInterval(syncClock,300000);
+  tmLoad();setInterval(function(){tmExpire();tmPay()},5000);syncClock();setInterval(syncClock,300000);
   (function(){var u=loadParentUser();setBal(u?u.balance:1000);var dem=document.querySelector('.bal .demo');if(dem){if(u){dem.style.display='none';dem.textContent=''}else{dem.style.display='';dem.textContent='DEMO'}}buildMenu()})();
   setInterval(function(){var u=loadParentUser();if(!u)return;if(acctId()!==ACC)switchAcct();var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
   window.addEventListener('storage',function(e){if(e.key==='sc_user'||e.key==='sc_accounts'||e.key==='sc_bal'){var u=loadParentUser();if(u&&acctId()!==ACC)switchAcct();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
@@ -1711,13 +1746,19 @@ body{overflow:visible!important}
     var boot=document.getElementById('boot');
     var app=document.getElementById('app');
     if(app)app.classList.add('ready');
+    try{sessionStorage.setItem('sc_av_booted','1')}catch(e){}
+    try{if(window.AviatorSound&&AviatorSound.enable)AviatorSound.enable()}catch(e){}
     if(boot){
       boot.classList.add('hide');
       setTimeout(function(){if(boot.parentNode)boot.parentNode.removeChild(boot)},450);
     }
   }
+  var BOOTED=false;try{BOOTED=sessionStorage.getItem('sc_av_booted')==='1'}catch(e){}
+  if(BOOTED){launchGame()}
+  else{
   setTimeout(function(){show('conn')},SPLASH_MS);
   setTimeout(launchGame,SPLASH_MS+CONNECTION_MS);
+  }
 })();
 </script>
 </body>
