@@ -341,7 +341,7 @@ footer.tf::before{content:'';display:block;width:48px;height:3px;border-radius:2
 .txb:hover{border-color:gold}.txb i{font-style:normal;font-size:16px}.txb b{background:#52b826;color:#0b0f19;border-radius:12px;padding:1px 8px;font-size:11px}.txb span{color:#64748b;font-size:16px}
 #txFull{position:fixed;inset:0;z-index:2500;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#0b0f19;padding:env(safe-area-inset-top) max(14px,calc(50vw - 280px)) calc(28px + env(safe-area-inset-bottom));animation:txexp .32s cubic-bezier(.2,.9,.3,1);transform-origin:50% 55%}
 @keyframes txexp{from{transform:scale(.55);opacity:0;border-radius:40px}}
-</style></head><body><div id="loader"><img src="https://res.cloudinary.com/qegjv5mo/image/upload/v1793090324/file_00000000691081f58998fa31e2a062e8.png" alt="Shika Chapaa"><div class="nm">SHIKA<span class="gold"> CHAPAA</span></div><div class="bar"><i id="lbar"></i></div><small id="ltxt">LOADING MATCHES…</small></div>
+</style></head><body><div id="loader"><img src="https://res.cloudinary.com/qegjv5mo/image/upload/v1793090324/file_00000000691081f58998fa31e2a062e8.png" alt="Shika Chapaa"><div class="nm">SHIKA<span class="gold"> CHAPAA</span></div><div class="bar"><i id="lbar"></i></div><small id="ltxt">LOADING MATCHES…</small></div><script>try{if(sessionStorage.getItem("sc_seen")){var _l=document.getElementById("loader");if(_l)_l.parentNode.removeChild(_l)}}catch(e){}</script>
 <div class="shell">
 
 <!-- ===== HEADER (original structure) ===== -->
@@ -664,9 +664,22 @@ document.addEventListener('click',e=>{const t=e.target,c=s=>t.closest(s);let x;
 document.addEventListener('input',e=>{if(e.target.id=='wAmt')return updWTax();if(e.target.id=='srch'){q=e.target.value.trim().toLowerCase();return matches()}if(e.target.classList.contains('stake')){stake=+e.target.value||0;document.querySelectorAll('.taxbox').forEach(b=>b.innerHTML=taxHTML());document.querySelectorAll('.stake').forEach(s=>{if(s!==e.target)s.value=e.target.value})}});
 
 /* ===== AVIATOR LAUNCH (same mechanism as your original: opens your game file full-screen) ===== */
-function launchAviator(){save();let l=$('avLayer');
+/* While the game is open, the home page is frozen behind it: not clickable, not scrollable, no home sounds/popups */
+function avState(on){window.__avOpen=!!on;
+ document.documentElement.style.overflow=on?'hidden':'';document.body.style.overflow=on?'hidden':'';
+ [...document.body.children].forEach(el=>{if(el.id==='avLayer')return;
+  if(on){if(!el.hasAttribute('inert')){el.setAttribute('inert','');el.dataset.avInert='1'}}
+  else if(el.dataset.avInert){el.removeAttribute('inert');delete el.dataset.avInert}})}
+function launchAviator(){save();avState(true);
+ try{sessionStorage.setItem('sc_view','game');if(!(history.state&&history.state.scGame))history.pushState({scGame:1},'')}catch(_){}
+ let l=$('avLayer');
  if(!l){l=document.createElement('div');l.id='avLayer';l.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#0b0e14;display:flex;flex-direction:column');l.innerHTML='<iframe id="avFrame" src="shika-chapaa-aviator.html" title="Aviator" style="border:0;width:100%;height:100%;flex:1;background:#0b0e14" allow="autoplay"></iframe>';document.body.appendChild(l);
-  addEventListener('message',ev=>{if(ev&&ev.data=='shika-close-aviator'){const L=$('avLayer');if(L){L.style.display='none';$('avFrame').src='about:blank';/* Share balance with Aviator via same localStorage keys */
+  addEventListener('popstate',()=>{if(!window.__avOpen)return;
+   if(confirm('Are you sure you want to quit the game?'))postMessage('shika-close-aviator','*');
+   else{try{history.pushState({scGame:1},'')}catch(_){}}});
+  addEventListener('message',ev=>{if(ev&&ev.data=='shika-close-aviator'){const L=$('avLayer');if(L){avState(false);
+   try{sessionStorage.removeItem('sc_view');if(history.state&&history.state.scGame)history.back()}catch(_){}
+  L.style.display='none';$('avFrame').src='about:blank';/* Share balance with Aviator via same localStorage keys */
   bal=ld('sc_bal',bal);if(user&&user.phone){const tm=loadTxMap();txs=Array.isArray(tm[user.phone])?tm[user.phone]:[]}else txs=[];sv('sc_tx',txs);if(user&&user.phone){const a=loadAcc();if(a[user.phone]&&a[user.phone].balance!=null){bal=Number(a[user.phone].balance);sv('sc_bal',bal)}}renderAll()}}})}
  else{l.style.display='flex';$('avFrame').src='shika-chapaa-aviator.html'}}
 /* ===== MODULES: modal, auth, wallet, account, responsible gaming ===== */
@@ -1005,7 +1018,7 @@ function trending(){const all=Object.entries(MATCHES).flatMap(([sp,a])=>a.map(m=
   return`<div class="tc" data-tr="${sp}|${m.h}|${m.a}|1"><div class="lg"><span>${m.lg}</span><span class="tm ${m.live?'live':''}">${m.live?'● ':''}${m.t}</span></div><div class="tms">${m.h}<em>v</em>${m.a}</div><div class="or">${vs.map((v,k)=>`<span><small>${lb[k]}</small>${v.toFixed(2)}</span>`).join('')}</div></div>`}).join('')}
 /* ===== WELCOME BONUS: popup + banner + coin shower + sound ===== */
 let actx=null;
-function sfx(kind){try{
+function sfx(kind){if(window.__avOpen)return;try{
  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
  const go=()=>{const t0=actx.currentTime;
   const tone=(f,t,d,type,v)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t0+t);g.gain.linearRampToValueAtTime(v,t0+t+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+t+d);o.connect(g);g.connect(actx.destination);o.start(t0+t);o.stop(t0+t+d+.05)};
@@ -1019,7 +1032,7 @@ function coinShower(n){const fr=document.createDocumentFragment();
   c.style.cssText='left:'+Math.random()*100+'vw;--s:'+(14+Math.random()*16)+'px;--x:'+((Math.random()-.5)*160)+'px;--d:'+(1.6+Math.random()*1.8)+'s;--w:'+(Math.random()*.9)+'s';
   c.addEventListener('animationend',()=>c.remove());fr.appendChild(c)}
  document.body.appendChild(fr)}
-function bonusPop(){if($('bonusPop'))return;const d=document.createElement('div');d.id='bonusPop';
+function bonusPop(){if(window.__avOpen){setTimeout(bonusPop,1500);return}if($('bonusPop'))return;const d=document.createElement('div');d.id='bonusPop';
  d.innerHTML="<div class='rays'></div><div class='bcard'><span class='btag'>WELCOME GIFT</span><div class='bsub'>DEPOSIT <b>KES "+nf(BONUS.min)+"+</b> AND GET</div><div class='bamt'><span>KES</span> "+nf(BONUS.amt)+"</div><div class='bfree'>FREE BONUS!</div><p>New here? Top up KES "+nf(BONUS.min)+" or more and we add KES "+nf(BONUS.amt)+" on top, instantly.</p><button class='bclaim' data-bonus='claim'>CLAIM MY KES "+nf(BONUS.amt)+"</button><button class='blater' data-bonus='close'>Maybe later</button><div class='bfine'>18+ · New players · One-time · T&amp;Cs apply · Play responsibly</div></div>";
  document.body.appendChild(d);coinShower(46);sfx('fanfare');try{navigator.vibrate&&navigator.vibrate([60,40,60])}catch(e){}}
 function bonusClose(){const p=$('bonusPop');if(p){p.style.transition='opacity .25s';p.style.opacity=0;setTimeout(()=>p.remove(),260)}sv('sc_bonus_seen',true)}
@@ -1093,6 +1106,8 @@ document.addEventListener('error',e=>fixLogo(e.target),true);
 const probe=new Image();probe.onerror=()=>document.querySelectorAll('img').forEach(fixLogo);probe.src='https://res.cloudinary.com/qegjv5mo/image/upload/v1793090324/file_00000000691081f58998fa31e2a062e8.png';
 (function(){
   const b=$('lbar'),t=$('ltxt'),L=$('loader');
+  try{sessionStorage.setItem('sc_seen','1')}catch(e){}
+  if(!L)return;
   const msgs=['LOADING MATCHES…','SYNCING ODDS…','GETTING GAMES READY…','READY!'];
   const total=5000,start=Date.now();
   const i=setInterval(()=>{
@@ -1109,5 +1124,6 @@ const probe=new Image();probe.onerror=()=>document.querySelectorAll('img').forEa
 /* Soft header depth while scrolling (visual only) */
 addEventListener('scroll',()=>{const h=document.querySelector('header');if(h)h.classList.toggle('scrolled',scrollY>8)},{passive:true});
 console.log('[Shika] wallet BASE =',BASE);sports();leagues();trending();matches();renderAll();ticker();jackpot();if(!ld('sc_age',false))ageGate();
+try{if(sessionStorage.getItem('sc_view')==='game'){if(user&&ld('sc_age',false))launchAviator();else sessionStorage.removeItem('sc_view')}}catch(e){}
 })();
 </script></body></html>
