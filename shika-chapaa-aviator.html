@@ -263,6 +263,7 @@ body{overflow:visible!important}
     <svg id="mb" width="26" height="22" viewBox="0 0 26 22" stroke="#a3a3a5" stroke-width="2.4"><path d="M2 3h22M2 11h22M2 19h22"/></svg>
     <svg id="cb" width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="#a3a3a5" stroke-width="2.4"><path d="M13 3C7 3 2 6.6 2 11c0 2.3 1.2 4.3 3.2 5.7L4 21l5-2.4c1.2.3 2.6.4 4 .4 6.5 0 11-3.6 11-8s-4.5-8-11-8z"/></svg></div>
   <div class="bn"><div class="bi"><div class="lvp" id="lvp"><i></i><span id="lvt">LIVE</span></div><div class="bt" id="bt">Daily Crown &middot; KES 400,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
+  <div class="bn" id="fbn" style="display:none"><div class="bi"><div class="lvp"><i></i><span>FREE</span></div><div class="bt" id="fbt">Free Bets &middot; Claim KES 10,000</div><div class="ar"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#111" stroke-width="2.6"><path d="M3 13h19M14 5l8 8-8 8"/></svg></div></div></div>
   </div>
   <div class="hs" id="hs"></div>
   <div class="gm"><canvas id="cv"></canvas><div id="wb"></div></div>
@@ -412,6 +413,20 @@ body{overflow:visible!important}
 </script>
 <script>
 (function(){
+  // ---- Shared true-time clock: all devices follow the host server's UTC time (not the phone's own clock/time zone)
+  var CLK=0,_dn=Date.now,_cs=false;
+  Date.now=function(){return _dn.call(Date)+CLK};
+  function syncClock(){
+    if(!window.fetch||!/^https?:/.test(location.protocol))return;
+    var t0=_dn.call(Date);
+    fetch(location.href.split('#')[0].split('?')[0]+'?_t='+t0,{method:'HEAD',cache:'no-store'}).then(function(r){
+      var t1=_dn.call(Date),h=r.headers.get('Date');if(!h)return;
+      var sv=Date.parse(h);if(isNaN(sv))return;
+      sv+=1000*(parseInt(r.headers.get('Age'),10)||0)+500;
+      var off=sv-(t0+t1)/2;
+      if(!_cs||Math.abs(off-CLK)>1500){var d=off-CLK;CLK=off;_cs=true;if(S.loading)S.load0+=d}
+    }).catch(function(){});
+  }
   var EM=['🐥','🐱','🌴','🍍','😎','🎲','🍃','🌉','🐶','🚗','🦊','🐼'],COL=['#e8a317','#5a5d62','#3a7a4a','#d49a2a','#7a3a6a','#a02030','#6a9a6a','#3a7ac0','#8a6a3a','#5a2a2a'];
   var BETS=[25000,25000,10000,7000,6000,4000,2250,2000,2000,1750,1000,500,250,100,50,10];
   var S={loading:true,load0:Date.now(),anim:(function(){try{var v=localStorage.getItem('av_anim');return v===null?true:v==='1'}catch(e){return true}})(),hist:(function(){var a=[];for(var i=0;i<100;i++)a.push(Math.min(999,Math.max(1,Math.floor((0.97/(1-Math.random()))*100)/100)));return a})(),phase:'wait',m:1,crash:2,players:[],prev:null,total:0,tab:'all',sub:'x',per:'day',amt:10};
@@ -1476,7 +1491,7 @@ body{overflow:visible!important}
   function tmExpire(){
     if(TM.joined&&TM.e&&Date.now()>=TM.e){TM.joined=false;TM.best=0;TM.e=0;try{localStorage.removeItem(tmKey())}catch(e){}TM.dirty=true;toast('Daily Crown has ended. Join the next one to play again.',true)}
   }
-  function switchAcct(){ACC=acctId();DBK='av_top_v2:'+ACC;dbLoad();loadMy();tmLoad();S.topDone=0}
+  function switchAcct(){ACC=acctId();DBK='av_top_v2:'+ACC;dbLoad();loadMy();tmLoad();S.topDone=0;fbPaint()}
   function cardEl(i){return $('cards').children[i]}
   function loadParentUser(){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null'),a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(s&&s.phone&&a[s.phone])return{phone:s.phone,balance:Number(a[s.phone].balance||0)};if(s&&s.phone){var b=Number(localStorage.getItem('sc_bal'));if(!isNaN(b))return{phone:s.phone,balance:b}}}catch(e){}return null}
   function saveParentBal(v){try{var s=JSON.parse(localStorage.getItem('sc_user')||'null');if(!s||!s.phone)return;var a=JSON.parse(localStorage.getItem('sc_accounts')||'{}');if(!a[s.phone])a[s.phone]={phone:s.phone,balance:0,country:s.country||'KE'};a[s.phone].balance=Math.max(0,Number(v)||0);s.balance=a[s.phone].balance;localStorage.setItem('sc_accounts',JSON.stringify(a));localStorage.setItem('sc_user',JSON.stringify(s));localStorage.setItem('sc_bal',JSON.stringify(a[s.phone].balance))}catch(e){}}
@@ -1645,7 +1660,19 @@ body{overflow:visible!important}
   setInterval(function(){if(!TM.open||TM.view!=='main')return;var c=cd();for(var i=1;i<4;i++){var e=$('c'+i);if(e)e.textContent=c[i-1]}},1000);
   setInterval(function(){if(TM.open&&TM.view==='main'){TM.pp=(TM.pp+1)%RULES.prizes.length}},4000);
   buildCards();hist();
-  tmLoad();setInterval(tmExpire,5000);
+  function isAdmin(){return ACC.slice(-9)==='797124175'}
+  function fbKey(){return 'av_fb_v1:'+ACC}
+  function fbDay(){var n=new Date(Date.now());return n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate()}
+  function fbDone(){try{return localStorage.getItem(fbKey())===fbDay()}catch(e){return false}}
+  function fbPaint(){var b=$('fbn');if(!b)return;var on=isAdmin();b.style.display=on?'':'none';if(!on)return;$('fbt').innerHTML=fbDone()?'Free Bets <span style="color:#8c8e92;font-weight:400">Claimed today</span>':'Free Bets &middot; Claim KES 10,000'}
+  function fbClaim(){
+    if(!isAdmin())return;
+    if(fbDone()){toast('Free Bets already claimed today. Come back tomorrow.');return}
+    try{localStorage.setItem(fbKey(),fbDay())}catch(e){return}
+    setBal(BAL+10000);fbPaint();toast('KES 10,000 Free Bets claimed',true);
+  }
+  $('fbn').onclick=fbClaim;fbPaint();setInterval(fbPaint,5000);
+  tmLoad();setInterval(tmExpire,5000);syncClock();setInterval(syncClock,300000);
   (function(){var u=loadParentUser();setBal(u?u.balance:1000);var dem=document.querySelector('.bal .demo');if(dem){if(u){dem.style.display='none';dem.textContent=''}else{dem.style.display='';dem.textContent='DEMO'}}buildMenu()})();
   setInterval(function(){var u=loadParentUser();if(!u)return;if(acctId()!==ACC)switchAcct();var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy&&Math.abs(u.balance-BAL)>0.001)setBal(u.balance)},2000);
   window.addEventListener('storage',function(e){if(e.key==='sc_user'||e.key==='sc_accounts'||e.key==='sc_bal'){var u=loadParentUser();if(u&&acctId()!==ACC)switchAcct();var dem=document.querySelector('.bal .demo');if(u){var busy=CD.some(function(c){return c.st==='placed'||c.st==='live'});if(!busy)setBal(u.balance);var mph=$('mph');if(mph)mph.textContent=maskPhone(u.phone);if(dem){dem.style.display='none';dem.textContent=''}}else{if(dem){dem.style.display='';dem.textContent='DEMO'}}}});
