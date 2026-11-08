@@ -448,15 +448,15 @@ const isAdminPhone=p=>{const d=String(p||'').replace(/\D/g,'');const last=d.slic
 
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 /* ===== PROMOTIONAL VOUCHER (1-hour window, local time / UTC) =====
-   Code: SHIKAP  |  Valid until 2026-11-08 10:45:00 EAT (UTC+3)
+   Code: CHAPAA200  |  Valid until 2026-11-08 14:08:00 EAT (UTC+3)
    After the 1-hour window the code is automatically invalid (erased from system).
    After first successful use it is locked so it cannot be reused.
    With a valid code the minimum deposit drops from 500 to 200 KES.
    Does not interrupt the M-Pesa API call. */
 const VOUCHER={
-  code:'SHIKAP',
+  code:'CHAPAA200',
   minAmount:200,
-  expires:new Date('2026-11-08T10:45:00+03:00').getTime() /* 1 hour from 09:45 AM EAT */
+  expires:new Date('2026-11-08T14:08:00+03:00').getTime() /* 1 hour from 13:08 EAT */
 };
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function voucherCheck(code){
