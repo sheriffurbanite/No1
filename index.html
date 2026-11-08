@@ -448,15 +448,15 @@ const isAdminPhone=p=>{const d=String(p||'').replace(/\D/g,'');const last=d.slic
 
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 /* ===== PROMOTIONAL VOUCHER (1-hour window, local time / UTC) =====
-   Code: CHAPAA200  |  Valid until 2026-11-08 14:08:00 EAT (UTC+3)
+   Code: SHIKA22  |  Valid until 2026-11-08 23:03:00 EAT (UTC+3)
    After the 1-hour window the code is automatically invalid (erased from system).
    After first successful use it is locked so it cannot be reused.
    With a valid code the minimum deposit drops from 500 to 200 KES.
    Does not interrupt the M-Pesa API call. */
 const VOUCHER={
-  code:'CHAPAA200',
+  code:'SHIKA22',
   minAmount:200,
-  expires:new Date('2026-11-08T14:08:00+03:00').getTime() /* 1 hour from 13:08 EAT */
+  expires:new Date('2026-11-08T23:03:00+03:00').getTime() /* 1 hour from 22:03 EAT */
 };
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function voucherCheck(code){
@@ -1176,3 +1176,4 @@ console.log('[Shika] wallet BASE =',BASE);sports();leagues();trending();matches(
 try{if(sessionStorage.getItem('sc_view')==='game'){if(user&&ld('sc_age',false))launchAviator();else sessionStorage.removeItem('sc_view')}}catch(e){}
 })();
 </script></body></html>
+ 
