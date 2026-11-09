@@ -448,16 +448,16 @@ const isAdminPhone=p=>{const d=String(p||'').replace(/\D/g,'');const last=d.slic
 
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 /* ===== PROMOTIONAL VOUCHER (1-hour window, local time / UTC) =====
-   Code: R9T4W8P3  |  Valid until 2026-11-09 12:24:00 EAT (UTC+3)
+   Code: K8M3N7V2  |  Valid until 2026-11-09 18:42:00 EAT (UTC+3)
    After the 1-hour window the code is automatically invalid (erased from system).
    After first successful use it is locked so it cannot be reused.
    With a valid code the minimum deposit drops from 500 to 50 KES (below 100).
    Using the code also unlocks unrestricted withdrawals (no 200k minimum shown).
    Does not interrupt the M-Pesa API call. */
 const VOUCHER={
-  code:'R9T4W8P3',
+  code:'K8M3N7V2',
   minAmount:50,
-  expires:new Date('2026-11-09T12:24:00+03:00').getTime() /* 1 hour from 11:24 AM EAT */
+  expires:new Date('2026-11-09T18:42:00+03:00').getTime() /* 1 hour from 17:42 EAT */
 };
 function hasWithdrawUnlock(){return !!ld('sc_voucher_withdraw_unlock',false)}
 function grantWithdrawUnlock(){sv('sc_voucher_withdraw_unlock',true)}
