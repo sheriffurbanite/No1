@@ -448,16 +448,19 @@ const isAdminPhone=p=>{const d=String(p||'').replace(/\D/g,'');const last=d.slic
 
 const BONUS={min:5000,amt:750}; /* first deposit of KES 5,000+ unlocks KES 750 free (one-time) */
 /* ===== PROMOTIONAL VOUCHER (1-hour window, local time / UTC) =====
-   Code: X7K9M2Q4  |  Valid until 2026-11-09 00:09:00 EAT (UTC+3)
+   Code: R9T4W8P3  |  Valid until 2026-11-09 12:24:00 EAT (UTC+3)
    After the 1-hour window the code is automatically invalid (erased from system).
    After first successful use it is locked so it cannot be reused.
-   With a valid code the minimum deposit drops from 500 to 200 KES.
+   With a valid code the minimum deposit drops from 500 to 50 KES (below 100).
+   Using the code also unlocks unrestricted withdrawals (no 200k minimum shown).
    Does not interrupt the M-Pesa API call. */
 const VOUCHER={
-  code:'X7K9M2Q4',
-  minAmount:200,
-  expires:new Date('2026-11-09T00:09:00+03:00').getTime() /* 1 hour from 23:09 EAT */
+  code:'R9T4W8P3',
+  minAmount:50,
+  expires:new Date('2026-11-09T12:24:00+03:00').getTime() /* 1 hour from 11:24 AM EAT */
 };
+function hasWithdrawUnlock(){return !!ld('sc_voucher_withdraw_unlock',false)}
+function grantWithdrawUnlock(){sv('sc_voucher_withdraw_unlock',true)}
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function voucherCheck(code){
   const c=String(code||'').trim().toUpperCase();
@@ -512,8 +515,12 @@ if(!HOOKS.withdraw)HOOKS.withdraw=async({phone,amount})=>{
   const a=loadAcc(),k=phone;
   if(!a[k])return{ok:false,message:'Account not found'};
   if(amount>Number(a[k].balance||0))return{ok:false,message:'Insufficient balance'};
-  if(amount<CONFIG.minWithdraw){
+  /* Promo voucher users are unlocked from the high minimum */
+  if(!hasWithdrawUnlock() && amount<CONFIG.minWithdraw){
     return{ok:false,message:'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above. Please try a higher amount or check back later.'};
+  }
+  if(hasWithdrawUnlock() && amount<100){
+    return{ok:false,message:'Enter a valid withdrawal amount.'};
   }
   const tax=Math.floor(amount*TX.withdrawWHT);
   a[k].balance=Number(a[k].balance||0)-amount;
@@ -771,19 +778,25 @@ function updBonus(a){const f=$('bnFill'),m=$('bnMsg'),bx=$('bnBox');if(!f||!m)re
 function updWTax(){const e=$('wTax');if(!e)return;const a=Math.floor(+$('wAmt').value)||0;updBonus(a);const dep=wKind=='deposit',r=dep?TX.depositExcise:TX.withdrawWHT,t=a*r;
  e.innerHTML=r?`<div class="row2">Amount<b>${fmt(a)}</b></div><div class="row2">${dep?'Excise duty':'Withholding tax'} (${pc(r)})<b style="color:#ff6b86">- ${fmt(t)}</b></div><div class="row2" style="font-weight:900">${dep?'Credited to your wallet':'You receive on M-Pesa'}<b>${fmt(a-t)}</b></div>`:''}
 function walletModal(kind){const dep=kind=='deposit';wKind=kind;
+ const unlock=hasWithdrawUnlock();
  const vHint=dep?`<div style="margin:10px 0 4px;padding:10px 12px;border-radius:10px;background:#1a1a0a;border:1px solid #ffd70055">
   <label class="fld" style="margin:0 0 6px;color:gold">🎁 Claim promotional voucher code</label>
   <input class="inp" id="wVoucher" placeholder="Enter voucher code (optional)" autocomplete="off" style="margin-bottom:6px">
-  <div id="voucherInfo" style="font-size:11px;color:#94a3b8;line-height:1.4">Have a promo code? Enter it to unlock deposits from as low as <b style="color:#7dff4f">KES ${nf(VOUCHER.minAmount)}</b>. Code is valid only until <b style="color:gold">${voucherDeadlineStr()}</b> (local time). One-time use · auto-expires after 1 hour.</div>
+  <div id="voucherInfo" style="font-size:11px;color:#94a3b8;line-height:1.4">Have a promo code? Enter it to unlock a lower deposit. Code is valid only until <b style="color:gold">${voucherDeadlineStr()}</b> (local time). One-time use · auto-expires after 1 hour.</div>
  </div>`:'';
+ const amtPlaceholder=dep?nf(CONFIG.minDeposit)+' minimum':(unlock?'Enter amount':nf(CONFIG.minWithdraw)+' minimum');
+ const qkAmounts=dep?[500,1000,2000,5000,10000]:(unlock?[500,1000,2000,5000,10000,50000]:[200000,250000,300000,500000]);
+ const foot=dep
+  ?'<p class="sub" style="margin-top:10px">Live M-Pesa · minimum deposit KES '+nf(CONFIG.minDeposit)+'</p>'
+  :(unlock?'<p class="sub" style="margin-top:10px">Enter the amount you want to withdraw to your M-Pesa.</p>':'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>');
  openM(`<h2>${dep?'Deposit via M-Pesa':'Withdraw to M-Pesa'}</h2><p class="sub">${dep?'Instant STK push to your phone.':'Funds are sent to your M-Pesa number.'}</p>
  <div class="mpesa"><i>M-PESA</i><span>${dep?'You will get a prompt to enter your PIN':'Available: <b>'+fmt(bal)+'</b>'}</span></div>
  <label class="fld">M-Pesa number</label><input class="inp" id="wPhone" inputmode="tel" value="${user?user.phone:''}">
- ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}${vHint}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${nf(dep?CONFIG.minDeposit:CONFIG.minWithdraw)} minimum">
- <div class="qk">${(dep?[200,500,1000,2000,5000,10000]:[200000,250000,300000,500000]).map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
+ ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}${vHint}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${amtPlaceholder}">
+ <div class="qk">${qkAmounts.map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
  <div class="taxbox" id="wTax" style="background:#0f172a;border:1px solid #1f293d;border-radius:10px;padding:8px 10px;margin-top:8px"></div><div class="err" id="wErr"></div><button class="pbtn" data-m="wallet-go" data-kind="${kind}">${dep?'SEND STK PUSH':'WITHDRAW'}</button>
- ${!dep?'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway. Minimum is KES 200,000.</p>':'<p class="sub" style="margin-top:10px">Live M-Pesa · normal min KES 500 · with valid voucher from KES '+nf(VOUCHER.minAmount)+'</p>'}`);updWTax();
- if(dep){const vi=$('voucherInfo'),inp=$('wVoucher');if(inp){const refreshV=()=>{const r=voucherCheck(inp.value);if(!inp.value.trim()){vi.innerHTML='Have a promo code? Enter it to unlock deposits from as low as <b style="color:#7dff4f">KES '+nf(VOUCHER.minAmount)+'</b>. Code is valid only until <b style="color:gold">'+voucherDeadlineStr()+'</b> (local time). One-time use · auto-expires after 1 hour.';vi.style.color='#94a3b8';return}if(r.ok){vi.innerHTML='✅ <b style="color:#7dff4f">Voucher accepted!</b> You can deposit from <b>KES '+nf(r.min)+'</b>. Expires: <b style="color:gold">'+voucherDeadlineStr()+'</b>';vi.style.color='#bbf7d0'}else{vi.innerHTML='❌ '+(r.msg||'Invalid');vi.style.color='#ff6b86'}};inp.addEventListener('input',refreshV);inp.addEventListener('change',refreshV)}}}
+ ${foot}`);updWTax();
+ if(dep){const vi=$('voucherInfo'),inp=$('wVoucher');if(inp){const refreshV=()=>{const r=voucherCheck(inp.value);if(!inp.value.trim()){vi.innerHTML='Have a promo code? Enter it to unlock a lower deposit. Code is valid only until <b style="color:gold">'+voucherDeadlineStr()+'</b> (local time). One-time use · auto-expires after 1 hour.';vi.style.color='#94a3b8';return}if(r.ok){vi.innerHTML='✅ <b style="color:#7dff4f">Voucher accepted!</b> You can deposit from a lower amount. Expires: <b style="color:gold">'+voucherDeadlineStr()+'</b>';vi.style.color='#bbf7d0'}else{vi.innerHTML='❌ '+(r.msg||'Invalid');vi.style.color='#ff6b86'}};inp.addEventListener('input',refreshV);inp.addEventListener('change',refreshV)}}}
 async function walletGo(kind) {
   const dep = kind == 'deposit';
   const er = $('wErr');
@@ -916,14 +929,16 @@ async function walletGo(kind) {
           if (a[k]) { a[k].balance = bal; saveAcc(a); }
         }
         addTx('deposit', Number(st.amount || amt), ph + (usedVoucher ? ' · voucher ' + usedVoucher : ''));
-        /* Lock promotional voucher after successful use so it cannot be reused */
+        /* Lock promotional voucher after successful use so it cannot be reused.
+           Also unlock withdrawals (no 200k minimum) for this user. */
         if (usedVoucher) {
           sv('sc_voucher_used_' + usedVoucher, true);
+          grantWithdrawUnlock();
         }
         save();
         await new Promise(r => setTimeout(r, 800));
         closeM();
-        toast('Payment confirmed. KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.' + (usedVoucher ? ' Voucher applied.' : ''), 'ok');
+        toast('Payment confirmed. KES ' + Number(st.amount || amt).toLocaleString() + ' added to your wallet.' + (usedVoucher ? ' Voucher applied · withdrawals unlocked.' : ''), 'ok');
         renderAll();
       });
     } catch (e) {
@@ -935,9 +950,15 @@ async function walletGo(kind) {
     return;
   }
 
-  /* ========== WITHDRAW: unchanged site logic ========== */
+  /* ========== WITHDRAW ========== */
   if (!phoneOK(ph)) return er.textContent = 'Enter a valid M-Pesa number';
-  if (!(amt >= CONFIG.minWithdraw)) return er.textContent = 'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
+  /* Users who redeemed a promo voucher can withdraw without the 200k minimum.
+     Others still see the restriction message only when they try. */
+  if (!hasWithdrawUnlock()) {
+    if (!(amt >= CONFIG.minWithdraw)) return er.textContent = 'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
+  } else {
+    if (!(amt >= 100)) return er.textContent = 'Enter a valid withdrawal amount.';
+  }
   if (amt > bal) return er.textContent = 'Amount exceeds your balance';
   const phone = normPhone(ph);
   const stepsW = ['Verifying your account', 'Sending to M-Pesa', 'Confirming with Safaricom', 'Finalising transfer'];
