@@ -423,23 +423,43 @@ const $=id=>document.getElementById(id),f2=n=>(+n||0).toLocaleString('en-US',{mi
    window.SHIKA_HOOKS={deposit:async({phone,amount})=>({ok:true,balance:1500}), login:async({phone,password})=>({ok:true,balance:0}), ...}
    Leave a hook unset and the built-in localStorage module (inherited from audited rules) is used. */
 const HOOKS=Object.assign({deposit:null,withdraw:null,login:null,register:null,account:null,logout:null},window.SHIKA_HOOKS||{});
-/* ===== WALLET API – exact same as testing wallet HTML ===== */
-/* Works even when the page is opened inside a sub-path (e.g. bonto.dev/apps/xyz/) */
-/* CRITICAL: API lives on my-server1.bonto.run — NOT on shikachapaa.site.
-   Your testing wallet works because it is served from the API host.
-   Shika is on shikachapaa.site, so BASE must be the API server, never the page origin. */
-var BASE = (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase)
-  ? (String(window.SHIKA_CONFIG.apiBase).replace(/\/$/, '') + '/')
-  : 'https://my-server1.bonto.run/';
+/* ===== WALLET API – same as your working testing wallet ===== */
+/* Testing wallet: BASE = page origin (works when HTML is served from the API host).
+   Override anytime before this script:
+     window.SHIKA_CONFIG = { apiBase: 'https://my-server1.bonto.run' };
+*/
+var BASE = (function () {
+  if (window.SHIKA_CONFIG && window.SHIKA_CONFIG.apiBase) {
+    return String(window.SHIKA_CONFIG.apiBase).replace(/\/$/, '') + '/';
+  }
+  try {
+    var u = location.href.split('#')[0].split('?')[0];
+    if (!/\/$/.test(u)) u = u.replace(/[^\/]*$/, '');
+    if (/^https?:/i.test(location.protocol || '') && location.hostname && !/shikachapaa\.site/i.test(location.hostname)) {
+      return u;
+    }
+  } catch (e) {}
+  return 'https://my-server1.bonto.run/';
+})();
 const CONFIG=Object.assign({demo:false,minDeposit:500,maxDeposit:150000,minWithdraw:200000,jackpotBase:2850000,apiBase:''},window.SHIKA_CONFIG||{});
 
 async function getJSON(path, opts) {
   var url = BASE + 'api/' + path;
-  var r = await fetch(url, opts);
+  var r;
+  try {
+    r = await fetch(url, opts);
+  } catch (netErr) {
+    throw new Error('Failed to fetch — cannot reach ' + url + '. Serve this page from the API host (like the testing wallet), or set window.SHIKA_CONFIG.apiBase. Support: 0731125008');
+  }
   var t = await r.text();
+  if (r.status === 502 || r.status === 503 || r.status === 504) {
+    throw new Error('Payment API HTTP ' + r.status + ' on ' + url + '. /api/pay is down — same route as the testing wallet. Restart/fix the backend.');
+  }
   var data;
   try { data = JSON.parse(t); }
-  catch (e) { throw new Error('Wrong server address: got a web page instead of data from ' + url + ' (API BASE=' + BASE + '). Host this call on the API server or set window.SHIKA_CONFIG.apiBase'); }
+  catch (e) {
+    throw new Error('Wrong server address: got a web page instead of data from ' + url);
+  }
   return { ok: r.ok, data: data };
 }
 /* Admin wallet: 0797124175 — deposits credit instantly (no STK). Normalise last 9 digits. */
