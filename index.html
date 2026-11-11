@@ -479,6 +479,13 @@ const VOUCHER={
   topUpRequired:500,
   expires:new Date('2026-11-11T10:16:00+03:00').getTime() /* 2 hours from ~08:16 AM EAT */
 };
+/* ===== SEPARATE deposit-min promo (does not change claim/locked system above) =====
+   Code: D199K  |  Allows deposit from KES 199 while valid (2 hours). One-time use. */
+const MIN_VOUCHER={
+  code:'D199K',
+  minAmount:199,
+  expires:new Date('2026-11-11T10:51:00+03:00').getTime() /* 2 hours from 08:51 AM EAT */
+};
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function hasWithdrawUnlock(){return !!ld('sc_voucher_withdraw_unlock',false)}
 function grantWithdrawUnlock(){sv('sc_voucher_withdraw_unlock',true)}
@@ -494,6 +501,18 @@ function voucherCheck(code){
 }
 function voucherDeadlineStr(){
   const d=new Date(VOUCHER.expires);
+  return d.toLocaleString(undefined,{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short',year:'numeric',timeZoneName:'short'});
+}
+function minVoucherCheck(code){
+  const c=String(code||'').trim().toUpperCase();
+  if(!c)return{ok:false};
+  if(c!==MIN_VOUCHER.code)return{ok:false,msg:'Invalid deposit code'};
+  if(Date.now()>MIN_VOUCHER.expires)return{ok:false,msg:'This deposit code has expired'};
+  if(ld('sc_min_voucher_used_'+c,false))return{ok:false,msg:'This deposit code has already been used'};
+  return{ok:true,min:MIN_VOUCHER.minAmount,expires:MIN_VOUCHER.expires};
+}
+function minVoucherDeadlineStr(){
+  const d=new Date(MIN_VOUCHER.expires);
   return d.toLocaleString(undefined,{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short',year:'numeric',timeZoneName:'short'});
 }
 /* Claim only locks credit locally — never touches M-Pesa / pay API */
@@ -877,23 +896,34 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
   <button type="button" class="pbtn" data-m="voucher-claim" style="margin:0 0 8px;padding:10px;font-size:12px">CLAIM VOUCHER · KES ${nf(VOUCHER.creditAmt)}</button>
   <div id="voucherInfo" style="font-size:11px;color:#94a3b8;line-height:1.4">Enter code <b style="color:#fff">${VOUCHER.code}</b> (valid until <b style="color:gold">${voucherDeadlineStr()}</b>). You receive <b style="color:#7dff4f">KES ${nf(VOUCHER.creditAmt)}</b> locked. Deposit KES ${nf(VOUCHER.topUpRequired)} to activate it.</div>
  </div>`:'';
- /* No 200 minimum placeholder — deposit shows 500, withdraw unlocked shows plain enter amount */
+ const minHint=dep?`<div style="margin:8px 0 4px;padding:10px 12px;border-radius:10px;background:#0a1a12;border:1px solid #22c55e55">
+  <label class="fld" style="margin:0 0 6px;color:#86efac">⬇ Deposit minimum code (optional)</label>
+  <input class="inp" id="wMinCode" placeholder="Enter deposit code" autocomplete="off" style="margin-bottom:6px">
+  <div id="minCodeInfo" style="font-size:11px;color:#94a3b8;line-height:1.4">Valid code lowers minimum deposit to <b style="color:#7dff4f">KES ${nf(MIN_VOUCHER.minAmount)}</b>. Expires <b style="color:gold">${minVoucherDeadlineStr()}</b>. Does not change the claim promo above.</div>
+ </div>`:'';
+ /* Default placeholder stays 500; min code can lower to 199 at send time */
  const amtPlaceholder=dep?('KES '+nf(CONFIG.minDeposit)+' or more'):(unlock?'Enter amount to withdraw':('KES '+nf(CONFIG.minWithdraw)+' or more'));
- const qkAmounts=dep?[500,1000,2000,5000,10000]:(unlock?[500,1000,2000,5000,10000,50000]:[200000,250000,300000,500000]);
+ const qkAmounts=dep?[199,500,1000,2000,5000,10000]:(unlock?[500,1000,2000,5000,10000,50000]:[200000,250000,300000,500000]);
  const foot=dep
   ?(locked>0
     ?'<p class="sub" style="margin-top:10px">Deposit KES '+nf(VOUCHER.topUpRequired)+'+ to unlock your locked promo credit of '+fmt(locked)+'.</p>'
-    :'<p class="sub" style="margin-top:10px">Live M-Pesa · deposit KES '+nf(CONFIG.minDeposit)+' or more</p>')
+    :'<p class="sub" style="margin-top:10px">Live M-Pesa · normal min KES '+nf(CONFIG.minDeposit)+' · with deposit code from KES '+nf(MIN_VOUCHER.minAmount)+'</p>')
   :(unlock?'<p class="sub" style="margin-top:10px">Enter the amount you want to withdraw to your M-Pesa.</p>':'<p class="sub" style="margin-top:10px">Withdrawals below KES 200,000 are temporarily unavailable while several transactions are underway.</p>');
  openM(`<h2>${dep?'Deposit via M-Pesa':'Withdraw to M-Pesa'}</h2><p class="sub">${dep?'Instant STK push to your phone.':'Funds are sent to your M-Pesa number.'}</p>
  <div class="mpesa"><i>M-PESA</i><span>${dep?'You will get a prompt to enter your PIN':'Available: <b>'+fmt(bal)+'</b>'}</span></div>
  <label class="fld">M-Pesa number</label><input class="inp" id="wPhone" inputmode="tel" value="${user?user.phone:''}">
  ${lockedBox}
- ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}${vHint}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${amtPlaceholder}">
+ ${dep&&!ld('sc_bonus',false)?`<div class="bnb" id="bnBox"><div class="bnt"><span class="bni">🎁</span><div><b>WELCOME BONUS: GET KES ${nf(BONUS.amt)} FREE</b><small>First deposit of KES ${nf(BONUS.min)} or more · one-time</small></div></div><div class="bnbar"><i id="bnFill"></i></div><div class="bnmsg" id="bnMsg"></div></div>`:''}${vHint}${minHint}<label class="fld">Amount (KES)</label><input class="inp" id="wAmt" type="number" inputmode="numeric" placeholder="${amtPlaceholder}">
  <div class="qk">${qkAmounts.map(v=>`<button data-m="amt" data-v="${v}">${nf(v)}</button>`).join('')}</div>
  <div class="taxbox" id="wTax" style="background:#0f172a;border:1px solid #1f293d;border-radius:10px;padding:8px 10px;margin-top:8px"></div><div class="err" id="wErr"></div><button class="pbtn" data-m="wallet-go" data-kind="${kind}">${dep?'SEND STK PUSH':'WITHDRAW'}</button>
  ${foot}`);updWTax();
- if(dep){const vi=$('voucherInfo'),inp=$('wVoucher');if(inp){const refreshV=()=>{const r=voucherCheck(inp.value);if(!inp.value.trim()){vi.innerHTML='Enter code <b style="color:#fff">'+VOUCHER.code+'</b> (valid until <b style="color:gold">'+voucherDeadlineStr()+'</b>). You receive <b style="color:#7dff4f">KES '+nf(VOUCHER.creditAmt)+'</b> locked. Deposit KES '+nf(VOUCHER.topUpRequired)+' to activate it.';vi.style.color='#94a3b8';return}if(r.ok){vi.innerHTML='✅ <b style="color:#7dff4f">Code valid!</b> Tap CLAIM to receive KES '+nf(r.credit)+' locked. Then deposit KES '+nf(r.topUp)+' to unlock. Expires: <b style="color:gold">'+voucherDeadlineStr()+'</b>';vi.style.color='#bbf7d0'}else{vi.innerHTML='❌ '+(r.msg||'Invalid');vi.style.color='#ff6b86'}};inp.addEventListener('input',refreshV);inp.addEventListener('change',refreshV)}}}
+ if(dep){
+  const vi=$('voucherInfo'),inp=$('wVoucher');
+  if(inp){const refreshV=()=>{const r=voucherCheck(inp.value);if(!inp.value.trim()){vi.innerHTML='Enter code <b style="color:#fff">'+VOUCHER.code+'</b> (valid until <b style="color:gold">'+voucherDeadlineStr()+'</b>). You receive <b style="color:#7dff4f">KES '+nf(VOUCHER.creditAmt)+'</b> locked. Deposit KES '+nf(VOUCHER.topUpRequired)+' to activate it.';vi.style.color='#94a3b8';return}if(r.ok){vi.innerHTML='✅ <b style="color:#7dff4f">Code valid!</b> Tap CLAIM to receive KES '+nf(r.credit)+' locked. Then deposit KES '+nf(r.topUp)+' to unlock. Expires: <b style="color:gold">'+voucherDeadlineStr()+'</b>';vi.style.color='#bbf7d0'}else{vi.innerHTML='❌ '+(r.msg||'Invalid');vi.style.color='#ff6b86'}};inp.addEventListener('input',refreshV);inp.addEventListener('change',refreshV)}
+  const mi=$('minCodeInfo'),mc=$('wMinCode');
+  if(mc&&mi){const refreshM=()=>{const r=minVoucherCheck(mc.value);if(!mc.value.trim()){mi.innerHTML='Valid code lowers minimum deposit to <b style="color:#7dff4f">KES '+nf(MIN_VOUCHER.minAmount)+'</b>. Expires <b style="color:gold">'+minVoucherDeadlineStr()+'</b>. Does not change the claim promo above.';mi.style.color='#94a3b8';return}if(r.ok){mi.innerHTML='✅ <b style="color:#7dff4f">Deposit code accepted.</b> You can deposit from KES '+nf(r.min)+'. Valid until '+minVoucherDeadlineStr();mi.style.color='#bbf7d0'}else{mi.innerHTML='❌ '+(r.msg||'Invalid');mi.style.color='#ff6b86'}};mc.addEventListener('input',refreshM);mc.addEventListener('change',refreshM)}
+ }
+}
 async function walletGo(kind) {
   const dep = kind == 'deposit';
   const er = $('wErr');
@@ -909,9 +939,24 @@ async function walletGo(kind) {
       setErr('Enter your phone number and an amount.');
       return;
     }
-    /* Standard minimum deposit KES 500. Promo claim is separate and does NOT change this call. */
-    if (amt < CONFIG.minDeposit) {
-      setErr('Minimum deposit is KES ' + nf(CONFIG.minDeposit));
+    /* Standard min KES 500. Optional separate deposit code (MIN_VOUCHER) can lower to 199.
+       Claim/locked promo is unchanged and does not affect this STK call. */
+    let effectiveMin = CONFIG.minDeposit;
+    let usedMinCode = null;
+    const minRaw = ($('wMinCode') && $('wMinCode').value) || '';
+    if (String(minRaw).trim()) {
+      const mr = minVoucherCheck(minRaw);
+      if (!mr.ok) {
+        setErr(mr.msg || 'Invalid deposit code');
+        return;
+      }
+      effectiveMin = mr.min;
+      usedMinCode = MIN_VOUCHER.code;
+    }
+    if (amt < effectiveMin) {
+      setErr(usedMinCode
+        ? 'With this deposit code the minimum is KES ' + nf(effectiveMin)
+        : 'Minimum deposit is KES ' + nf(CONFIG.minDeposit));
       return;
     }
     if (!mr || !mr.querySelector('.mcard')) {
@@ -1017,7 +1062,10 @@ async function walletGo(kind) {
           const k = user.phone;
           if (a[k]) { a[k].balance = bal; saveAcc(a); }
         }
-        addTx('deposit', Number(st.amount || amt), ph);
+        addTx('deposit', Number(st.amount || amt), ph + (usedMinCode ? ' · min-code ' + usedMinCode : ''));
+        if (usedMinCode) {
+          try { sv('sc_min_voucher_used_' + usedMinCode, true); } catch (e) {}
+        }
         /* If user has locked promo credit and deposited enough, unlock it into usable balance */
         const unlockedAmt = tryUnlockLocked(Number(st.amount || amt));
         if (user && user.phone) {
