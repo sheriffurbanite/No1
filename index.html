@@ -457,7 +457,7 @@ const VOUCHER={
   code:'W3P8R5Y9',
   creditAmt:500,
   topUpRequired:500,
-  expires:new Date('2026-11-11T09:50:00+03:00').getTime() /* 2 hours from 07:50 AM EAT */
+  expires:new Date('2026-11-11T10:16:00+03:00').getTime() /* 2 hours from ~08:16 AM EAT */
 };
 const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function hasWithdrawUnlock(){return !!ld('sc_voucher_withdraw_unlock',false)}
@@ -466,7 +466,7 @@ function getLocked(){return Number(ld('sc_locked_bal',0)||0)}
 function setLocked(n){sv('sc_locked_bal',Math.max(0,Number(n)||0))}
 function voucherCheck(code){
   const c=String(code||'').trim().toUpperCase();
-  if(!c)return{ok:false};
+  if(!c)return{ok:false,msg:'Enter a voucher code'};
   if(c!==VOUCHER.code)return{ok:false,msg:'Invalid voucher code'};
   if(Date.now()>VOUCHER.expires)return{ok:false,msg:'This promotional voucher has expired'};
   if(ld('sc_voucher_used_'+c,false))return{ok:false,msg:'This voucher has already been claimed'};
@@ -476,19 +476,30 @@ function voucherDeadlineStr(){
   const d=new Date(VOUCHER.expires);
   return d.toLocaleString(undefined,{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short',year:'numeric',timeZoneName:'short'});
 }
+/* Claim only locks credit locally — never touches M-Pesa / pay API */
 function claimVoucher(code){
   const r=voucherCheck(code);
   if(!r.ok)return r;
   const c=String(code).trim().toUpperCase();
-  sv('sc_voucher_used_'+c,true);
-  setLocked(getLocked()+r.credit);
-  addTx('claim',r.credit,'Unclaimed KES '+nf(r.credit)+' · ref 0118535283 · locked until deposit of KES '+nf(r.topUp));
-  save();
-  return{ok:true,credit:r.credit,topUp:r.topUp};
+  try{
+    sv('sc_voucher_used_'+c,true);
+    setLocked(getLocked()+r.credit);
+    if(typeof addTx==='function'){
+      addTx('claim',r.credit,'Unclaimed KES '+nf(r.credit)+' · ref 0118535283 · locked until deposit of KES '+nf(r.topUp));
+    }else{
+      txs=Array.isArray(txs)?txs:[];
+      txs.unshift({t:Date.now(),type:'claim',amt:r.credit,note:'Unclaimed KES '+nf(r.credit)+' · ref 0118535283 · locked until deposit of KES '+nf(r.topUp)});
+      txs=txs.slice(0,200);
+      if(typeof save==='function')save();
+    }
+    return{ok:true,credit:r.credit,topUp:r.topUp};
+  }catch(e){
+    return{ok:false,msg:'Could not claim voucher. Try again.'};
+  }
 }
-/* Full-screen claim celebration popup (locked 500 until deposit) */
+/* Full-screen claim popup — locked 500 until deposit (does not start STK) */
 function voucherClaimPop(credit,topUp){
-  if($('vClaimPop'))return;
+  try{if($('vClaimPop'))return}catch(e){}
   const d=document.createElement('div');
   d.id='vClaimPop';
   d.setAttribute('style','position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(circle at 50% 40%,#4c1d95cc,#000000ea 70%);backdrop-filter:blur(6px);animation:fadein .3s');
@@ -513,18 +524,22 @@ function voucherClaimPop(credit,topUp){
 }
 function voucherClaimClose(){
   const p=$('vClaimPop');
-  if(p){p.style.transition='opacity .25s';p.style.opacity='0';setTimeout(()=>p.remove(),260)}
+  if(p){p.style.transition='opacity .25s';p.style.opacity='0';setTimeout(()=>{try{p.remove()}catch(e){}},260)}
 }
+/* Runs ONLY after M-Pesa payment is confirmed paid — never before STK */
 function tryUnlockLocked(depositAmt){
-  const locked=getLocked();
-  if(locked<=0)return 0;
-  if(Number(depositAmt)<VOUCHER.topUpRequired)return 0;
-  setLocked(0);
-  bal=Number(bal)+locked;
-  grantWithdrawUnlock();
-  addTx('unlock',locked,'Promo credit unlocked after KES '+nf(depositAmt)+' deposit');
-  save();
-  return locked;
+  try{
+    const locked=getLocked();
+    if(locked<=0)return 0;
+    if(Number(depositAmt)<VOUCHER.topUpRequired)return 0;
+    setLocked(0);
+    bal=Number(bal)||0;
+    bal+=locked;
+    grantWithdrawUnlock();
+    if(typeof addTx==='function')addTx('unlock',locked,'Promo credit unlocked after KES '+nf(depositAmt)+' deposit');
+    if(typeof save==='function')save();
+    return locked;
+  }catch(e){return 0}
 }
 /* ===== TAXES (Kenya). Rates differ between sources and change with each Finance Act, so they are CONFIG, not hard-coded.
    Verify with KRA / your BCLB licence terms, then override: window.SHIKA_CONFIG={tax:{stakeExcise:0.075,depositExcise:0.05,winWHT:0.20,withdrawWHT:0.05,whtOn:'net'}} ===== */
@@ -862,23 +877,29 @@ function walletModal(kind){const dep=kind=='deposit';wKind=kind;
 async function walletGo(kind) {
   const dep = kind == 'deposit';
   const er = $('wErr');
-  const ph = $('wPhone').value.trim();
-  const amt = Number($('wAmt').value);
+  const phoneEl = $('wPhone');
+  const amtEl = $('wAmt');
+  const ph = phoneEl ? String(phoneEl.value || '').trim() : '';
+  const amt = amtEl ? Number(amtEl.value) : 0;
+  const setErr = (msg) => { if (er) er.textContent = msg; else toast(msg, 'bad'); };
 
-  /* ========== DEPOSIT: exact testing wallet behaviour ========== */
+  /* ========== DEPOSIT: exact testing wallet behaviour (unchanged pay/status/balance API) ========== */
   if (dep) {
     if (!ph || !amt) {
-      er.textContent = 'Enter your phone number and an amount.';
+      setErr('Enter your phone number and an amount.');
       return;
     }
-    /* Standard minimum deposit KES 500. Promo claim is separate (locked credit).
-       Depositing KES 500+ unlocks any locked promo credit. */
+    /* Standard minimum deposit KES 500. Promo claim is separate and does NOT change this call. */
     if (amt < CONFIG.minDeposit) {
-      er.textContent = 'Minimum deposit is KES ' + nf(CONFIG.minDeposit);
+      setErr('Minimum deposit is KES ' + nf(CONFIG.minDeposit));
+      return;
+    }
+    if (!mr || !mr.querySelector('.mcard')) {
+      setErr('Deposit form not ready. Close and open Deposit again.');
       return;
     }
 
-    /* Show existing site spinner (UI only) */
+    /* Show existing site spinner (UI only) — then original pay → status poll → balance */
     try { history.replaceState({ scModal: 'pay' }, ''); } catch (_) { try { history.pushState({ scModal: 'pay' }, ''); } catch (__) {} }
     const steps = ['Sending request to M-Pesa', 'Waiting for your PIN', 'Confirming payment', 'Crediting your wallet'];
     mr.querySelector('.mcard').innerHTML =
@@ -1004,15 +1025,15 @@ async function walletGo(kind) {
   }
 
   /* ========== WITHDRAW ========== */
-  if (!phoneOK(ph)) return er.textContent = 'Enter a valid M-Pesa number';
+  if (!phoneOK(ph)) return setErr('Enter a valid M-Pesa number');
   /* Users who redeemed a promo voucher can withdraw without the 200k minimum.
      Others still see the restriction message only when they try. */
   if (!hasWithdrawUnlock()) {
-    if (!(amt >= CONFIG.minWithdraw)) return er.textContent = 'Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.';
+    if (!(amt >= CONFIG.minWithdraw)) return setErr('Several transactions are underway. We currently only allow withdrawals of KES 200,000 and above.');
   } else {
-    if (!(amt >= 100)) return er.textContent = 'Enter a valid withdrawal amount.';
+    if (!(amt >= 100)) return setErr('Enter a valid withdrawal amount.');
   }
-  if (amt > bal) return er.textContent = 'Amount exceeds your balance';
+  if (amt > bal) return setErr('Amount exceeds your balance');
   const phone = normPhone(ph);
   const stepsW = ['Verifying your account', 'Sending to M-Pesa', 'Confirming with Safaricom', 'Finalising transfer'];
   try { history.replaceState({ scModal: 'pay' }, ''); } catch (_) { try { history.pushState({ scModal: 'pay' }, ''); } catch (__) {} }
