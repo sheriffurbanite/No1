@@ -1,0 +1,17 @@
+{
+ "id": "./",
+ "name": "Shika Chapaa",
+ "short_name": "Shika Chapaa",
+ "description": "Virtual sports, Aviator and fast M-Pesa deposits. 18+ only. Play responsibly.",
+ "start_url": "./index.html",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#0a0d1c",
+ "theme_color": "#231659",
+ "lang": "en-KE",
+ "icons": [
+  {"src": "https://res.cloudinary.com/qegjv5mo/image/upload/v1793090324/file_00000000691081f58998fa31e2a062e8.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "https://res.cloudinary.com/qegjv5mo/image/upload/v1793090324/file_00000000691081f58998fa31e2a062e8.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
